@@ -1,0 +1,72 @@
+name: household_expenses_project
+description: "Household expense project."
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.3 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  material_symbols_icons: ^4.2719.3
+
+  provider: ^6.0.0        #provider
+  go_router: ^13.2.0      #go_router
+
+  keyboard_actions: 
+    path:  ./custom_package/keyboard_actions-4.2.0 #keyboard_actions
+
+  #localization
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+
+  #sqlite
+  sqflite: ^2.3.2
+  path: ^1.8.3
+
+  #riverpod
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  #riverpod
+  flutter_lints: ^3.0.0
+  riverpod_generator: ^2.4.0
+  build_runner: ^2.4.9
+  custom_lint: ^0.6.4
+  riverpod_lint: ^2.3.10
+
+
+flutter:
+  generate: true       #多言語対応のファイルが自動生成
+  uses-material-design: true
+
+  fonts:
+    - family: Noto Sans JP
+      fonts:
+        - asset: fonts/NotoSans/NotoSansJP-Thin.ttf
+          weight: 100
+        - asset: fonts/NotoSans/NotoSansJP-ExtraLight.ttf
+          weight: 200
+        - asset: fonts/NotoSans/NotoSansJP-Light.ttf
+          weight: 300
+        - asset: fonts/NotoSans/NotoSansJP-Regular.ttf
+          weight: 400
+        - asset: fonts/NotoSans/NotoSansJP-Medium.ttf
+          weight: 500
+        - asset: fonts/NotoSans/NotoSansJP-SemiBold.ttf
+          weight: 600
+        - asset: fonts/NotoSans/NotoSansJP-Bold.ttf
+          weight: 700
+        - asset: fonts/NotoSans/NotoSansJP-ExtraBold.ttf
+          weight: 800
+        - asset: fonts/NotoSans/NotoSansJP-Black.ttf
+          weight: 900
