@@ -56,6 +56,13 @@ KeyboardActionsConfig buildConfig(BuildContext context) {
           (node) => Padding(
                 padding: keyboardInkWellPadding,
                 child: KeyboardGestureDetector(
+                  onTapIcon: () => inputMath(MathSymbol.division),
+                  customIcon: const DividedIcon(),
+                ),
+              ),
+          (node) => Padding(
+                padding: keyboardInkWellPadding,
+                child: KeyboardGestureDetector(
                   onTapIcon: () => computeMath(),
                   customIcon: const Icon(Symbols.equal,
                       weight: 400, size: customIconSize),
@@ -73,7 +80,7 @@ KeyboardActionsConfig buildConfig(BuildContext context) {
       KeyboardActionsItem(
         focusNode: categoryNode,
         keyboardCustom: true,
-        footerBuilder: (_) => ColorPickerKeyboard(
+        footerBuilder: (_) => CategoryPickerKeyboard(
           notifier: cateoryNotifer,
         ),
       ),
@@ -107,6 +114,22 @@ class KeyboardGestureDetector extends InkWell {
             child: customIcon,
           ),
         );
+}
+
+//-----DividedIcon-----
+class DividedIcon extends StatelessWidget {
+  const DividedIcon({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Stack(
+      alignment: Alignment.center,
+      children: [
+        Icon(Symbols.remove, weight: 700, size: customIconSize),
+        Icon(Symbols.go_to_line, weight: 700, size: customIconSize),
+      ],
+    );
+  }
 }
 
 //-----KeyboardClosedIcon-----
@@ -152,21 +175,32 @@ void computeMath() {
     if (int.tryParse(inputText.substring(inputText.length - 1)) != null) {
       //記号と数字を分割
       final symbolPattern = RegExp(
-          "[${MathSymbol.sum.value}${MathSymbol.diff.value}/${MathSymbol.multiplication.value}]");
-      List<int> numList = inputText
+          "[${MathSymbol.diff.value}${MathSymbol.sum.value}/${MathSymbol.multiplication.value}${MathSymbol.division.value}]");
+      List<double> numList = inputText
           .split(symbolPattern)
-          .map((e) => int.parse(e == "" ? "0" : e))
+          .map((e) => double.parse(e == "" ? "0" : e))
           .toList();
       List<String?> symbolList =
           symbolPattern.allMatches(inputText).map((e) => e.group(0)).toList();
 
       if (symbolList.isNotEmpty) {
-        //掛け算
-        while (symbolList.contains(MathSymbol.multiplication.value)) {
-          var xIndex = symbolList.indexOf(MathSymbol.multiplication.value);
-          numList[xIndex] = numList[xIndex] * numList[xIndex + 1];
-          numList.removeAt(xIndex + 1);
-          symbolList.removeAt(xIndex);
+        //掛割算
+        var multIndex = symbolList.indexOf(MathSymbol.multiplication.value);
+        var divIndex = symbolList.indexOf(MathSymbol.division.value);
+        while (multIndex > -1 || divIndex > -1) {
+          if (multIndex > -1
+              ? (divIndex > -1 ? multIndex < divIndex : true)
+              : false) {
+            numList[multIndex] = numList[multIndex] * numList[multIndex + 1];
+            numList.removeAt(multIndex + 1);
+            symbolList.removeAt(multIndex);
+            multIndex = symbolList.indexOf(MathSymbol.multiplication.value);
+          } else {
+            numList[divIndex] = numList[divIndex] / numList[divIndex + 1];
+            numList.removeAt(divIndex + 1);
+            symbolList.removeAt(divIndex);
+            divIndex = symbolList.indexOf(MathSymbol.division.value);
+          }
         }
 
         //加減算
@@ -187,15 +221,15 @@ void computeMath() {
   }
 }
 
-//-----customedKeyboard-----
-class ColorPickerKeyboard extends StatelessWidget
+//-----CategoryKeyboard-----
+class CategoryPickerKeyboard extends StatelessWidget
     with KeyboardCustomPanelMixin<Color>
     implements PreferredSizeWidget {
   @override
   final ValueNotifier<Color> notifier;
   static const double _kKeyboardHeight = 280;
 
-  ColorPickerKeyboard({super.key, required this.notifier});
+  CategoryPickerKeyboard({super.key, required this.notifier});
 
   @override
   Widget build(BuildContext context) {

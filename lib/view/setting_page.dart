@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:keyboard_actions/external/keyboard_avoider/bottom_area_avoider.dart';
 import 'package:provider/provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
-import 'package:household_expenses_project/model/my_app_state.dart';
+import 'package:household_expenses_project/provider/my_app_state.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 
 //-------ページ１（ホーム）---------------------------

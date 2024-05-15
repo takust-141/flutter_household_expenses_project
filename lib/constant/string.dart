@@ -9,7 +9,8 @@ const String labelIncome = "収入";
 enum MathSymbol {
   sum(value: "+"),
   diff(value: "-"),
-  multiplication(value: "x");
+  multiplication(value: "x"),
+  division(value: "÷");
 
   final String value;
   const MathSymbol({required this.value});

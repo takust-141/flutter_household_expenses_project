@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:household_expenses_project/constant/constant.dart';
-import 'package:household_expenses_project/model/my_app_state.dart';
+import 'package:household_expenses_project/provider/my_app_state.dart';
 import 'package:household_expenses_project/component/customed_keyboard.dart';
 
 //-------入力画面------------
@@ -66,7 +66,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             LengthLimitingTextInputFormatter(20),
                             FilteringTextInputFormatter.allow(
                               RegExp(
-                                  "[0-9${MathSymbol.sum.value}${MathSymbol.diff.value}${MathSymbol.multiplication.value}]"),
+                                  "[0-9.${MathSymbol.sum.value}${MathSymbol.diff.value}${MathSymbol.multiplication.value}${MathSymbol.division.value}]"),
                             ),
                           ],
                           style:

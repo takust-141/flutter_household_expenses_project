@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:household_expenses_project/model/my_app_state.dart';
+import 'package:household_expenses_project/provider/my_app_state.dart';
 
 //-------ページ１（ホーム）---------------------------
 class ListViewPage extends StatelessWidget {
