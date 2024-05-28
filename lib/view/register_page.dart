@@ -4,10 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/provider/my_app_state.dart';
-import 'package:household_expenses_project/component/customed_keyboard.dart';
+import 'package:household_expenses_project/component/customed_register_keyboard.dart';
 
 //-------入力画面------------
-
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -16,18 +15,39 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  //フォームコントローラー
+  final TextEditingController paymentAmountTextController =
+      TextEditingController();
+  final TextEditingController subCategoryController = TextEditingController();
+
+  //customKeyboard用
+  final cateoryNotifer = ValueNotifier<Color>(Colors.blue);
+
+  //FocusNode
+  final CustomFocusNode paymentAmountNode = CustomFocusNode();
+  final CustomFocusNode categoryNode = CustomFocusNode();
+  final CustomFocusNode subCategoryNode = CustomFocusNode();
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
+    RegisterKeyboardAction registerKeyboardAction = RegisterKeyboardAction(
+      paymentAmountTextController: paymentAmountTextController,
+      subCategoryController: subCategoryController,
+      cateoryNotifer: cateoryNotifer,
+      paymentAmountNode: paymentAmountNode,
+      categoryNode: categoryNode,
+      subCategoryNode: subCategoryNode,
+    );
 
     return KeyboardActions(
       keepFocusOnTappingNode: true,
       autoScroll: true,
       overscroll: 40,
       tapOutsideBehavior: TapOutsideBehavior.translucentDismiss,
-      config: buildConfig(context),
+      config: registerKeyboardAction.buildConfig(context),
       child: Padding(
         padding: EdgeInsets.only(bottom: mediaQuery.padding.bottom),
         child: Padding(
@@ -108,15 +128,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 SizedBox(height: 120),
                 TextButton(
                   style: ButtonStyle(
-                    foregroundColor:
-                        MaterialStateProperty.resolveWith((states) {
-                      return states.contains(MaterialState.disabled)
+                    foregroundColor: WidgetStateProperty.resolveWith((states) {
+                      return states.contains(WidgetState.disabled)
                           ? null
                           : theme.colorScheme.onPrimary;
                     }),
-                    backgroundColor:
-                        MaterialStateProperty.resolveWith((states) {
-                      return states.contains(MaterialState.disabled)
+                    backgroundColor: WidgetStateProperty.resolveWith((states) {
+                      return states.contains(WidgetState.disabled)
                           ? null
                           : theme.colorScheme.primary;
                     }),

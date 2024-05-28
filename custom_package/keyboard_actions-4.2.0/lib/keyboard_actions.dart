@@ -13,8 +13,8 @@ export 'keyboard_actions_item.dart';
 export 'keyboard_custom.dart';
 
 const double _kBarSize = 45.0;
-const Duration _timeToDismiss = Duration(milliseconds: 200);
-const Duration _timeToDismissBar = Duration(milliseconds: 200);
+const Duration _timeToDismiss = Duration(milliseconds: 300);
+const Duration _timeToDismissBar = Duration(milliseconds: 300);
 
 enum KeyboardActionsPlatform {
   ANDROID,
@@ -125,27 +125,10 @@ class KeyboardActionstate extends State<KeyboardActions>
   OverlayState? _overlayState;
 
   //アニメーション用パラメータ
-  late AnimationController _slideKeyboardAnimationController =
-      AnimationController(
-    vsync: this,
-    duration: _timeToDismiss,
-  );
-  late AnimationController _slideBarAnimationController = AnimationController(
-    vsync: this,
-    duration: _timeToDismissBar,
-  );
-
-  final Curve _slideCurve = Curves.easeOutCubic;
-  late Animation<Offset> _slideKeyboardAnimation = Tween<Offset>(
-    begin: const Offset(0, 1),
-    end: const Offset(0, 0),
-  )
-      .chain(CurveTween(curve: _slideCurve))
-      .animate(_slideKeyboardAnimationController);
-  late Animation<double> _slideBarAnimation = Tween<double>(
-    begin: 0,
-    end: 1,
-  ).chain(CurveTween(curve: _slideCurve)).animate(_slideBarAnimationController);
+  late AnimationController _slideKeyboardAnimationController;
+  late AnimationController _slideBarAnimationController;
+  late Animation<Offset> _slideKeyboardAnimation;
+  late Animation<double> _slideBarAnimation;
 
   /// If the keyboard bar is on for the current platform
   bool get _isAvailable {
@@ -539,13 +522,14 @@ class KeyboardActionstate extends State<KeyboardActions>
 
   @override
   void dispose() {
-    _slideKeyboardAnimationController.dispose();
     clearConfig();
     _overlayEntry.forEach((key, value) {
       if (value != null) {
         _removeOverlay(fromDispose: true, index: key);
       }
     });
+    _slideBarAnimationController.dispose();
+    _slideKeyboardAnimationController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -561,8 +545,39 @@ class KeyboardActionstate extends State<KeyboardActions>
         _updateOffset();
       });
     }
-
+    setAnimationController();
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
+  void setAnimationController() {
+    //アニメーション用パラメータ
+    _slideKeyboardAnimationController = AnimationController(
+      vsync: this,
+      duration: _timeToDismiss,
+    );
+    _slideBarAnimationController = AnimationController(
+      vsync: this,
+      duration: _timeToDismissBar,
+    );
+
+    final Curve _slideCurve = Curves.easeOutCubic;
+    _slideKeyboardAnimation = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: const Offset(0, 0),
+    )
+        .chain(CurveTween(curve: _slideCurve))
+        .animate(_slideKeyboardAnimationController);
+    _slideBarAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    )
+        .chain(CurveTween(curve: _slideCurve))
+        .animate(_slideBarAnimationController);
   }
 
   var isKeyboardOpen = false;
