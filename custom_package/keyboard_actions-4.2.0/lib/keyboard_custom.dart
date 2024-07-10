@@ -11,7 +11,7 @@ class KeyboardCustomInput<T> extends StatefulWidget {
   final WidgetKeyboardBuilder<T> builder;
 
   ///Set the same `focusNode` you add to the [KeyboardAction]
-  final CustomFocusNode focusNode;
+  final FocusNode focusNode;
 
   ///The height of your widget
   final double? height;
@@ -47,6 +47,7 @@ class _KeyboardCustomInputState<T> extends State<KeyboardCustomInput<T>>
     return Focus(
       focusNode: widget.focusNode,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: () {
           if (!widget.focusNode.hasFocus) {
             widget.focusNode.requestFocus();
@@ -55,28 +56,11 @@ class _KeyboardCustomInputState<T> extends State<KeyboardCustomInput<T>>
         child: Container(
           height: widget.height,
           width: double.maxFinite,
-          child: InputDecorator(
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              filled: false,
-              disabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              enabled: false,
-            ),
-            isFocused: _hasFocus!,
-            child: MergeSemantics(
-              child: Semantics(
-                focused: _hasFocus,
-                child: Container(
-                  child: AnimatedBuilder(
-                    animation: widget.notifier,
-                    builder: (context, child) => widget.builder(
-                        context, widget.notifier.value, _hasFocus),
-                  ),
-                ),
-              ),
-            ),
+          child: ValueListenableBuilder(
+            valueListenable: widget.notifier,
+            builder: (context, value, child) {
+              return widget.builder(context, widget.notifier.value, _hasFocus);
+            },
           ),
         ),
       ),

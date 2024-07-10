@@ -1,9 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:keyboard_actions/external/keyboard_avoider/bottom_area_avoider.dart';
 import 'package:keyboard_actions/external/platform_check/platform_check.dart';
 
@@ -15,7 +13,8 @@ export 'keyboard_actions_item.dart';
 export 'keyboard_custom.dart';
 
 const double _kBarSize = 45.0;
-const Duration _timeToDismiss = Duration(milliseconds: 200);
+const Duration _timeToDismiss = Duration(milliseconds: 300);
+const Duration _timeToDismissBar = Duration(milliseconds: 300);
 
 enum KeyboardActionsPlatform {
   ANDROID,
@@ -109,7 +108,7 @@ class KeyboardActions extends StatefulWidget {
 
 /// State class for [KeyboardActions].
 class KeyboardActionstate extends State<KeyboardActions>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, TickerProviderStateMixin {
   /// The currently configured keyboard actions
   KeyboardActionsConfig? config;
 
@@ -117,17 +116,19 @@ class KeyboardActionstate extends State<KeyboardActions>
   Map<int, KeyboardActionsItem> _map = Map();
   KeyboardActionsItem? _currentAction;
   int? _currentIndex = 0;
-  OverlayEntry? _overlayEntry;
+  Map<int, OverlayEntry?> _overlayEntry = Map();
   double _offset = 0;
   PreferredSizeWidget? _currentFooter;
   bool _dismissAnimationNeeded = true;
   final _keyParent = GlobalKey();
   Completer<void>? _dismissAnimation;
+  OverlayState? _overlayState;
 
-  Completer<void>? _customKeyboardPositioned;
-  Completer<void>? _customKeyboardBuild;
-
-  bool _customKeyboardUpped = false;
+  //アニメーション用パラメータ
+  late AnimationController _slideKeyboardAnimationController;
+  late AnimationController _slideBarAnimationController;
+  late Animation<Offset> _slideKeyboardAnimation;
+  late Animation<double> _slideBarAnimation;
 
   /// If the keyboard bar is on for the current platform
   bool get _isAvailable {
@@ -140,7 +141,13 @@ class KeyboardActionstate extends State<KeyboardActions>
 
   /// If we are currently showing the keyboard bar
   bool get _isShowing {
-    return _overlayEntry != null;
+    bool _showFlag = false;
+    _overlayEntry.forEach((key, value) {
+      if (value != null) {
+        _showFlag = true;
+      }
+    });
+    return _showFlag;
   }
 
   /// The current previous index, or null.
@@ -192,10 +199,15 @@ class KeyboardActionstate extends State<KeyboardActions>
 
   void _addAction(int index, KeyboardActionsItem action) {
     _map[index] = action;
+    _overlayEntry[index] = null;
   }
 
   void _clearAllFocusNode() {
     _map = Map();
+    _overlayEntry.forEach((key, value) {
+      value?.remove();
+    });
+    _overlayEntry = Map();
   }
 
   void _clearFocus() {
@@ -218,35 +230,18 @@ class KeyboardActionstate extends State<KeyboardActions>
 
   void _shouldGoToNextFocus(KeyboardActionsItem action, int? nextIndex) async {
     _dismissAnimationNeeded = true;
-    _currentAction = action;
-    _currentIndex = nextIndex;
-    //remove focus for unselected fields
-    _map.keys.forEach((key) {
-      final currentAction = _map[key]!;
-      if (currentAction == _currentAction &&
-          currentAction.footerBuilder != null) {
-        _dismissAnimationNeeded = false;
-      }
-      if (currentAction != _currentAction) {
-        currentAction.focusNode.unfocus();
-      }
-    });
-    //if it is a custom keyboard then wait until the focus was dismissed from the others
-    if (_currentAction!.footerBuilder != null) {
-      await Future.delayed(
-        Duration(milliseconds: _timeToDismiss.inMilliseconds),
-      );
-    }
 
-    FocusScope.of(context).requestFocus(_currentAction!.focusNode);
-    await Future.delayed(const Duration(milliseconds: 100));
-    bottomAreaAvoiderKey.currentState?.scrollToOverscroll();
+    _currentAction!.focusNode.unfocus();
+    await _dismissAnimation?.future;
+    action.focusNode.requestFocus();
   }
 
   void _onTapUp() {
+    //DumpFocusTree();
     if (_previousIndex != null) {
       final currentAction = _map[_previousIndex!]!;
       if (currentAction.enabled) {
+        //currentAction.focusNode.previousFocus();
         _shouldGoToNextFocus(currentAction, _previousIndex);
       } else {
         _currentIndex = _previousIndex;
@@ -259,6 +254,7 @@ class KeyboardActionstate extends State<KeyboardActions>
     if (_nextIndex != null) {
       final currentAction = _map[_nextIndex!]!;
       if (currentAction.enabled) {
+        //currentAction.focusNode.nextFocus();
         _shouldGoToNextFocus(currentAction, _nextIndex);
       } else {
         _currentIndex = _nextIndex;
@@ -271,22 +267,27 @@ class KeyboardActionstate extends State<KeyboardActions>
   ///
   /// Called every time the focus changes, and when the app is resumed on Android.
   void _focusChanged(bool showBar) async {
+    int _index = _currentIndex!;
     if (_isAvailable) {
-      if (_dismissAnimation != null) {
-        // wait for the previous animation to complete
-        await _dismissAnimation?.future;
-        //await Future.delayed(
-        //   Duration(milliseconds: _timeToDismiss.inMilliseconds));
-      }
-      if (showBar && !_isShowing) {
-        _insertOverlay();
-      } else if (!showBar && _isShowing) {
-        _removeOverlay();
-      } else if (showBar && _isShowing) {
-        if (PlatformCheck.isAndroid) {
-          _updateOffset();
+      if (!showBar && _isShowing) {
+        _removeOverlay(index: _index);
+      } else {
+        if (_dismissAnimation != null) {
+          await _dismissAnimation;
+          _dismissAnimation = null;
         }
-        _overlayEntry!.markNeedsBuild();
+        if (showBar &&
+            (!_isShowing ||
+                (_currentFooter == null ||
+                    _currentAction!.keyboardCustom == false))) {
+          _insertOverlay(index: _index);
+          _dismissAnimation = Completer<void>();
+        } else if (showBar && _isShowing) {
+          if (PlatformCheck.isAndroid) {
+            _updateOffset();
+          }
+          _overlayEntry[_index]!.markNeedsBuild();
+        }
       }
       if (_currentAction != null && _currentAction!.footerBuilder != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -328,32 +329,17 @@ class KeyboardActionstate extends State<KeyboardActions>
   ///
   /// Position the overlay based on the current [MediaQuery] to land above the keyboard.
 
-  void _insertOverlay() async {
-    debugPrint("insert_start");
-    if (_currentAction!.keyboardCustom) {
-      _customKeyboardBuild = Completer<void>();
-      _customKeyboardUpped = false;
-    }
-
+  void _insertOverlay({required int index}) {
     _inserted = true;
-
-    OverlayState os = Overlay.of(context, rootOverlay: true);
-
-    _overlayEntry = OverlayEntry(builder: (context) {
+    _overlayEntry[index] = OverlayEntry(builder: (context) {
       // Update and build footer, if any
       _currentFooter = (_currentAction!.footerBuilder != null)
           ? _currentAction!.footerBuilder!(context)
           : null;
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_currentAction!.keyboardCustom && _customKeyboardBuild != null) {
-          debugPrint("build Compleat");
-          _customKeyboardBuild?.complete();
-        }
-      });
-
       final queryData = MediaQuery.of(context);
       return Stack(
+        alignment: AlignmentDirectional.bottomEnd,
         children: [
           if (widget.tapOutsideBehavior != TapOutsideBehavior.none ||
               // ignore: deprecated_member_use_from_same_package
@@ -363,7 +349,7 @@ class KeyboardActionstate extends State<KeyboardActions>
                 //-----オーバーレイタップ時のイベント-----
                 onPointerDown: (event) {
                   if (!widget.keepFocusOnTappingNode ||
-                      _currentAction?.focusNode.rect.contains(event.position) !=
+                      _currentAction!.focusNode.rect.contains(event.position) !=
                           true) {
                     _clearFocus();
                   }
@@ -375,42 +361,35 @@ class KeyboardActionstate extends State<KeyboardActions>
               ),
             ),
           if (!_currentAction!.keyboardCustom)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: queryData.viewInsets.bottom,
-              child: Material(
-                color: config!.keyboardBarColor ?? Colors.grey[200],
-                elevation: config!.keyboardBarElevation ?? 20,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    if (_currentAction!.displayActionBar)
-                      _buildBar(_currentAction!.displayArrows),
-                    if (_currentFooter != null)
-                      AnimatedContainer(
-                        duration: _timeToDismiss,
-                        child: _currentFooter,
-                        height: _inserted
-                            ? _currentFooter!.preferredSize.height
-                            : 0,
-                      ),
-                  ],
+            SizeTransition(
+              sizeFactor: _slideBarAnimation,
+              axis: Axis.vertical,
+              axisAlignment: -1,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: queryData.viewInsets.bottom),
+                child: Material(
+                  color: config!.keyboardBarColor ?? Colors.grey[200],
+                  elevation: config!.keyboardBarElevation ?? 20,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      if (_currentAction!.displayActionBar)
+                        _buildBar(_currentAction!.displayArrows),
+                      if (_currentFooter != null)
+                        Container(
+                          child: _currentFooter,
+                          height: _inserted
+                              ? _currentFooter!.preferredSize.height
+                              : 0,
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
           if (_currentAction!.keyboardCustom)
-            AnimatedPositioned(
-              duration: _timeToDismiss,
-              left: 0,
-              right: 0,
-              bottom: _customKeyboardUpped
-                  ? 0
-                  : -(_kBarSize + _currentFooter!.preferredSize.height),
-              onEnd: () {
-                _customKeyboardPositioned?.complete();
-                debugPrint("customanimationCompleat");
-              },
+            SlideTransition(
+              position: _slideKeyboardAnimation,
               child: Material(
                 color: config!.keyboardBarColor ?? Colors.grey[200],
                 elevation: config!.keyboardBarElevation ?? 20,
@@ -420,9 +399,8 @@ class KeyboardActionstate extends State<KeyboardActions>
                     if (_currentAction!.displayActionBar)
                       _buildBar(_currentAction!.displayArrows),
                     Container(
-                      //duration: _timeToDismiss,
                       child: _currentFooter,
-                      height: //_currentFooter!.preferredSize.height,
+                      height:
                           _inserted ? _currentFooter!.preferredSize.height : 0,
                     ),
                   ],
@@ -433,59 +411,40 @@ class KeyboardActionstate extends State<KeyboardActions>
       );
     });
 
-    os.insert(_overlayEntry!);
+    _overlayState!.insert(_overlayEntry[index]!);
 
     if (_dismissAnimationNeeded) {
       if (_currentAction!.footerBuilder == null ||
           _currentAction!.keyboardCustom == false) {
         // カスタムバーの場合
+        _slideBarAnimationController.forward();
       } else {
         //カスタムキーボードの場合
-        if (mounted) {
-          _overlayEntry?.markNeedsBuild();
-          //カスタムキーボードがビルドされるまで待つ（重要）
-          debugPrint("wait_customKeyboardBuild");
-          await _customKeyboardBuild!.future;
-          debugPrint("custom Keyboard Up");
-          _customKeyboardUpped = true;
-          _customKeyboardBuild = null;
-          _updateOffset();
-        }
+        _slideKeyboardAnimationController.forward();
       }
     }
   }
 
   /// Remove the overlay bar. Call when losing focus or being dismissed.
-  void _removeOverlay({bool fromDispose = false}) async {
+  void _removeOverlay({bool fromDispose = false, required int index}) async {
     if (_dismissAnimationNeeded) {
-      if (_currentFooter == null || _currentAction!.keyboardCustom == false) {
-        // カスタムバーの場合
-        // カスタムバーremove処理
-        //*
-      } else {
-        //カスタムキーボードの場合
-        if (mounted && !fromDispose) {
-          _overlayEntry?.markNeedsBuild();
-          // add a completer to indicate the completion of dismiss animation.
-          _dismissAnimation = Completer<void>();
-
-          // カスタムキーボードが閉じるまで待つ
-          _customKeyboardPositioned = Completer<void>();
-          _customKeyboardUpped = false;
-          await _customKeyboardPositioned!.future;
-
-          //await Future.delayed(_timeToDismiss);
-
-          _dismissAnimation?.complete();
-          _customKeyboardPositioned = null;
-          _dismissAnimation = null;
+      if (mounted && !fromDispose) {
+        _overlayEntry[index]?.markNeedsBuild();
+        // add a completer to indicate the completion of dismiss animation.
+        if (_currentFooter == null || _currentAction!.keyboardCustom == false) {
+          // カスタムバーの場合
+          await _slideBarAnimationController.reverse();
+        } else {
+          //カスタムキーボードの場合
+          await _slideKeyboardAnimationController.reverse();
         }
       }
+      _dismissAnimation?.complete();
     }
-    _inserted = false;
 
-    _overlayEntry?.remove();
-    _overlayEntry = null;
+    _inserted = false;
+    _overlayEntry[index]?.remove();
+    _overlayEntry[index] = null;
     _currentFooter = null;
     if (!fromDispose && _dismissAnimationNeeded) _updateOffset();
     _dismissAnimationNeeded = true;
@@ -559,20 +518,27 @@ class KeyboardActionstate extends State<KeyboardActions>
 
   @override
   void didUpdateWidget(KeyboardActions oldWidget) {
-    if (widget.enable) setConfig(widget.config);
+    //if (widget.enable) setConfig(widget.config);
     super.didUpdateWidget(oldWidget);
   }
 
   @override
   void dispose() {
     clearConfig();
-    _removeOverlay(fromDispose: true);
+    _overlayEntry.forEach((key, value) {
+      if (value != null) {
+        _removeOverlay(fromDispose: true, index: key);
+      }
+    });
+    _slideBarAnimationController.dispose();
+    _slideKeyboardAnimationController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void initState() {
+    _overlayState = Overlay.of(context, rootOverlay: true);
     WidgetsBinding.instance.addObserver(this);
     if (widget.enable) {
       setConfig(widget.config);
@@ -581,7 +547,39 @@ class KeyboardActionstate extends State<KeyboardActions>
         _updateOffset();
       });
     }
+    setAnimationController();
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
+  void setAnimationController() {
+    //アニメーション用パラメータ
+    _slideKeyboardAnimationController = AnimationController(
+      vsync: this,
+      duration: _timeToDismiss,
+    );
+    _slideBarAnimationController = AnimationController(
+      vsync: this,
+      duration: _timeToDismissBar,
+    );
+
+    final Curve _slideCurve = Curves.easeOutCubic;
+    _slideKeyboardAnimation = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: const Offset(0, 0),
+    )
+        .chain(CurveTween(curve: _slideCurve))
+        .animate(_slideKeyboardAnimationController);
+    _slideBarAnimation = Tween<double>(
+      begin: 0,
+      end: 1,
+    )
+        .chain(CurveTween(curve: _slideCurve))
+        .animate(_slideBarAnimationController);
   }
 
   var isKeyboardOpen = false;
@@ -600,83 +598,77 @@ class KeyboardActionstate extends State<KeyboardActions>
 
   /// Build the keyboard action bar based on the current [config].
   Widget _buildBar(bool displayArrows) {
-    return AnimatedCrossFade(
-      duration: _timeToDismiss,
-      crossFadeState:
-          _isShowing ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-      firstChild: Container(
-        height: _kBarSize,
-        width: MediaQuery.of(context).size.width,
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: widget.config.keyboardSeparatorColor,
-              width: 1.0,
-            ),
-          ),
-        ),
-        child: SafeArea(
-          top: false,
-          bottom: false,
-          child: Row(
-            mainAxisAlignment:
-                _currentAction?.toolbarAlignment ?? MainAxisAlignment.end,
-            children: [
-              if (config!.nextFocus && displayArrows) ...[
-                IconButton(
-                  icon: Icon(Icons.keyboard_arrow_up),
-                  tooltip: 'Previous',
-                  iconSize: IconTheme.of(context).size!,
-                  color: IconTheme.of(context).color,
-                  disabledColor: Theme.of(context).disabledColor,
-                  onPressed: _previousIndex != null ? _onTapUp : null,
-                ),
-                IconButton(
-                  icon: Icon(Icons.keyboard_arrow_down),
-                  tooltip: 'Next',
-                  iconSize: IconTheme.of(context).size!,
-                  color: IconTheme.of(context).color,
-                  disabledColor: Theme.of(context).disabledColor,
-                  onPressed: _nextIndex != null ? _onTapDown : null,
-                ),
-                const Spacer(),
-              ],
-              if (_currentAction?.displayDoneButton != null &&
-                  _currentAction!.displayDoneButton &&
-                  (_currentAction!.toolbarButtons == null ||
-                      _currentAction!.toolbarButtons!.isEmpty))
-                Padding(
-                  padding: const EdgeInsets.all(5.0),
-                  child: InkWell(
-                    onTap: () {
-                      if (_currentAction?.onTapAction != null) {
-                        _currentAction!.onTapAction!();
-                      }
-                      _clearFocus();
-                    },
-                    child: Container(
-                      padding:
-                          EdgeInsets.symmetric(vertical: 5.0, horizontal: 12.0),
-                      child: config?.defaultDoneWidget ??
-                          Text(
-                            "Done",
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                    ),
-                  ),
-                ),
-              if (_currentAction?.toolbarButtons != null)
-                ..._currentAction!.toolbarButtons!
-                    .map((item) => item(_currentAction!.focusNode))
-                    .toList()
-            ],
+    return Container(
+      height: _kBarSize,
+      width: MediaQuery.of(context).size.width,
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: widget.config.keyboardSeparatorColor,
+            width: 1.0,
           ),
         ),
       ),
-      secondChild: const SizedBox.shrink(),
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Row(
+          mainAxisAlignment:
+              _currentAction?.toolbarAlignment ?? MainAxisAlignment.end,
+          children: [
+            if (config!.nextFocus && displayArrows) ...[
+              IconButton(
+                icon: Icon(Icons.keyboard_arrow_up),
+                tooltip: 'Previous',
+                iconSize: IconTheme.of(context).size!,
+                color: IconTheme.of(context).color,
+                disabledColor: Theme.of(context).disabledColor,
+                onPressed: _previousIndex != null ? _onTapUp : null,
+              ),
+              IconButton(
+                icon: Icon(Icons.keyboard_arrow_down),
+                tooltip: 'Next',
+                iconSize: IconTheme.of(context).size!,
+                color: IconTheme.of(context).color,
+                disabledColor: Theme.of(context).disabledColor,
+                onPressed: _nextIndex != null ? _onTapDown : null,
+              ),
+              const Spacer(),
+            ],
+            if (_currentAction?.displayDoneButton != null &&
+                _currentAction!.displayDoneButton &&
+                (_currentAction!.toolbarButtons == null ||
+                    _currentAction!.toolbarButtons!.isEmpty))
+              Padding(
+                padding: const EdgeInsets.all(5.0),
+                child: InkWell(
+                  onTap: () {
+                    if (_currentAction?.onTapAction != null) {
+                      _currentAction!.onTapAction!();
+                    }
+                    _clearFocus();
+                  },
+                  child: Container(
+                    padding:
+                        EdgeInsets.symmetric(vertical: 5.0, horizontal: 12.0),
+                    child: config?.defaultDoneWidget ??
+                        Text(
+                          "Done",
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                  ),
+                ),
+              ),
+            if (_currentAction?.toolbarButtons != null)
+              ..._currentAction!.toolbarButtons!
+                  .map((item) => item(_currentAction!.focusNode))
+                  .toList()
+          ],
+        ),
+      ),
     );
   }
 
@@ -702,12 +694,12 @@ class KeyboardActionstate extends State<KeyboardActions>
               width: double.maxFinite,
               key: _keyParent,
               child: BottomAreaAvoider(
+                curve: Curves.easeOutCubic,
                 key: bottomAreaAvoiderKey,
                 areaToAvoid: _offset,
                 overscroll: widget.overscroll,
                 duration: Duration(
-                    milliseconds:
-                        (_timeToDismiss.inMilliseconds * 1.8).toInt()),
+                    milliseconds: (_timeToDismiss.inMilliseconds).toInt()),
                 autoScroll: widget.autoScroll,
                 physics: widget.bottomAvoiderScrollPhysics,
                 child: widget.child,

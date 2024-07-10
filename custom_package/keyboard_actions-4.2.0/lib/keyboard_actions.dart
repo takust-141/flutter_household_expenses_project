@@ -12,9 +12,15 @@ export 'keyboard_actions_config.dart';
 export 'keyboard_actions_item.dart';
 export 'keyboard_custom.dart';
 
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 const double _kBarSize = 45.0;
 const Duration _timeToDismiss = Duration(milliseconds: 300);
+const Duration _timeToDismissBottomArea = Duration(milliseconds: 300);
 const Duration _timeToDismissBar = Duration(milliseconds: 300);
+const Duration _scrollAdditionalTime = Duration(milliseconds: 50);
+const Cubic animationCurve = Curves.easeOutCubic;
+const Curve defaultCurve = Curves.easeIn;
 
 enum KeyboardActionsPlatform {
   ANDROID,
@@ -52,7 +58,7 @@ enum TapOutsideBehavior {
 ///   1. using scaffold is not required
 ///   2. content is only shrunk as needed (a problem with scaffold)
 ///   3. we shrink an additional [_kBarSize] so the keyboard action bar doesn't cover content either.
-class KeyboardActions extends StatefulWidget {
+class KeyboardActions extends ConsumerStatefulWidget {
   /// Any content you want to resize/scroll when the keyboard comes up
   final Widget? child;
 
@@ -107,7 +113,7 @@ class KeyboardActions extends StatefulWidget {
 }
 
 /// State class for [KeyboardActions].
-class KeyboardActionstate extends State<KeyboardActions>
+class KeyboardActionstate extends ConsumerState<KeyboardActions>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   /// The currently configured keyboard actions
   KeyboardActionsConfig? config;
@@ -116,7 +122,7 @@ class KeyboardActionstate extends State<KeyboardActions>
   Map<int, KeyboardActionsItem> _map = Map();
   KeyboardActionsItem? _currentAction;
   int? _currentIndex = 0;
-  Map<int, OverlayEntry?> _overlayEntry = Map();
+  OverlayEntry? _overlayEntry;
   double _offset = 0;
   PreferredSizeWidget? _currentFooter;
   bool _dismissAnimationNeeded = true;
@@ -130,6 +136,9 @@ class KeyboardActionstate extends State<KeyboardActions>
   late Animation<Offset> _slideKeyboardAnimation;
   late Animation<double> _slideBarAnimation;
 
+  //スクロールパラメータ
+  late ScrollController _bottomAvoidScrollController;
+
   /// If the keyboard bar is on for the current platform
   bool get _isAvailable {
     return config!.keyboardActionsPlatform == KeyboardActionsPlatform.ALL ||
@@ -141,13 +150,7 @@ class KeyboardActionstate extends State<KeyboardActions>
 
   /// If we are currently showing the keyboard bar
   bool get _isShowing {
-    bool _showFlag = false;
-    _overlayEntry.forEach((key, value) {
-      if (value != null) {
-        _showFlag = true;
-      }
-    });
-    return _showFlag;
+    return _overlayEntry != null;
   }
 
   /// The current previous index, or null.
@@ -199,15 +202,10 @@ class KeyboardActionstate extends State<KeyboardActions>
 
   void _addAction(int index, KeyboardActionsItem action) {
     _map[index] = action;
-    _overlayEntry[index] = null;
   }
 
   void _clearAllFocusNode() {
     _map = Map();
-    _overlayEntry.forEach((key, value) {
-      value?.remove();
-    });
-    _overlayEntry = Map();
   }
 
   void _clearFocus() {
@@ -266,26 +264,24 @@ class KeyboardActionstate extends State<KeyboardActions>
   /// Shows or hides the keyboard bar as needed, and re-calculates the overlay offset.
   ///
   /// Called every time the focus changes, and when the app is resumed on Android.
+
   void _focusChanged(bool showBar) async {
-    int _index = _currentIndex!;
     if (_isAvailable) {
-      if (showBar &&
-          (!_isShowing ||
-              (_currentFooter == null ||
-                  _currentAction!.keyboardCustom == false))) {
-        _insertOverlay(index: _index);
-      } else if (!showBar && _isShowing) {
-        _removeOverlay(index: _index);
-      } else if (showBar && _isShowing) {
-        if (PlatformCheck.isAndroid) {
-          _updateOffset();
+      if (!showBar && _isShowing) {
+        await _removeOverlay();
+        _dismissAnimation?.complete();
+        _dismissAnimation = null;
+        CustomFocusNode.waitAnimation = null;
+      } else {
+        await _dismissAnimation?.future;
+        if (showBar &&
+            (!_isShowing ||
+                (_currentFooter == null ||
+                    _currentAction!.keyboardCustom == false))) {
+          _insertOverlay();
+          _dismissAnimation = Completer<void>();
+          CustomFocusNode.waitAnimation = _dismissAnimation;
         }
-        _overlayEntry[_index]!.markNeedsBuild();
-      }
-      if (_currentAction != null && _currentAction!.footerBuilder != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _updateOffset();
-        });
       }
     }
   }
@@ -298,10 +294,6 @@ class KeyboardActionstate extends State<KeyboardActions>
       _onKeyboardChanged(keyboardIsOpen);
       isKeyboardOpen = keyboardIsOpen;
     }
-    // Need to wait a frame to get the new size
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateOffset();
-    });
   }
 
   void _startListeningFocus() {
@@ -322,9 +314,9 @@ class KeyboardActionstate extends State<KeyboardActions>
   ///
   /// Position the overlay based on the current [MediaQuery] to land above the keyboard.
 
-  void _insertOverlay({required int index}) {
+  void _insertOverlay() {
     _inserted = true;
-    _overlayEntry[index] = OverlayEntry(builder: (context) {
+    _overlayEntry = OverlayEntry(builder: (context) {
       // Update and build footer, if any
       _currentFooter = (_currentAction!.footerBuilder != null)
           ? _currentAction!.footerBuilder!(context)
@@ -342,7 +334,8 @@ class KeyboardActionstate extends State<KeyboardActions>
                 //-----オーバーレイタップ時のイベント-----
                 onPointerDown: (event) {
                   if (!widget.keepFocusOnTappingNode ||
-                      _currentAction?.focusNode.rect.contains(event.position) !=
+                      _currentAction!.focusNode.customRect
+                              .contains(event.position) !=
                           true) {
                     _clearFocus();
                   }
@@ -358,25 +351,25 @@ class KeyboardActionstate extends State<KeyboardActions>
               sizeFactor: _slideBarAnimation,
               axis: Axis.vertical,
               axisAlignment: -1,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: queryData.viewInsets.bottom),
-                child: Material(
-                  color: config!.keyboardBarColor ?? Colors.grey[200],
-                  elevation: config!.keyboardBarElevation ?? 20,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      if (_currentAction!.displayActionBar)
-                        _buildBar(_currentAction!.displayArrows),
-                      if (_currentFooter != null)
-                        Container(
-                          child: _currentFooter,
-                          height: _inserted
-                              ? _currentFooter!.preferredSize.height
-                              : 0,
-                        ),
-                    ],
-                  ),
+              child: Material(
+                color: config!.keyboardBarColor ?? Colors.grey[200],
+                elevation: config!.keyboardBarElevation ?? 20,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    if (_currentAction!.displayActionBar)
+                      _buildBar(_currentAction!.displayArrows),
+                    if (_currentFooter != null)
+                      Container(
+                        child: _currentFooter,
+                        height: _inserted
+                            ? _currentFooter!.preferredSize.height
+                            : 0,
+                      ),
+                    SizedBox(
+                      height: queryData.viewInsets.bottom,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -404,7 +397,7 @@ class KeyboardActionstate extends State<KeyboardActions>
       );
     });
 
-    _overlayState!.insert(_overlayEntry[index]!);
+    _overlayState!.insert(_overlayEntry!);
 
     if (_dismissAnimationNeeded) {
       if (_currentAction!.footerBuilder == null ||
@@ -419,14 +412,10 @@ class KeyboardActionstate extends State<KeyboardActions>
   }
 
   /// Remove the overlay bar. Call when losing focus or being dismissed.
-  void _removeOverlay({bool fromDispose = false, required int index}) async {
+  Future<void> _removeOverlay({bool fromDispose = false}) async {
     if (_dismissAnimationNeeded) {
       if (mounted && !fromDispose) {
-        _dismissAnimation = Completer<void>();
-        for (var i = 0; i < _map.length; i++) {
-          _map[i]?.focusNode.setWaitAnimationNode(_dismissAnimation);
-        }
-        _overlayEntry[index]?.markNeedsBuild();
+        _overlayEntry?.markNeedsBuild();
         // add a completer to indicate the completion of dismiss animation.
         if (_currentFooter == null || _currentAction!.keyboardCustom == false) {
           // カスタムバーの場合
@@ -436,27 +425,24 @@ class KeyboardActionstate extends State<KeyboardActions>
           await _slideKeyboardAnimationController.reverse();
         }
       }
-      _dismissAnimation?.complete();
-      _dismissAnimation = null;
     }
-
     _inserted = false;
-    _overlayEntry[index]?.remove();
-    _overlayEntry[index] = null;
+    _overlayEntry?.remove();
+    _overlayEntry = null;
     _currentFooter = null;
-    if (!fromDispose && _dismissAnimationNeeded) _updateOffset();
     _dismissAnimationNeeded = true;
   }
 
   void _updateOffset() {
+    ref.read(offsetFocus.notifier).state = _currentAction?.focusNode;
     if (!mounted) {
       return;
     }
 
     if (!_isShowing || !_isAvailable) {
-      setState(() {
-        _offset = 0.0;
-      });
+      ref.read(offsetProvider.notifier).state = 0.0;
+      scrollToObject(_bottomAvoidScrollController, _timeToDismissBottomArea,
+          animationCurve);
       return;
     }
 
@@ -467,10 +453,7 @@ class KeyboardActionstate extends State<KeyboardActions>
     final keyboardHeight = EdgeInsets.fromViewPadding(
       View.of(context).viewInsets,
       View.of(context).devicePixelRatio,
-    )
-        //WidgetsBinding.instance.window.viewInsets,
-        //WidgetsBinding.instance.window.devicePixelRatio)
-        .bottom;
+    ).bottom;
 
     newOffset += keyboardHeight; // + offset for the system keyboard
 
@@ -485,9 +468,40 @@ class KeyboardActionstate extends State<KeyboardActions>
 
     // Update state if changed
     if (_offset != newOffset) {
-      setState(() {
-        _offset = newOffset;
-      });
+      ref.read(offsetProvider.notifier).state = newOffset;
+      scrollToObject(_bottomAvoidScrollController, _timeToDismissBottomArea,
+          animationCurve);
+    }
+  }
+
+  void _resetOffset() {
+    if (!mounted) {
+      return;
+    }
+    ref.read(offsetProvider.notifier).state = 0.0;
+    return;
+  }
+
+  void scrollToObject(
+      ScrollController _scrollController, Duration _duration, Cubic? _curve) {
+    final focusNode = ref.read(offsetFocus);
+    final offset = ref.read(offsetProvider);
+    final voidSpan = (focusNode?.customRectHeight ?? 0) + widget.overscroll;
+    if (focusNode != null) {
+      final focuRenderObject = focusNode.context?.findRenderObject();
+      if (focuRenderObject is RenderBox) {
+        final focusOffset = focuRenderObject.localToGlobal(Offset.zero).dy;
+        final screenHeight = MediaQuery.of(context).size.height;
+        final keyboardOffset = screenHeight - offset;
+        if (focusOffset + voidSpan > keyboardOffset) {
+          double scrollOffset = focusOffset + voidSpan - keyboardOffset;
+          _scrollController.animateTo(
+            _scrollController.offset + scrollOffset,
+            duration: _duration,
+            curve: _curve ?? defaultCurve,
+          );
+        }
+      }
     }
   }
 
@@ -511,38 +525,42 @@ class KeyboardActionstate extends State<KeyboardActions>
         _focusChanged(false);
       }
     }
+
     super.didChangeAppLifecycleState(state);
   }
 
   @override
   void didUpdateWidget(KeyboardActions oldWidget) {
-    //if (widget.enable) setConfig(widget.config);
     super.didUpdateWidget(oldWidget);
   }
 
   @override
   void dispose() {
     clearConfig();
-    _overlayEntry.forEach((key, value) {
-      if (value != null) {
-        _removeOverlay(fromDispose: true, index: key);
-      }
-    });
+    _removeOverlay(fromDispose: true);
+    _dismissAnimation = null;
     _slideBarAnimationController.dispose();
     _slideKeyboardAnimationController.dispose();
+    _bottomAvoidScrollController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void initState() {
+    _bottomAvoidScrollController = ScrollController();
+    _bottomAvoidScrollController.addListener(() {
+      // スクロール位置が変更された際の処理
+      _currentAction?.focusNode.resizeRect();
+    });
+
     _overlayState = Overlay.of(context, rootOverlay: true);
     WidgetsBinding.instance.addObserver(this);
     if (widget.enable) {
       setConfig(widget.config);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _onLayout();
-        _updateOffset();
+        _resetOffset();
       });
     }
     setAnimationController();
@@ -565,7 +583,7 @@ class KeyboardActionstate extends State<KeyboardActions>
       duration: _timeToDismissBar,
     );
 
-    final Curve _slideCurve = Curves.easeOutCubic;
+    final Curve _slideCurve = animationCurve;
     _slideKeyboardAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: const Offset(0, 0),
@@ -578,6 +596,30 @@ class KeyboardActionstate extends State<KeyboardActions>
     )
         .chain(CurveTween(curve: _slideCurve))
         .animate(_slideBarAnimationController);
+
+    _slideKeyboardAnimationController
+        .addStatusListener((AnimationStatus status) {
+      if (status == AnimationStatus.completed) {
+        print('Animation completed');
+        _updateOffset();
+      }
+      if (status == AnimationStatus.dismissed) {
+        print('Animation dissmiss');
+        _resetOffset();
+      }
+    });
+    _slideBarAnimationController.addStatusListener((AnimationStatus status) {
+      if (status == AnimationStatus.completed) {
+        print('Animation completed');
+        Future.delayed(_scrollAdditionalTime, () {
+          _updateOffset();
+        });
+      }
+      if (status == AnimationStatus.dismissed) {
+        print('Animation dissmiss');
+        _resetOffset();
+      }
+    });
   }
 
   var isKeyboardOpen = false;
@@ -692,15 +734,14 @@ class KeyboardActionstate extends State<KeyboardActions>
               width: double.maxFinite,
               key: _keyParent,
               child: BottomAreaAvoider(
+                duration: _timeToDismissBottomArea,
+                curve: animationCurve,
                 key: bottomAreaAvoiderKey,
-                areaToAvoid: _offset,
                 overscroll: widget.overscroll,
-                duration: Duration(
-                    milliseconds:
-                        (_timeToDismiss.inMilliseconds * 1.8).toInt()),
                 autoScroll: widget.autoScroll,
                 physics: widget.bottomAvoiderScrollPhysics,
                 child: widget.child,
+                scrollController: _bottomAvoidScrollController,
               ),
             ),
           )
@@ -708,26 +749,75 @@ class KeyboardActionstate extends State<KeyboardActions>
   }
 }
 
+//CustomFocusNode：CustomTextField(タップ反応Rectサイズ変更)、カスタムキーボードアニメーションの待機
 class CustomFocusNode extends FocusNode {
-  CustomFocusNode(
-      {super.debugLabel,
-      super.onKeyEvent,
-      super.skipTraversal,
-      super.canRequestFocus,
-      super.descendantsAreFocusable,
-      super.descendantsAreTraversable});
+  double? inputWidgetHPaddding;
+  double? inputWidgetHeight;
+  CustomFocusNode({
+    super.debugLabel,
+    super.onKeyEvent,
+    super.skipTraversal,
+    super.canRequestFocus,
+    super.descendantsAreFocusable,
+    super.descendantsAreTraversable,
+  });
 
-  Completer<void>? _waitAnimation;
+  static Completer<void>? _waitAnimation;
 
-  void setWaitAnimationNode(Completer<void>? completer) {
-    _waitAnimation = completer;
+  static set waitAnimation(Completer<void>? value) {
+    _waitAnimation = value;
+  }
+
+  late Rect customRect;
+
+  double get customRectHeight {
+    return customRect.size.height;
+  }
+
+  void resizeInput(_inputWidgetHPaddding, _inputWidgetHeight) {
+    this.inputWidgetHPaddding = _inputWidgetHPaddding;
+    this.inputWidgetHeight = _inputWidgetHeight;
+  }
+
+  void resizeRect() {
+    customRect = Rect.fromCenter(
+      center: super.rect.center,
+      width: super.rect.width + (inputWidgetHPaddding ?? 0) * 2,
+      height: inputWidgetHeight ?? super.rect.height,
+    );
   }
 
   @override
   void requestFocus([FocusNode? node]) async {
-    if (_waitAnimation != null) {
-      await _waitAnimation?.future;
-    }
+    await _waitAnimation?.future;
     super.requestFocus(node);
+    resizeRect();
+  }
+
+  @override
+  void notifyListeners() {
+    super.notifyListeners();
+    resizeRect();
+  }
+}
+
+class CustomTextFormField extends StatelessWidget {
+  final Widget child;
+  final CustomFocusNode focusNode;
+  final double inputWidgetHPaddding;
+  final double inputWidgetHeight;
+
+  const CustomTextFormField({
+    super.key,
+    required this.child,
+    required this.focusNode,
+    required this.inputWidgetHPaddding,
+    required this.inputWidgetHeight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    focusNode.resizeInput(inputWidgetHPaddding, inputWidgetHeight);
+    return child;
   }
 }

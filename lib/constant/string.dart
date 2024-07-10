@@ -15,3 +15,6 @@ enum MathSymbol {
   final String value;
   const MathSymbol({required this.value});
 }
+
+//エラーメッセージ
+const String dbError = "データの読み込みに失敗しました。開発者に問い合わせしてください。";

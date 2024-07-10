@@ -38,6 +38,7 @@ class RegisterKeyboardAction {
       keyboardBarElevation: 1,
       keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
       keyboardBarColor: Theme.of(context).scaffoldBackgroundColor,
+      keyboardSeparatorColor: Theme.of(context).scaffoldBackgroundColor,
       nextFocus: true,
       defaultDoneWidget: const KeyboardClosedIcon(),
       actions: [

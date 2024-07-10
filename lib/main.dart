@@ -1,39 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-import 'package:household_expenses_project/provider/my_app_state.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/router/router.dart';
 import 'package:household_expenses_project/constant/constant.dart';
+import 'package:household_expenses_project/view_model/category_db_provider.dart';
 
-void main() {
+void main() async {
   //sqlite初期化用
   WidgetsFlutterBinding.ensureInitialized();
 
-  runApp(const HouseholdExpensesApp());
+  final CategoryDBProvider categoryProvider = CategoryDBProvider();
+  try {
+    await categoryProvider.open();
+  } catch (e) {
+    debugPrint(e as String?);
+  }
+
+  runApp(
+    const ProviderScope(child: HouseholdExpensesApp()),
+  );
 }
 
-class HouseholdExpensesApp extends StatelessWidget {
+class HouseholdExpensesApp extends ConsumerWidget {
   const HouseholdExpensesApp({super.key});
   @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => MyAppState(),
-      child: MaterialApp.router(
-        title: "Household Expenses App",
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: lightColorScheme,
-          brightness: Brightness.light,
-          fontFamily: "Noto Sans JP",
-        ),
-        darkTheme: ThemeData(
-          useMaterial3: true,
-          colorScheme: darkColorScheme,
-          brightness: Brightness.dark,
-          fontFamily: "Noto Sans JP",
-        ),
-        routerConfig: router,
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    TextTheme textTheme =
+        Theme.of(context).textTheme.apply(fontFamily: "Noto Sans JP");
+    MaterialTheme theme = MaterialTheme(textTheme);
+
+    return MaterialApp.router(
+      title: "Household Expenses App",
+      theme: theme.light(),
+      darkTheme: theme.dark(),
+      routerConfig: router,
     );
   }
 }

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:household_expenses_project/constant/constant.dart';
-import 'package:household_expenses_project/provider/my_app_state.dart';
 import 'package:household_expenses_project/component/customed_register_keyboard.dart';
 
 //-------入力画面------------
@@ -27,10 +25,10 @@ class _RegisterPageState extends State<RegisterPage> {
   final CustomFocusNode paymentAmountNode = CustomFocusNode();
   final CustomFocusNode categoryNode = CustomFocusNode();
   final CustomFocusNode subCategoryNode = CustomFocusNode();
+  final CustomFocusNode sampleNode = CustomFocusNode();
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
     RegisterKeyboardAction registerKeyboardAction = RegisterKeyboardAction(
@@ -51,55 +49,51 @@ class _RegisterPageState extends State<RegisterPage> {
       child: Padding(
         padding: EdgeInsets.only(bottom: mediaQuery.padding.bottom),
         child: Padding(
-          padding: sidePadding,
+          padding: viewEdgeInsets,
           child: Form(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 //金額
-                Padding(
-                  padding: smallEdgeInsets,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          keyboardType: TextInputType.number,
-                          focusNode: paymentAmountNode,
-                          controller: paymentAmountTextController,
-                          decoration: InputDecoration(
-                            border: const OutlineInputBorder(),
-                            labelText: '金額',
-                            suffixIcon: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                  0, sssmall, ssmall, sssmall),
-                              child: IconButton(
-                                onPressed: () =>
-                                    paymentAmountTextController.clear(),
-                                icon: const Icon(Icons.cancel),
-                                iconSize: 20,
-                              ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        keyboardType: TextInputType.number,
+                        focusNode: paymentAmountNode,
+                        controller: paymentAmountTextController,
+                        decoration: InputDecoration(
+                          border: const OutlineInputBorder(),
+                          labelText: '金額',
+                          suffixIcon: Padding(
+                            padding: const EdgeInsets.fromLTRB(
+                                0, sssmall, ssmall, sssmall),
+                            child: IconButton(
+                              onPressed: () =>
+                                  paymentAmountTextController.clear(),
+                              icon: const Icon(Icons.cancel),
+                              iconSize: 20,
                             ),
                           ),
-                          inputFormatters: [
-                            LengthLimitingTextInputFormatter(20),
-                            FilteringTextInputFormatter.allow(
-                              RegExp(
-                                  "[0-9.${MathSymbol.sum.value}${MathSymbol.diff.value}${MathSymbol.multiplication.value}${MathSymbol.division.value}]"),
-                            ),
-                          ],
-                          style:
-                              const TextStyle(fontSize: 20, letterSpacing: 1.5),
                         ),
+                        inputFormatters: [
+                          LengthLimitingTextInputFormatter(20),
+                          FilteringTextInputFormatter.allow(
+                            RegExp(
+                                "[0-9.${MathSymbol.sum.value}${MathSymbol.diff.value}${MathSymbol.multiplication.value}${MathSymbol.division.value}]"),
+                          ),
+                        ],
+                        style:
+                            const TextStyle(fontSize: 20, letterSpacing: 1.5),
                       ),
-                      const Padding(
-                        padding: EdgeInsets.only(left: medium),
-                        child:
-                            Text(currencyUnit, style: TextStyle(fontSize: 25)),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.only(left: medium),
+                      child: Text(currencyUnit, style: TextStyle(fontSize: 25)),
+                    ),
+                  ],
                 ),
                 //カテゴリ
                 Padding(
@@ -139,8 +133,33 @@ class _RegisterPageState extends State<RegisterPage> {
                           : theme.colorScheme.primary;
                     }),
                   ),
-                  onPressed: null,
+                  onPressed: (null),
                   child: const Text('送信'),
+                ),
+                TextFormField(
+                  focusNode: sampleNode,
+                ),
+
+                Container(
+                  width: 100,
+                  height: 100,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(6.0),
+                    color: Colors.red,
+                  ),
+                  alignment: Alignment.topLeft,
+                  child: Container(
+                    alignment: Alignment.topLeft,
+                    height: 30,
+                    width: 200,
+                    color: Colors.blue,
+                    child: Container(
+                      height: 200,
+                      width: 70,
+                      color: Colors.yellow,
+                    ),
+                  ),
                 ),
               ],
             ),

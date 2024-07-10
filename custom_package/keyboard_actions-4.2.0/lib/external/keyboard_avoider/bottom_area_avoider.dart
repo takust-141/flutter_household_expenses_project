@@ -2,6 +2,11 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:keyboard_actions/keyboard_actions.dart';
+
+final offsetProvider = StateProvider<double>((ref) => 0.0);
+final offsetFocus = StateProvider<CustomFocusNode?>((ref) => null);
 
 /// Helps [child] stay visible by resizing it to avoid the given [areaToAvoid].
 ///
@@ -9,11 +14,11 @@ import 'package:flutter/rendering.dart';
 ///
 /// If [autoScroll] is true and the [child] contains a focused widget such as a [TextField],
 /// automatically scrolls so that it is just visible above the keyboard, plus any additional [overscroll].
-class BottomAreaAvoider extends StatefulWidget {
-  static const Duration defaultDuration = Duration(milliseconds: 100);
-  static const Curve defaultCurve = Curves.easeIn;
+class BottomAreaAvoider extends ConsumerStatefulWidget {
   static const double defaultOverscroll = 12.0;
   static const bool defaultAutoScroll = false;
+  static const Duration _defaultDuration = Duration(milliseconds: 300);
+  static const Cubic _defaultCurve = Curves.easeOutCubic;
 
   /// The child to embed.
   ///
@@ -23,7 +28,7 @@ class BottomAreaAvoider extends StatefulWidget {
 
   /// Amount of bottom area to avoid. For example, the height of the currently-showing system keyboard, or
   /// any custom bottom overlays.
-  final double areaToAvoid;
+  //final double areaToAvoid;
 
   /// Whether to auto-scroll to the focused widget after the keyboard appears. Defaults to false.
   /// Could be expensive because it searches all the child objects in this widget's render tree.
@@ -33,173 +38,77 @@ class BottomAreaAvoider extends StatefulWidget {
   /// Useful in case the focused widget is inside a parent widget that you also want to be visible.
   final double overscroll;
 
-  /// Duration of the resize animation. Defaults to [defaultDuration]. To disable, set to [Duration.zero].
-  final Duration duration;
-
-  /// Animation curve. Defaults to [defaultCurve]
-  final Curve curve;
-
   /// The [ScrollPhysics] of the [SingleChildScrollView] which contains child
   final ScrollPhysics? physics;
+  final Duration duration;
+  final Cubic curve;
 
-  BottomAreaAvoider(
-      {Key? key,
-      required this.child,
-      required this.areaToAvoid,
-      this.autoScroll = false,
-      this.duration = defaultDuration,
-      this.curve = defaultCurve,
-      this.overscroll = defaultOverscroll,
-      this.physics})
-      : //assert(child is ScrollView ? child.controller != null : true),
-        assert(areaToAvoid >= 0, 'Cannot avoid a negative area'),
+  final ScrollController scrollController;
+
+  BottomAreaAvoider({
+    Key? key,
+    required this.child,
+    this.autoScroll = false,
+    this.overscroll = defaultOverscroll,
+    this.physics,
+    required this.scrollController,
+    this.duration = _defaultDuration,
+    this.curve = _defaultCurve,
+  }) : //assert(child is ScrollView ? child.controller != null : true),
+        //assert(areaToAvoid >= 0, 'Cannot avoid a negative area'),
         super(key: key);
 
   BottomAreaAvoiderState createState() => BottomAreaAvoiderState();
 }
 
-class BottomAreaAvoiderState extends State<BottomAreaAvoider> {
-  final _animationKey = new GlobalKey<ImplicitlyAnimatedWidgetState>();
-  Function(AnimationStatus)? _animationListener;
-  ScrollController? _scrollController;
-  late double _previousAreaToAvoid;
-
-  @override
-  void didUpdateWidget(BottomAreaAvoider oldWidget) {
-    _previousAreaToAvoid = oldWidget.areaToAvoid;
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  void dispose() {
-    _animationKey.currentState?.animation
-        .removeStatusListener(_animationListener!);
-    super.dispose();
-  }
-
+class BottomAreaAvoiderState extends ConsumerState<BottomAreaAvoider> {
   @override
   Widget build(BuildContext context) {
-    // Add a status listener to the animation after the initial build.
-    // Wait a frame so that _animationKey.currentState is not null.
-    if (_animationListener == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _animationListener = _paddingAnimationStatusChanged;
-        _animationKey.currentState?.animation
-            .addStatusListener(_animationListener!);
-      });
+    if (widget.child is SingleChildScrollView) {
+      return _rewrapScrollView(widget.child as SingleChildScrollView);
     }
-
-    // If [child] is a [ScrollView], get its [ScrollController]
-    // and embed the [child] directly in an [AnimatedContainer].
-    if (widget.child is ScrollView) {
-      var scrollView = widget.child as ScrollView;
-      _scrollController =
-          scrollView.controller ?? PrimaryScrollController.of(context);
-      return _buildAnimatedContainer(widget.child);
-    }
-    // If [child] is not a [ScrollView], and [autoScroll] is true,
-    // embed the [child] in a [SingleChildScrollView] to make
-    // it possible to scroll to the focused widget.
     if (widget.autoScroll) {
-      _scrollController = new ScrollController();
-      return _buildAnimatedContainer(
-        LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              physics: widget.physics,
-              controller: _scrollController,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: widget.child,
-              ),
-            );
-          },
-        ),
-      );
+      return _wrapScrollView(widget.child);
     }
     // Just embed the [child] directly in an [AnimatedContainer].
-    return _buildAnimatedContainer(widget.child);
+    return widget.child!;
   }
 
-  Widget _buildAnimatedContainer(Widget? child) {
-    return AnimatedContainer(
-      key: _animationKey,
-      color: Colors.transparent,
-      padding: EdgeInsets.only(bottom: widget.areaToAvoid),
-      duration: widget.duration,
-      curve: widget.curve,
-      child: child,
+  Widget _wrapScrollView(Widget? child) {
+    return SingleChildScrollView(
+      physics: widget.physics,
+      controller: widget.scrollController,
+      child: Column(
+        children: [
+          child ?? const SizedBox(),
+          AnimatedSize(
+            duration: widget.duration,
+            curve: widget.curve,
+            child: SizedBox(height: ref.watch(offsetProvider)),
+          )
+        ],
+      ),
     );
   }
 
-  /// Called whenever the status of our padding animation changes.
-  ///
-  /// If the animation has completed, we added overlap, and scroll is on, scroll to that.
-  void _paddingAnimationStatusChanged(AnimationStatus status) {
-    if (status != AnimationStatus.completed) {
-      return; // Only check when the animation is finishing
-    }
-    if (!widget.autoScroll) {
-      return; // auto scroll is not enabled, do nothing
-    }
-    if (widget.areaToAvoid <= _previousAreaToAvoid) {
-      return; // decreased-- do nothing. We only scroll when area to avoid is added (keyboard shown).
-    }
-    // Need to wait a frame to get the new size (todo: is this still needed? we dont use mediaquery anymore)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return; // context is no longer valid
+  Widget _rewrapScrollView(Widget scrollableWidget) {
+    // scrollableWidgetの中身を取り出して、新しい子リストを作成
+    List<Widget> children;
+    if (scrollableWidget is SingleChildScrollView) {
+      SingleChildScrollView scrollView = scrollableWidget;
+      if (scrollView.child is Column) {
+        Column column = scrollView.child as Column;
+        children = List.from(column.children);
+        children.add(SizedBox(height: ref.watch(offsetProvider)));
+        return _wrapScrollView(
+          SingleChildScrollView(
+            physics: widget.physics,
+            controller: widget.scrollController,
+            child: Column(children: children),
+          ),
+        );
       }
-      scrollToOverscroll();
-    });
-  }
-
-  void scrollToOverscroll() {
-    final focused = findFocusedObject(context.findRenderObject());
-    if (focused == null || _scrollController == null) return;
-    scrollToObject(focused, _scrollController!, widget.duration, widget.curve,
-        widget.overscroll);
-  }
-}
-
-/// Utility helper methods
-
-/// Finds the first focused focused child of [root] using a breadth-first search.
-RenderObject? findFocusedObject(RenderObject? root) {
-  final q = Queue<RenderObject?>();
-  q.add(root);
-  while (q.isNotEmpty) {
-    final node = q.removeFirst()!;
-    final config = SemanticsConfiguration();
-    //ignore: invalid_use_of_protected_member
-    node.describeSemanticsConfiguration(config);
-    if (config.isFocused) {
-      return node;
     }
-    node.visitChildrenForSemantics((child) {
-      q.add(child);
-    });
-  }
-  return null;
-}
-
-/// Scroll to the given [object], which must be inside [scrollController]s viewport.
-scrollToObject(RenderObject object, ScrollController scrollController,
-    Duration duration, Curve curve, double overscroll) {
-  // Calculate the offset needed to show the object in the [ScrollView]
-  // so that its bottom touches the top of the keyboard.
-  final viewport = RenderAbstractViewport.of(object);
-  final offset = viewport.getOffsetToReveal(object, 1.0).offset + overscroll;
-
-  // If the object is covered by the keyboard, scroll to reveal it,
-  // and add [focusPadding] between it and top of the keyboard.
-  if (offset > scrollController.position.pixels) {
-    scrollController.position.moveTo(
-      offset,
-      duration: duration,
-      curve: curve,
-    );
+    return scrollableWidget;
   }
 }
