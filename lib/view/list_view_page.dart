@@ -18,6 +18,7 @@ class ListViewPage extends StatelessWidget {
           controller: _scrollController,
           child: Column(
             children: [
+              TextField(),
               SizedBox(height: 500),
               TextFormField(),
               SizedBox(height: 500),

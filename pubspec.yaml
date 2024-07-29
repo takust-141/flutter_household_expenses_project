@@ -15,7 +15,7 @@ dependencies:
   material_symbols_icons: ^4.2719.3
 
   provider: ^6.0.0        #provider
-  go_router: ^13.2.0      #go_router
+  go_router: ^14.2.1      #go_router
   
 
   keyboard_actions: 

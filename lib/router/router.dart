@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expenses_project/model/category.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/view/view.dart';
@@ -12,6 +13,8 @@ final GlobalKey<NavigatorState> _rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
 final GlobalKey<NavigatorState> _shellNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'shell');
+
+GlobalKey<FormState>? formkey;
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
@@ -59,7 +62,8 @@ final router = GoRouter(
                       path: 'category_edit',
                       name: 'category_edit',
                       builder: (context, state) {
-                        return CategoryEditPage(addNewCategory: true);
+                        formkey = GlobalKey<FormState>();
+                        return CategoryEditPage(formkey);
                       },
                     ),
                   ],
@@ -129,7 +133,6 @@ class _ScaffoldWithNavBarState extends ConsumerState<ScaffoldWithNavBar>
                   index,
                   initialLocation: index == widget.navigationShell.currentIndex,
                 );
-                ref.read(needAppBarAnimationProvider.notifier).state = false;
               },
             )
           : null,
@@ -145,14 +148,27 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appBarState = ref.watch(appBarProvider);
-    final needAnimation = ref.watch(needAppBarAnimationProvider);
-    final mediaQuery = MediaQuery.of(context);
     final theme = Theme.of(context);
+
+    final List<Widget> appBarWidget = [
+      SizedBox(
+        width: appBarState?.appBarSideWidth ?? 0,
+        child: appBarState?.getAppBarLeadingWidget(),
+      ),
+      Expanded(
+        child: Center(
+          child: appBarState
+              ?.getAppBarTitleWidget(Theme.of(context).textTheme.titleMedium),
+        ),
+      ),
+      SizedBox(
+        width: appBarState?.appBarSideWidth ?? 0,
+        child: appBarState?.getAppBarTailingWidget(formkey),
+      ),
+    ];
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(appBarProvider.notifier).setAppBar(goRouterState.topRoute?.name);
-      debugPrint(appBarState?.name);
-      ref.read(needAppBarAnimationProvider.notifier).state = true;
     });
 
     return Material(
@@ -161,33 +177,9 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
         color: theme.scaffoldBackgroundColor,
         child: SafeArea(
           child: Row(
+            key: ValueKey(appBarState),
             mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: appBarSideWidth,
-                child: needAnimation
-                    ? AnimatedSwitcher(
-                        duration: appBarAnimationDuration,
-                        child: appBarState?.getAppBarBackWidget(),
-                      )
-                    : appBarState?.getAppBarBackWidget(),
-              ),
-              Expanded(
-                child: Center(
-                  child: needAnimation
-                      ? AnimatedSwitcher(
-                          duration: appBarAnimationDuration,
-                          child: appBarState?.getAppBarTitleWidget(
-                              Theme.of(context).textTheme.titleMedium),
-                        )
-                      : appBarState?.getAppBarTitleWidget(
-                          Theme.of(context).textTheme.titleMedium),
-                ),
-              ),
-              SizedBox(
-                width: appBarSideWidth,
-              ),
-            ],
+            children: appBarWidget,
           ),
         ),
       ),

@@ -113,12 +113,15 @@ class _RegisterPageState extends State<RegisterPage> {
                 Padding(
                   padding: smallEdgeInsets,
                   child: TextFormField(
-                    keyboardType: TextInputType.datetime,
+                    keyboardType: TextInputType.text,
                     controller: subCategoryController,
                     focusNode: subCategoryNode,
                     decoration: const InputDecoration(hintText: 'サブカテゴリ'),
                   ),
                 ),
+                TextFormField(
+                    //focusNode: sampleNode,
+                    ),
                 SizedBox(height: 120),
                 TextButton(
                   style: ButtonStyle(
@@ -135,31 +138,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   onPressed: (null),
                   child: const Text('送信'),
-                ),
-                TextFormField(
-                  focusNode: sampleNode,
-                ),
-
-                Container(
-                  width: 100,
-                  height: 100,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6.0),
-                    color: Colors.red,
-                  ),
-                  alignment: Alignment.topLeft,
-                  child: Container(
-                    alignment: Alignment.topLeft,
-                    height: 30,
-                    width: 200,
-                    color: Colors.blue,
-                    child: Container(
-                      height: 200,
-                      width: 70,
-                      color: Colors.yellow,
-                    ),
-                  ),
                 ),
               ],
             ),

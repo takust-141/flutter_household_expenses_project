@@ -21,6 +21,9 @@ const ssmallVerticalEdgeInsets = EdgeInsets.symmetric(vertical: ssmall);
 const ssmallHorizontalEdgeInsets = EdgeInsets.symmetric(horizontal: ssmall);
 const smallHorizontalEdgeInsets = EdgeInsets.symmetric(horizontal: small);
 
+//AppBar
+const appbarSidePadding = smedium;
+
 //カスタムキーボード
 const double keyboardIconSize = 24;
 const double customIconSize = 20;
@@ -31,16 +34,16 @@ const keyboardClosedIconPadding =
     EdgeInsets.symmetric(vertical: 5.0, horizontal: 12.0);
 
 const double containreBorderRadius = 6;
+const double dialogRadius = 10;
 
 const double boarderWidth = 1.2;
 
 //リストアイテム
-const double listHeight = 40;
-//appbar
-const double appBarSideWidth = 56;
+const double listHeight = 45;
+
 //Form
 const double formItemHeight = 50;
-const double formItemNameWidth = 80;
+const double formItemNameWidth = 90;
 BorderRadius formInputBoarderRadius = BorderRadius.circular(small);
 BorderRadius formInputInnerBoarderRadius =
     BorderRadius.circular(small - formInputBoarderWidth);

@@ -28,8 +28,8 @@ class SettingPage extends StatelessWidget {
             child: Column(
               children: [
                 SettingListItem(
-                  setText: "カテゴリ編集",
-                  onTapRoute: () => goRoute.go('/setting/category_list'),
+                  setText: "カテゴリー編集",
+                  onTapRoute: () => goRoute.push('/setting/category_list'),
                 ),
                 Divider(
                   height: 0,

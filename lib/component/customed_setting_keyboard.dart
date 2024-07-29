@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:household_expenses_project/constant/constant.dart';
-import 'package:household_expenses_project/constant/keyboard_icons.dart';
+import 'package:household_expenses_project/constant/keyboard_components.dart';
 import 'package:household_expenses_project/component/customed_keyboard_component.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 class CategoryKeyboardAction {
   CategoryKeyboardAction({
@@ -171,8 +170,6 @@ class CategoryColorPickerKeyboard extends StatelessWidget
     final double itemWidth = keyboardAreaWidth / 5;
     final double itemHeight = keyboardAreaHeight / 4;
 
-    List<MaterialColor> keyboardColors = Colors.primaries;
-
     return SafeArea(
       top: false,
       child: SizedBox(
@@ -185,7 +182,7 @@ class CategoryColorPickerKeyboard extends StatelessWidget
                 height: keyboardAreaHeight,
                 child: Wrap(
                   children: <Widget>[
-                    for (var i = 0; i < Colors.primaries.length; i++)
+                    for (var i = 0; i < keyboardColors.length; i++)
                       ColorKeyboardButton(
                         onTap: () => updateValue(keyboardColors[i]),
                         itemWidth: itemWidth,

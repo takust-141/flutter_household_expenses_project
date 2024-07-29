@@ -1,17 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/component/segmented_button.dart';
 import 'package:household_expenses_project/constant/constant.dart';
+import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 //Provider
-final appBarProvider = StateNotifierProvider<AppBarStateNotifier, AppBarState?>(
-    (ref) => AppBarStateNotifier(null));
+final appBarProvider =
+    NotifierProvider<AppBarNotifier, AppBarState?>(AppBarNotifier.new);
+final doneButtonProvider =
+    NotifierProvider<DoneButtonNotifier, bool>(DoneButtonNotifier.new);
 
-final needAppBarAnimationProvider = StateProvider<bool>((ref) => false);
+class DoneButtonNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    return false;
+  }
+
+  void setState(String? text) {
+    if (text == null || text.trim().isEmpty) {
+      state = false;
+    } else {
+      state = true;
+    }
+  }
+}
+
+const double _defauldAppBarSideWidth = 56;
 
 //状態管理
 @immutable
@@ -19,16 +36,22 @@ class AppBarState {
   final String name;
   final String? appBarTitle;
   final bool appBarBack;
+  final bool cancelAndDo;
   final bool needBottomBar;
+  final double appBarSideWidth;
   const AppBarState({
     required this.name,
     this.appBarTitle,
-    required this.appBarBack,
+    this.appBarBack = false,
     this.needBottomBar = true,
+    this.cancelAndDo = false,
+    this.appBarSideWidth = _defauldAppBarSideWidth,
   });
 
-  Widget? getAppBarBackWidget() {
-    if (appBarBack == true) {
+  Widget? getAppBarLeadingWidget() {
+    if (cancelAndDo) {
+      return const AppBarCancelWidget();
+    } else if (appBarBack) {
       return const AppBarBackWidget();
     }
     return null;
@@ -39,37 +62,65 @@ class AppBarState {
       return const SelectExpensesButton();
     }
 
-    if (appBarTitle != null) {
-      return Text(
-        appBarTitle!,
-        style: fontStyle,
-        key: ValueKey<String?>(appBarTitle),
-        overflow: TextOverflow.ellipsis,
-      );
-    } else {
-      return null;
+    String? titleText = appBarTitle;
+
+    return Consumer(
+      builder: (context, ref, child) {
+        if (name == 'category_edit') {
+          if (ref.read(selectCategoryNotifierProvider) == null) {
+            titleText = "新規追加";
+          } else {
+            titleText = "カテゴリ編集";
+          }
+        }
+        if (titleText != null) {
+          return Text(
+            titleText!,
+            style: fontStyle?.copyWith(fontSize: 18),
+            key: ValueKey<String?>(appBarTitle),
+            overflow: TextOverflow.ellipsis,
+          );
+        } else {
+          return const SizedBox();
+        }
+      },
+    );
+  }
+
+  Widget? getAppBarTailingWidget(GlobalKey<FormState>? formkey) {
+    if (cancelAndDo) {
+      return AppBarDoneWidget(formkey);
+    }
+    return null;
+  }
+}
+
+//Notifier
+class AppBarNotifier extends Notifier<AppBarState?> {
+  @override
+  AppBarState? build() {
+    return null;
+  }
+
+  void setAppBar(String? routeName) {
+    if (state?.name != routeName) {
+      state = AppBarStateCollection.getAppBarState(routeName);
     }
   }
 }
 
-//ここで値を変化させるメソッドを定義
-class AppBarStateNotifier extends StateNotifier<AppBarState?> {
-  AppBarStateNotifier(super.state);
-
-  void setAppBar(String? routeName) {
-    state = AppBarStateCollection.getAppBarState(routeName);
-  }
-}
-
+//Collection
 class AppBarStateCollection {
   static const List<AppBarState> appBarStateStateList = [
     AppBarState(name: 'register', appBarTitle: null, appBarBack: false),
     AppBarState(name: 'category_list', appBarTitle: 'カテゴリー', appBarBack: true),
     AppBarState(
-        name: 'category_edit',
-        appBarTitle: '日用品（後で変数にする）あああああああ',
-        appBarBack: true,
-        needBottomBar: false),
+      name: 'category_edit',
+      appBarTitle: null,
+      needBottomBar: false,
+      cancelAndDo: true,
+      appBarSideWidth: 100,
+    ),
   ];
 
   static AppBarState? getAppBarState(String? name) {
@@ -84,6 +135,7 @@ class AppBarStateCollection {
   }
 }
 
+//構成要素（パーツ）
 class AppBarBackWidget extends HookWidget {
   const AppBarBackWidget({super.key});
 
@@ -107,5 +159,87 @@ class AppBarBackWidget extends HookWidget {
       onTapUp: (_) => {backIconColor.value = theme.colorScheme.onSurface},
       onTapCancel: () => {backIconColor.value = theme.colorScheme.onSurface},
     );
+  }
+}
+
+class AppBarCancelWidget extends HookWidget {
+  const AppBarCancelWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textColor = useState<Color>(theme.colorScheme.onSurface);
+
+    return GestureDetector(
+      child: AnimatedContainer(
+        duration: listItemAnimationDuration,
+        child: Padding(
+          padding: const EdgeInsets.only(left: appbarSidePadding),
+          child: Text(
+            "キャンセル",
+            textAlign: TextAlign.left,
+            style: TextStyle(
+              color: textColor.value,
+              fontSize: 15,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ),
+      ),
+      onTap: () => context.pop(),
+      onTapDown: (_) => {textColor.value = theme.colorScheme.outline},
+      onTapUp: (_) => {textColor.value = theme.colorScheme.onSurface},
+      onTapCancel: () => {textColor.value = theme.colorScheme.onSurface},
+    );
+  }
+}
+
+class AppBarDoneWidget extends HookConsumerWidget {
+  final GlobalKey<FormState>? formkey;
+  const AppBarDoneWidget(this.formkey, {super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final textColor = useState<Color>(theme.colorScheme.onSurface);
+    final selectCategoryName = ref.read(selectCategoryNotifierProvider)?.name;
+
+    return ref.watch(doneButtonProvider)
+        ? GestureDetector(
+            child: AnimatedContainer(
+              duration: listItemAnimationDuration,
+              child: Padding(
+                padding: const EdgeInsets.only(right: appbarSidePadding),
+                child: Text(
+                  "完了",
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: textColor.value,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+            ),
+            onTap: () {
+              debugPrint("onTap");
+              formkey?.currentState?.save();
+            },
+            onTapDown: (_) => {textColor.value = theme.colorScheme.outline},
+            onTapUp: (_) => {textColor.value = theme.colorScheme.onSurface},
+            onTapCancel: () => {textColor.value = theme.colorScheme.onSurface},
+          )
+        : Padding(
+            padding: const EdgeInsets.only(right: appbarSidePadding),
+            child: Text(
+              "完了",
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: theme.colorScheme.outline,
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          );
   }
 }

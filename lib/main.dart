@@ -8,13 +8,6 @@ void main() async {
   //sqlite初期化用
   WidgetsFlutterBinding.ensureInitialized();
 
-  final CategoryDBProvider categoryProvider = CategoryDBProvider();
-  try {
-    await categoryProvider.open();
-  } catch (e) {
-    debugPrint(e as String?);
-  }
-
   runApp(
     const ProviderScope(child: HouseholdExpensesApp()),
   );

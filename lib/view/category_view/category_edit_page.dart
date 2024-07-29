@@ -1,41 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/component/customed_setting_keyboard.dart';
+import 'package:household_expenses_project/constant/keyboard_components.dart';
+import 'package:household_expenses_project/model/category.dart';
+import 'package:household_expenses_project/provider/app_bar_provider.dart';
+import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expenses_project/view_model/category_db_provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 
 //-------カテゴリ編集ページ---------------------------
-class CategoryEditPage extends StatefulWidget {
-  final bool addNewCategory;
-  CategoryEditPage({
-    super.key,
-    this.addNewCategory = false,
-  });
+class CategoryEditPage extends ConsumerStatefulWidget {
+  final GlobalKey<FormState>? formKey;
+  const CategoryEditPage(this.formKey, {super.key});
 
   @override
-  State<CategoryEditPage> createState() => _CategoryEditPageState();
+  ConsumerState<CategoryEditPage> createState() => _CategoryEditPageState();
 }
 
-class _CategoryEditPageState extends State<CategoryEditPage> {
+class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
   //デフォルト
-  static const defaultIcon = Symbols.home;
-  static const defaultColor = Colors.blue;
-  //フォームコントローラー
-  TextEditingController categoryNameController = TextEditingController();
+  static final defaultIcon = keyboardIcons[0];
+  static final defaultColor = keyboardColors[0];
+  //フォーム
+  final TextEditingController categoryNameController = TextEditingController();
   //customKeyboard用
-  final cateoryIconNotifer = ValueNotifier<IconData>(defaultIcon);
-  final cateoryColorNotifer = ValueNotifier<Color>(defaultColor);
+  late ValueNotifier<IconData> cateoryIconNotifer;
+  late ValueNotifier<Color> cateoryColorNotifer;
   //FocusNode
   final CustomFocusNode categoryNameNode = CustomFocusNode();
   final CustomFocusNode categoryIconNode = CustomFocusNode();
   final CustomFocusNode categoryColorNode = CustomFocusNode();
 
   @override
+  void initState() {
+    super.initState();
+    final selectCategoryProvider = ref.read(selectCategoryNotifierProvider);
+    cateoryIconNotifer =
+        ValueNotifier<IconData>(selectCategoryProvider?.icon ?? defaultIcon);
+    cateoryColorNotifer =
+        ValueNotifier<Color>(selectCategoryProvider?.color ?? defaultColor);
+    categoryNameController.text = selectCategoryProvider?.name ?? "";
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final mediaQuery = MediaQuery.of(context);
+    final navigator = Navigator.of(context);
+    final selectCategoryProvider = ref.read(selectCategoryNotifierProvider);
+    final categoryListProvider = ref.read(categorListNotifierProvider.notifier);
 
     final CategoryKeyboardAction categoryKeyboardAction =
         CategoryKeyboardAction(
@@ -46,6 +62,84 @@ class _CategoryEditPageState extends State<CategoryEditPage> {
       categoryIconNode: categoryIconNode,
       categoryColorNode: categoryColorNode,
     );
+
+    //ダイアログ
+    void openDialog({
+      required BuildContext context,
+      required String title,
+      required String text,
+      required Future onTap,
+    }) async {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(dialogRadius),
+            ),
+            child: Container(
+              padding: largeEdgeInsets,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(dialogRadius),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    "カテゴリー$title",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: large),
+                  Text(text, textAlign: TextAlign.center),
+                  const SizedBox(height: large),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: theme.colorScheme.primary,
+                          side: BorderSide(
+                              color: theme.colorScheme.primary, width: 1.3),
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(containreBorderRadius),
+                          ),
+                        ),
+                        child: const SizedBox(
+                            width: 75,
+                            child: Text("キャンセル", textAlign: TextAlign.center)),
+                      ),
+                      FilledButton(
+                        onPressed: () async {
+                          await onTap;
+                          Navigator.pop(context);
+                          navigator.pop();
+                        },
+                        style: FilledButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(containreBorderRadius),
+                          ),
+                        ),
+                        child: SizedBox(
+                            width: 75,
+                            child: Text(title, textAlign: TextAlign.center)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
 
     return Container(
       color: theme.colorScheme.surfaceContainer,
@@ -61,7 +155,7 @@ class _CategoryEditPageState extends State<CategoryEditPage> {
             padding: viewEdgeInsets,
             child: Column(
               children: [
-                //-----カテゴリカード表示-----
+                //-----カテゴリーカード表示-----
                 ValueListenableBuilder(
                   valueListenable: cateoryColorNotifer,
                   builder: (context, color, _) {
@@ -113,18 +207,47 @@ class _CategoryEditPageState extends State<CategoryEditPage> {
 
                 //-----フォーム-----
                 Form(
+                  key: widget.formKey,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       //カテゴリ名
                       CategoryEditItem(
-                        categoryName: "カテゴリ名",
+                        categoryName: "カテゴリー名",
                         inputWidget: CustomTextFormField(
                           focusNode: categoryNameNode,
                           inputWidgetHPaddding: small,
                           inputWidgetHeight: formItemHeight - 4,
                           child: TextFormField(
                             autofocus: false,
+                            onChanged: (value) => ref
+                                .read(doneButtonProvider.notifier)
+                                .setState(value),
+                            // Form送信処理
+                            onSaved: (value) async {
+                              if (value?.trim().isNotEmpty ?? false) {
+                                debugPrint("send form");
+                                if (selectCategoryProvider == null) {
+                                  debugPrint("insert");
+
+                                  await categoryListProvider
+                                      .insertCategory(
+                                          name: value!.trim(),
+                                          icon: cateoryIconNotifer.value,
+                                          color: cateoryColorNotifer.value)
+                                      .catchError((err) =>
+                                          {debugPrint(err.toString())});
+                                } else {
+                                  debugPrint("edit");
+                                  await categoryListProvider.updateCategory(
+                                      selectCategoryProvider.copyWith(
+                                          name: value!.trim(),
+                                          icon: cateoryIconNotifer.value,
+                                          color: cateoryColorNotifer.value));
+                                }
+                                navigator.pop();
+                              }
+                            },
                             focusNode: categoryNameNode,
                             keyboardType: TextInputType.text,
                             controller: categoryNameController,
@@ -143,11 +266,14 @@ class _CategoryEditPageState extends State<CategoryEditPage> {
                           focusNode: categoryIconNode,
                           notifier: cateoryIconNotifer,
                           builder: (context, val, hasFocus) {
-                            return Icon(val, size: 30);
+                            return Icon(
+                              val,
+                              size: 30,
+                              color: theme.colorScheme.onSurface,
+                            );
                           },
                         ),
                       ),
-
                       //色
                       CategoryEditItem(
                         categoryName: "カラー",
@@ -164,26 +290,60 @@ class _CategoryEditPageState extends State<CategoryEditPage> {
                           },
                         ),
                       ),
+                      const SizedBox(height: large),
 
-                      SizedBox(height: 120),
-                      TextButton(
-                        style: ButtonStyle(
-                          foregroundColor:
-                              WidgetStateProperty.resolveWith((states) {
-                            return states.contains(WidgetState.disabled)
-                                ? null
-                                : theme.colorScheme.onPrimary;
-                          }),
-                          backgroundColor:
-                              WidgetStateProperty.resolveWith((states) {
-                            return states.contains(WidgetState.disabled)
-                                ? null
-                                : theme.colorScheme.primary;
-                          }),
+                      if (selectCategoryProvider != null)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            //カテゴリー移行
+                            OutlinedButton(
+                              onPressed: () => openDialog(
+                                context: context,
+                                title: moveCategoryTitle,
+                                text:
+                                    '"${selectCategoryProvider.name}"$moveDialogText',
+                                onTap:
+                                    categoryListProvider.deleteCategoryFromId(
+                                        selectCategoryProvider.id!),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: theme.colorScheme.primary,
+                                side: BorderSide(
+                                    color: theme.colorScheme.primary,
+                                    width: 1.3),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      containreBorderRadius),
+                                ),
+                              ),
+                              child: const Text("カテゴリー$moveCategoryTitle"),
+                            ),
+                            //カテゴリー削除
+                            OutlinedButton(
+                              onPressed: () => openDialog(
+                                context: context,
+                                title: delCategoryTitle,
+                                text:
+                                    '"${selectCategoryProvider.name}"$delDialogText',
+                                onTap:
+                                    categoryListProvider.deleteCategoryFromId(
+                                        selectCategoryProvider.id!),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: theme.colorScheme.primary,
+                                side: BorderSide(
+                                    color: theme.colorScheme.primary,
+                                    width: 1.3),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      containreBorderRadius),
+                                ),
+                              ),
+                              child: const Text("カテゴリー$delCategoryTitle"),
+                            ),
+                          ],
                         ),
-                        onPressed: () => context.pop(),
-                        child: const Text('送信'),
-                      ),
                     ],
                   ),
                 ),
@@ -238,7 +398,7 @@ class CategoryCard extends StatelessWidget {
   }
 }
 
-//カテゴリEdit Item
+//カテゴリーEdit Item
 class CategoryEditItem extends HookWidget {
   final CustomFocusNode? focusNode;
   final Widget inputWidget;

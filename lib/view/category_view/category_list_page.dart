@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expenses_project/model/category.dart';
+import 'package:household_expenses_project/provider/app_bar_provider.dart';
+import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expenses_project/view_model/category_db_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 
 //-------カテゴリリストページ---------------------------
-class CategoryListPage extends StatelessWidget {
+class CategoryListPage extends ConsumerWidget {
   const CategoryListPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
+    final categoryListProvider = ref.watch(categorListNotifierProvider);
+    final int numOfCategory = categoryListProvider.value?.length ?? 0;
 
     return Container(
       color: theme.colorScheme.surfaceContainer,
@@ -27,21 +34,17 @@ class CategoryListPage extends StatelessWidget {
             ),
             child: Column(
               children: [
-                const CategoryListItem(
-                    categoryName: "カテゴリ編1",
-                    color: Colors.red,
-                    iconData: Icons.home,
-                    path: 'item3'),
-                Divider(
-                  height: 0,
-                  thickness: 0.2,
-                  color: theme.colorScheme.outline,
-                ),
-                const CategoryListItem(
-                    categoryName: "カテゴリ編2",
-                    color: Colors.red,
-                    iconData: Icons.home,
-                    path: 'item2'),
+                for (int i = 0; i < numOfCategory; i++) ...{
+                  CategoryListItem(
+                    category: categoryListProvider.value![i],
+                  ),
+                  if (i != numOfCategory - 1)
+                    Divider(
+                      height: 0,
+                      thickness: 0.2,
+                      color: theme.colorScheme.outline,
+                    ),
+                }
               ],
             ),
           ),
@@ -52,14 +55,7 @@ class CategoryListPage extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(containreBorderRadius),
             ),
-            child: CategoryListItem(
-              categoryName: "新規追加",
-              leading: Icon(
-                Symbols.variable_add,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              path: '/setting/category_list/category_edit',
-            ),
+            child: const CategoryListItem(isNewAdd: true, category: null),
           ),
         ],
       ),
@@ -68,30 +64,32 @@ class CategoryListPage extends StatelessWidget {
 }
 
 //カテゴリListItem
-class CategoryListItem extends HookWidget {
-  final String categoryName;
-  final Color? color;
-  final IconData? iconData;
-  final Widget? leading;
-  final String path;
+class CategoryListItem extends HookConsumerWidget {
+  final Category? category;
+  final bool isNewAdd;
   const CategoryListItem({
     super.key,
-    required this.categoryName,
-    this.color,
-    this.iconData,
-    this.leading,
-    required this.path,
+    required this.category,
+    this.isNewAdd = false,
   });
+  final String _defaultName = "新規追加";
 
   @override
-  Widget build(BuildContext context) {
-    var goRoute = GoRouter.of(context);
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
+    var goRoute = GoRouter.of(context);
+    final Color defaultColor = theme.colorScheme.onSurfaceVariant;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => goRoute.go(path),
+      onTap: () {
+        ref
+            .read(selectCategoryNotifierProvider.notifier)
+            .updateCategory(category);
+        ref.read(doneButtonProvider.notifier).setState(category?.name);
+        goRoute.go('/setting/category_list/category_edit');
+      },
       onTapDown: (_) =>
           {listItemColor.value = theme.colorScheme.surfaceContainerHighest},
       onTapUp: (_) => {listItemColor.value = theme.colorScheme.surfaceBright},
@@ -104,26 +102,29 @@ class CategoryListItem extends HookWidget {
         padding: smallEdgeInsets,
         child: Row(
           children: [
-            leading ??
-                (iconData != null
-                    ? Container(
-                        padding: sssmallEdgeInsets,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: color ?? theme.colorScheme.onSurfaceVariant,
-                            width: 2,
-                          ),
-                        ),
-                        child: Icon(
-                          iconData,
-                          color: color,
-                          size: 16,
-                        ),
-                      )
-                    : const SizedBox()),
+            isNewAdd
+                ? Icon(
+                    Symbols.variable_add,
+                    color: defaultColor,
+                  )
+                : Container(
+                    padding: sssmallEdgeInsets,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: category?.color ?? defaultColor,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Icon(
+                      category?.icon,
+                      color: category?.color ?? defaultColor,
+                      size: 16,
+                      weight: 600,
+                    ),
+                  ),
             const SizedBox(width: small),
-            Text(categoryName),
+            Text(category?.name ?? _defaultName),
             const Spacer(),
             Icon(Symbols.chevron_right,
                 weight: 300,

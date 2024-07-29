@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:household_expenses_project/model/category.dart';
 
-class CategoryDBProvider {
-  late Database db;
+//Provider
+final categorListNotifierProvider =
+    AsyncNotifierProvider<CategoryNotifier, List<Category>>(
+        () => CategoryNotifier());
+
+class CategoryNotifier extends AsyncNotifier<List<Category>> {
+  late Database _database;
+
+  //初期作業・初期値
+  @override
+  Future<List<Category>> build() async {
+    await _open();
+    return await getAllCategory();
+  }
 
   Future<String> _getDbPath() async {
     var dbFilePath = '';
@@ -15,10 +28,10 @@ class CategoryDBProvider {
     } else if (Platform.isIOS) {
       final dbDirectory = await getLibraryDirectory();
       dbFilePath = dbDirectory.path;
-      debugPrint("DB path : $dbFilePath");
     } else {
       throw Exception('Unable to determine platform.');
     }
+    debugPrint("DB path : $dbFilePath");
     try {
       await Directory(dbFilePath).create(recursive: true);
     } catch (e) {
@@ -29,7 +42,7 @@ class CategoryDBProvider {
     return path;
   }
 
-  Future open() async {
+  Future _open() async {
     late String path;
     try {
       path = await _getDbPath();
@@ -37,7 +50,7 @@ class CategoryDBProvider {
       rethrow;
     }
 
-    db = await openDatabase(
+    _database = await openDatabase(
       path,
       version: 1,
       onCreate: (Database db, int version) async {
@@ -45,29 +58,60 @@ class CategoryDBProvider {
           CREATE TABLE $categoryTable ( 
           $categoryId INTEGER PRIMARY KEY, 
           $categoryName TEXT NOT NULL,
-          $categoryIconName TEXT NOT NULL,
+          $categoryIcon TEXT NOT NULL,
           $categoryColor TEXT NOT NULL,
-          $categotyParentId INTEGER)
+          $categotyParentId INTEGER,
+          $categoryOrder INTEGER NOT NULL
+          )
         ''');
       },
     );
   }
 
-  Future<Category> insert(Category category) async {
-    category.id = await db.insert(categoryTable, category.toMap());
-    return category;
+  Future<List<Category>> getAllCategory() async {
+    List<Category> categoryList = [];
+    List<Map> listMap = await _database.query(
+      categoryTable,
+    );
+    for (var map in listMap) {
+      categoryList.add(Category.fromMap(map));
+    }
+    return categoryList;
+  }
+
+  Future insertCategory(
+      {required String name,
+      required IconData icon,
+      required Color color}) async {
+    final List<Category>? list = state.value;
+
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      int maxOrder = 0;
+      if (list != null) {
+        for (int i = 0; i < list.length; i++) {
+          if (maxOrder < list[i].order) {
+            maxOrder = list[i].order;
+          }
+        }
+      }
+      Category category = Category(
+        name: name,
+        icon: icon,
+        color: color,
+        order: maxOrder + 1,
+      );
+      await _database.insert(categoryTable, category.toMap());
+      List<Category> categoryList = await getAllCategory();
+      return categoryList;
+    });
   }
 
   //idは一意のため一件のみ返す
-  Future<Category?> getCategory(int id) async {
-    List<Map> maps = await db.query(
+  Future<Category?> getCategoryFromId(int id) async {
+    List<Map> maps = await _database.query(
       categoryTable,
-      columns: [
-        categoryName,
-        categoryIconName,
-        categoryIconName,
-        categotyParentId
-      ],
+      columns: [categoryName, categoryIcon, categoryColor, categotyParentId],
       where: '$categoryId = ?',
       whereArgs: [id],
     );
@@ -78,22 +122,30 @@ class CategoryDBProvider {
     }
   }
 
-  Future<int> delete(int id) async {
-    return await db.delete(
-      categoryTable,
-      where: '$categoryId = ?',
-      whereArgs: [id],
-    );
+  Future deleteCategoryFromId(int id) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await _database.delete(
+        categoryTable,
+        where: '$categoryId = ?',
+        whereArgs: [id],
+      );
+      return await getAllCategory();
+    });
   }
 
-  Future<int> update(Category category) async {
-    return await db.update(
-      categoryTable,
-      category.toMap(),
-      where: '$categoryId = ?',
-      whereArgs: [category.id],
-    );
+  Future updateCategory(Category category) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await _database.update(
+        categoryTable,
+        category.toMap(),
+        where: '$categoryId = ?',
+        whereArgs: [category.id],
+      );
+      return await getAllCategory();
+    });
   }
 
-  Future close() async => db.close();
+  Future close() async => _database.close();
 }

@@ -18,3 +18,11 @@ enum MathSymbol {
 
 //エラーメッセージ
 const String dbError = "データの読み込みに失敗しました。開発者に問い合わせしてください。";
+
+//カテゴリー削除
+const String moveCategoryTitle = "移行";
+const String delCategoryTitle = "削除";
+
+const String moveDialogText =
+    "カテゴリーを削除し、すでに登録されているデータを別のカテゴリーに移行します\n移行先のカテゴリーを選択してください";
+const String delDialogText = "を選んでいるデータは全て削除されます\nよろしいですか？";

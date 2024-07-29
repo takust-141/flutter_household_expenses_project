@@ -15,10 +15,10 @@ export 'keyboard_custom.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 const double _kBarSize = 45.0;
-const Duration _timeToDismiss = Duration(milliseconds: 300);
-const Duration _timeToDismissBottomArea = Duration(milliseconds: 300);
-const Duration _timeToDismissBar = Duration(milliseconds: 300);
-const Duration _scrollAdditionalTime = Duration(milliseconds: 50);
+const Duration _timeToDismiss = Duration(milliseconds: 200);
+const Duration _timeToDismissBottomArea = Duration(milliseconds: 200);
+const Duration _timeToDismissBar = Duration(milliseconds: 200);
+const Duration _scrollAdditionalTime = Duration(milliseconds: 150);
 const Cubic animationCurve = Curves.easeOutCubic;
 const Curve defaultCurve = Curves.easeIn;
 
@@ -600,23 +600,19 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
     _slideKeyboardAnimationController
         .addStatusListener((AnimationStatus status) {
       if (status == AnimationStatus.completed) {
-        print('Animation completed');
         _updateOffset();
       }
       if (status == AnimationStatus.dismissed) {
-        print('Animation dissmiss');
         _resetOffset();
       }
     });
     _slideBarAnimationController.addStatusListener((AnimationStatus status) {
       if (status == AnimationStatus.completed) {
-        print('Animation completed');
         Future.delayed(_scrollAdditionalTime, () {
           _updateOffset();
         });
       }
       if (status == AnimationStatus.dismissed) {
-        print('Animation dissmiss');
         _resetOffset();
       }
     });
