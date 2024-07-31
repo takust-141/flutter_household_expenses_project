@@ -3,6 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/model/category.dart';
+import 'package:household_expenses_project/view/category_view/sub_category_edit_page.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/view/view.dart';
@@ -15,6 +16,7 @@ final GlobalKey<NavigatorState> _shellNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'shell');
 
 GlobalKey<FormState>? formkey;
+GlobalKey<FormState>? subFormkey;
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
@@ -31,7 +33,7 @@ final router = GoRouter(
           routes: <RouteBase>[
             GoRoute(
               path: '/register',
-              name: 'register',
+              name: rootNameRegister,
               builder: (context, state) => RegisterPage(),
             ),
           ],
@@ -40,7 +42,7 @@ final router = GoRouter(
           routes: <RouteBase>[
             GoRoute(
               path: '/chart',
-              name: 'chart',
+              name: rootNameChart,
               builder: (context, state) => ListViewPage(),
             ),
           ],
@@ -50,21 +52,31 @@ final router = GoRouter(
           routes: <RouteBase>[
             GoRoute(
               path: '/setting',
-              name: 'setting',
+              name: rootNameSetting,
               builder: (context, state) => SettingPage(),
               routes: <RouteBase>[
                 GoRoute(
                   path: 'category_list',
-                  name: 'category_list',
+                  name: rootNameCategoryList,
                   builder: (context, state) => CategoryListPage(),
                   routes: <RouteBase>[
                     GoRoute(
                       path: 'category_edit',
-                      name: 'category_edit',
+                      name: rootNameCategoryEdit,
                       builder: (context, state) {
                         formkey = GlobalKey<FormState>();
                         return CategoryEditPage(formkey);
                       },
+                      routes: <RouteBase>[
+                        GoRoute(
+                          path: 'sub_category_edit',
+                          name: rootNameSubCategoryEdit,
+                          builder: (context, state) {
+                            subFormkey = GlobalKey<FormState>();
+                            return SubCategoryEditPage(subFormkey);
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -163,7 +175,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       SizedBox(
         width: appBarState?.appBarSideWidth ?? 0,
-        child: appBarState?.getAppBarTailingWidget(formkey),
+        child: appBarState?.getAppBarTailingWidget(formkey, subFormkey),
       ),
     ];
 

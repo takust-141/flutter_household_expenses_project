@@ -52,6 +52,8 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
     final navigator = Navigator.of(context);
     final selectCategoryProvider = ref.read(selectCategoryNotifierProvider);
     final categoryListProvider = ref.read(categorListNotifierProvider.notifier);
+    final subCategoryListProvider = ref.watch(subCategorListNotifierProvider);
+    final int numOfCategory = subCategoryListProvider.value?.length ?? 0;
 
     final CategoryKeyboardAction categoryKeyboardAction =
         CategoryKeyboardAction(
@@ -68,7 +70,7 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
       required BuildContext context,
       required String title,
       required String text,
-      required Future onTap,
+      required Future Function() onTap,
     }) async {
       showDialog(
         context: context,
@@ -117,7 +119,8 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                       ),
                       FilledButton(
                         onPressed: () async {
-                          await onTap;
+                          await onTap();
+                          if (!context.mounted) return;
                           Navigator.pop(context);
                           navigator.pop();
                         },
@@ -290,58 +293,106 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                           },
                         ),
                       ),
-                      const SizedBox(height: large),
 
                       if (selectCategoryProvider != null)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        Column(
                           children: [
-                            //カテゴリー移行
-                            OutlinedButton(
-                              onPressed: () => openDialog(
-                                context: context,
-                                title: moveCategoryTitle,
-                                text:
-                                    '"${selectCategoryProvider.name}"$moveDialogText',
-                                onTap:
-                                    categoryListProvider.deleteCategoryFromId(
-                                        selectCategoryProvider.id!),
+                            //サブカテゴリー
+                            Container(
+                              clipBehavior: Clip.antiAlias,
+                              decoration: BoxDecoration(
+                                  color: theme.colorScheme.surface,
+                                  borderRadius: formInputInnerBoarderRadius),
+                              margin: mediumEdgeInsets,
+                              child: Column(
+                                children: [
+                                  Container(
+                                    height: listHeight,
+                                    color: theme.colorScheme.outline,
+                                    alignment: Alignment.centerLeft,
+                                    padding:
+                                        const EdgeInsets.only(left: medium),
+                                    child: Text(
+                                      "サブカテゴリー",
+                                      textAlign: TextAlign.left,
+                                      style: TextStyle(
+                                          color: theme
+                                              .colorScheme.onInverseSurface,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                  for (int i = 0; i < numOfCategory; i++) ...{
+                                    SubCategoryListItem(
+                                      category:
+                                          subCategoryListProvider.value![i],
+                                    ),
+                                    Divider(
+                                      height: 0,
+                                      thickness: 0.2,
+                                      color: theme.colorScheme.outline,
+                                    ),
+                                  },
+                                  const SubCategoryListItem(
+                                    isNewAdd: true,
+                                    category: null,
+                                  )
+                                ],
                               ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: theme.colorScheme.primary,
-                                side: BorderSide(
-                                    color: theme.colorScheme.primary,
-                                    width: 1.3),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      containreBorderRadius),
-                                ),
-                              ),
-                              child: const Text("カテゴリー$moveCategoryTitle"),
                             ),
-                            //カテゴリー削除
-                            OutlinedButton(
-                              onPressed: () => openDialog(
-                                context: context,
-                                title: delCategoryTitle,
-                                text:
-                                    '"${selectCategoryProvider.name}"$delDialogText',
-                                onTap:
-                                    categoryListProvider.deleteCategoryFromId(
-                                        selectCategoryProvider.id!),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: theme.colorScheme.primary,
-                                side: BorderSide(
-                                    color: theme.colorScheme.primary,
-                                    width: 1.3),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      containreBorderRadius),
+
+                            const SizedBox(height: medium),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                //カテゴリー移行
+                                OutlinedButton(
+                                  onPressed: () => openDialog(
+                                    context: context,
+                                    title: moveCategoryTitle,
+                                    text:
+                                        '"${selectCategoryProvider.name}"$moveDialogText',
+                                    onTap: () => categoryListProvider
+                                        .deleteCategoryFromId(
+                                            selectCategoryProvider.id!),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: theme.colorScheme.primary,
+                                    side: BorderSide(
+                                        color: theme.colorScheme.primary,
+                                        width: 1.3),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          containreBorderRadius),
+                                    ),
+                                  ),
+                                  child: const Text("カテゴリー$moveCategoryTitle"),
                                 ),
-                              ),
-                              child: const Text("カテゴリー$delCategoryTitle"),
+                                //カテゴリー削除
+                                OutlinedButton(
+                                  onPressed: () => openDialog(
+                                    context: context,
+                                    title: delCategoryTitle,
+                                    text:
+                                        '"${selectCategoryProvider.name}"$delDialogText',
+                                    onTap: () => categoryListProvider
+                                        .deleteCategoryFromId(
+                                            selectCategoryProvider.id!),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: theme.colorScheme.primary,
+                                    side: BorderSide(
+                                        color: theme.colorScheme.primary,
+                                        width: 1.3),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                          containreBorderRadius),
+                                    ),
+                                  ),
+                                  child: const Text("カテゴリー$delCategoryTitle"),
+                                ),
+                              ],
                             ),
+                            const SizedBox(height: large),
                           ],
                         ),
                     ],
@@ -454,6 +505,80 @@ class CategoryEditItem extends HookWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+//サブカテゴリーListItem
+class SubCategoryListItem extends HookConsumerWidget {
+  final Category? category;
+  final bool isNewAdd;
+  const SubCategoryListItem({
+    super.key,
+    required this.category,
+    this.isNewAdd = false,
+  });
+  final String _defaultName = "新規追加";
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
+    var goRoute = GoRouter.of(context);
+    final Color defaultColor = theme.colorScheme.onSurfaceVariant;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        ref
+            .read(selectSubCategoryNotifierProvider.notifier)
+            .updateCategory(category);
+        ref.read(doneButtonProvider.notifier).setState(category?.name);
+        goRoute.go('/setting/category_list/category_edit/sub_category_edit');
+      },
+      onTapDown: (_) =>
+          {listItemColor.value = theme.colorScheme.surfaceContainerHighest},
+      onTapUp: (_) => {listItemColor.value = theme.colorScheme.surfaceBright},
+      onTapCancel: () =>
+          {listItemColor.value = theme.colorScheme.surfaceBright},
+      child: AnimatedContainer(
+        color: listItemColor.value,
+        height: listHeight,
+        duration: listItemAnimationDuration,
+        padding: const EdgeInsets.fromLTRB(medium, small, medium, small),
+        child: Row(
+          children: [
+            isNewAdd
+                ? Icon(
+                    Symbols.variable_add,
+                    color: defaultColor,
+                  )
+                : Container(
+                    padding: sssmallEdgeInsets,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: category?.color ?? defaultColor,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Icon(
+                      category?.icon,
+                      color: category?.color ?? defaultColor,
+                      size: 16,
+                      weight: 600,
+                    ),
+                  ),
+            const SizedBox(width: small),
+            Text(category?.name ?? _defaultName),
+            const Spacer(),
+            Icon(Symbols.chevron_right,
+                weight: 300,
+                size: 25,
+                color: theme.colorScheme.onSurfaceVariant),
+          ],
+        ),
       ),
     );
   }

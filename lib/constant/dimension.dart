@@ -20,6 +20,7 @@ const smallVerticalEdgeInsets = EdgeInsets.symmetric(vertical: small);
 const ssmallVerticalEdgeInsets = EdgeInsets.symmetric(vertical: ssmall);
 const ssmallHorizontalEdgeInsets = EdgeInsets.symmetric(horizontal: ssmall);
 const smallHorizontalEdgeInsets = EdgeInsets.symmetric(horizontal: small);
+const mediumHorizontalEdgeInsets = EdgeInsets.symmetric(horizontal: medium);
 
 //AppBar
 const appbarSidePadding = smedium;

@@ -7,6 +7,13 @@ import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+const rootNameRegister = 'register';
+const rootNameChart = 'chart';
+const rootNameSetting = 'setting';
+const rootNameCategoryList = 'category_list';
+const rootNameCategoryEdit = 'category_edit';
+const rootNameSubCategoryEdit = 'sub_category_edit';
+
 //Provider
 final appBarProvider =
     NotifierProvider<AppBarNotifier, AppBarState?>(AppBarNotifier.new);
@@ -58,7 +65,7 @@ class AppBarState {
   }
 
   Widget? getAppBarTitleWidget(TextStyle? fontStyle) {
-    if (name == 'register') {
+    if (name == rootNameRegister) {
       return const SelectExpensesButton();
     }
 
@@ -66,11 +73,18 @@ class AppBarState {
 
     return Consumer(
       builder: (context, ref, child) {
-        if (name == 'category_edit') {
+        if (name == rootNameCategoryEdit) {
           if (ref.read(selectCategoryNotifierProvider) == null) {
-            titleText = "新規追加";
+            titleText = "カテゴリー 新規追加";
           } else {
-            titleText = "カテゴリ編集";
+            titleText = "カテゴリー 編集";
+          }
+        }
+        if (name == rootNameSubCategoryEdit) {
+          if (ref.read(selectSubCategoryNotifierProvider) == null) {
+            titleText = "サブカテゴリー 新規追加";
+          } else {
+            titleText = "サブカテゴリー 編集";
           }
         }
         if (titleText != null) {
@@ -87,9 +101,15 @@ class AppBarState {
     );
   }
 
-  Widget? getAppBarTailingWidget(GlobalKey<FormState>? formkey) {
+  Widget? getAppBarTailingWidget(
+      GlobalKey<FormState>? formkey, GlobalKey<FormState>? subFormkey) {
     if (cancelAndDo) {
-      return AppBarDoneWidget(formkey);
+      if (name == rootNameCategoryEdit) {
+        return AppBarDoneWidget(formkey);
+      }
+      if (name == rootNameSubCategoryEdit) {
+        return AppBarDoneWidget(subFormkey);
+      }
     }
     return null;
   }
@@ -112,10 +132,18 @@ class AppBarNotifier extends Notifier<AppBarState?> {
 //Collection
 class AppBarStateCollection {
   static const List<AppBarState> appBarStateStateList = [
-    AppBarState(name: 'register', appBarTitle: null, appBarBack: false),
-    AppBarState(name: 'category_list', appBarTitle: 'カテゴリー', appBarBack: true),
+    AppBarState(name: rootNameRegister, appBarTitle: null, appBarBack: false),
     AppBarState(
-      name: 'category_edit',
+        name: rootNameCategoryList, appBarTitle: 'カテゴリー', appBarBack: true),
+    AppBarState(
+      name: rootNameCategoryEdit,
+      appBarTitle: null,
+      needBottomBar: false,
+      cancelAndDo: true,
+      appBarSideWidth: 100,
+    ),
+    AppBarState(
+      name: rootNameSubCategoryEdit,
       appBarTitle: null,
       needBottomBar: false,
       cancelAndDo: true,
@@ -202,7 +230,6 @@ class AppBarDoneWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final textColor = useState<Color>(theme.colorScheme.onSurface);
-    final selectCategoryName = ref.read(selectCategoryNotifierProvider)?.name;
 
     return ref.watch(doneButtonProvider)
         ? GestureDetector(

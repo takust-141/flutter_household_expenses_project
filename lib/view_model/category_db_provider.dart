@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:io';
@@ -9,7 +10,11 @@ import 'package:household_expenses_project/model/category.dart';
 //Provider
 final categorListNotifierProvider =
     AsyncNotifierProvider<CategoryNotifier, List<Category>>(
-        () => CategoryNotifier());
+        CategoryNotifier.new);
+
+final subCategorListNotifierProvider =
+    AsyncNotifierProvider<SubCategoryNotifier, List<Category>>(
+        SubCategoryNotifier.new);
 
 class CategoryNotifier extends AsyncNotifier<List<Category>> {
   late Database _database;
@@ -72,6 +77,8 @@ class CategoryNotifier extends AsyncNotifier<List<Category>> {
     List<Category> categoryList = [];
     List<Map> listMap = await _database.query(
       categoryTable,
+      where: "$categotyParentId IS NULL",
+      orderBy: "$categoryOrder ASC",
     );
     for (var map in listMap) {
       categoryList.add(Category.fromMap(map));
@@ -111,7 +118,6 @@ class CategoryNotifier extends AsyncNotifier<List<Category>> {
   Future<Category?> getCategoryFromId(int id) async {
     List<Map> maps = await _database.query(
       categoryTable,
-      columns: [categoryName, categoryIcon, categoryColor, categotyParentId],
       where: '$categoryId = ?',
       whereArgs: [id],
     );
@@ -148,4 +154,61 @@ class CategoryNotifier extends AsyncNotifier<List<Category>> {
   }
 
   Future close() async => _database.close();
+}
+
+//サブカテゴリー
+class SubCategoryNotifier extends CategoryNotifier {
+  //初期作業・初期値
+  @override
+  Future<List<Category>> build() async {
+    await _open();
+    return await getAllCategory();
+  }
+
+  @override
+  Future<List<Category>> getAllCategory() async {
+    final selectCategoryProvider = ref.watch(selectCategoryNotifierProvider);
+    List<Category> categoryList = [];
+    List<Map> listMap = await _database.query(
+      categoryTable,
+      where: '$categotyParentId IS NOT NULL AND $categotyParentId = ?',
+      whereArgs: [selectCategoryProvider!.id],
+      orderBy: "$categoryOrder ASC",
+    );
+    for (var map in listMap) {
+      categoryList.add(Category.fromMap(map));
+    }
+    return categoryList;
+  }
+
+  Future insertSubCategory({
+    required String name,
+    required IconData icon,
+    required Color color,
+    required int parentId,
+  }) async {
+    final List<Category>? list = state.value;
+
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      int maxOrder = 0;
+      if (list != null) {
+        for (int i = 0; i < list.length; i++) {
+          if (maxOrder < list[i].order) {
+            maxOrder = list[i].order;
+          }
+        }
+      }
+      Category category = Category(
+        name: name,
+        icon: icon,
+        color: color,
+        order: maxOrder + 1,
+        parentId: parentId,
+      );
+      await _database.insert(categoryTable, category.toMap());
+      List<Category> categoryList = await getAllCategory();
+      return categoryList;
+    });
+  }
 }

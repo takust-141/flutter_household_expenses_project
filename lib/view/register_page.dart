@@ -22,7 +22,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final cateoryNotifer = ValueNotifier<Color>(Colors.blue);
 
   //FocusNode
-  final CustomFocusNode paymentAmountNode = CustomFocusNode();
+  final CustomFocusNode amountOfMoneyNode = CustomFocusNode();
   final CustomFocusNode categoryNode = CustomFocusNode();
   final CustomFocusNode subCategoryNode = CustomFocusNode();
   final CustomFocusNode sampleNode = CustomFocusNode();
@@ -35,7 +35,7 @@ class _RegisterPageState extends State<RegisterPage> {
       paymentAmountTextController: paymentAmountTextController,
       subCategoryController: subCategoryController,
       cateoryNotifer: cateoryNotifer,
-      paymentAmountNode: paymentAmountNode,
+      amountOfMoneyNode: amountOfMoneyNode,
       categoryNode: categoryNode,
       subCategoryNode: subCategoryNode,
     );
@@ -62,7 +62,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Expanded(
                       child: TextFormField(
                         keyboardType: TextInputType.number,
-                        focusNode: paymentAmountNode,
+                        focusNode: amountOfMoneyNode,
                         controller: paymentAmountTextController,
                         decoration: InputDecoration(
                           border: const OutlineInputBorder(),

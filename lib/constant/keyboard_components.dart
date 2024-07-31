@@ -30,6 +30,7 @@ final List<Color> keyboardColors = [
   Colors.amber,
   Colors.orange,
   Colors.deepOrange,
+  Colors.deepOrange.shade900,
   Colors.brown,
   Colors.blueGrey,
   Colors.grey.shade800,

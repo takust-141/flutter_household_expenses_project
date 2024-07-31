@@ -9,7 +9,7 @@ class RegisterKeyboardAction {
     required this.paymentAmountTextController,
     required this.subCategoryController,
     required this.cateoryNotifer,
-    required this.paymentAmountNode,
+    required this.amountOfMoneyNode,
     required this.categoryNode,
     required this.subCategoryNode,
   });
@@ -20,7 +20,7 @@ class RegisterKeyboardAction {
   //customKeyboard用
   final cateoryNotifer;
   //FocusNode
-  final CustomFocusNode paymentAmountNode;
+  final CustomFocusNode amountOfMoneyNode;
   final CustomFocusNode categoryNode;
   final CustomFocusNode subCategoryNode;
 
@@ -28,8 +28,8 @@ class RegisterKeyboardAction {
   bool mathFlag = false;
 
   KeyboardActionsConfig buildConfig(BuildContext context) {
-    paymentAmountNode.addListener(() {
-      if (!paymentAmountNode.hasFocus) {
+    amountOfMoneyNode.addListener(() {
+      if (!amountOfMoneyNode.hasFocus) {
         computeMath();
       }
     });
@@ -43,7 +43,7 @@ class RegisterKeyboardAction {
       defaultDoneWidget: const KeyboardClosedIcon(),
       actions: [
         KeyboardActionsItem(
-          focusNode: paymentAmountNode,
+          focusNode: amountOfMoneyNode,
           toolbarButtons: [
             (node) => Padding(
                   padding: keyboardInkWellPadding,

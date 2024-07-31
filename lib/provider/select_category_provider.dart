@@ -6,6 +6,10 @@ final selectCategoryNotifierProvider =
     NotifierProvider<SelectCategoryNotifier, Category?>(
         SelectCategoryNotifier.new);
 
+final selectSubCategoryNotifierProvider =
+    NotifierProvider<SelectCategoryNotifier, Category?>(
+        SelectCategoryNotifier.new);
+
 class SelectCategoryNotifier extends Notifier<Category?> {
   @override
   Category? build() {
