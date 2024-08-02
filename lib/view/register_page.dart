@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/model/category.dart';
+import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/view_model/category_db_provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:household_expenses_project/constant/constant.dart';
@@ -46,7 +47,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       categorListNotifierProvider,
       (_, state) {
         state.when(
-            data: (data) => cateoryNotifer.value = data[0],
+            data: (data) {
+              cateoryNotifer.value = data[0];
+              ref
+                  .read(selectCategoryNotifierProvider.notifier)
+                  .updateCategory(data[0]);
+              subCateoryNotifer.value = null;
+            },
             error: (error, _) => cateoryNotifer.value = null,
             loading: () => cateoryNotifer.value = null);
       },
