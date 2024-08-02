@@ -169,15 +169,18 @@ class SubCategoryNotifier extends CategoryNotifier {
   Future<List<Category>> getAllCategory() async {
     final selectCategoryProvider = ref.watch(selectCategoryNotifierProvider);
     List<Category> categoryList = [];
-    List<Map> listMap = await _database.query(
-      categoryTable,
-      where: '$categotyParentId IS NOT NULL AND $categotyParentId = ?',
-      whereArgs: [selectCategoryProvider!.id],
-      orderBy: "$categoryOrder ASC",
-    );
-    for (var map in listMap) {
-      categoryList.add(Category.fromMap(map));
+    if (selectCategoryProvider != null) {
+      List<Map> listMap = await _database.query(
+        categoryTable,
+        where: '$categotyParentId IS NOT NULL AND $categotyParentId = ?',
+        whereArgs: [selectCategoryProvider!.id],
+        orderBy: "$categoryOrder ASC",
+      );
+      for (var map in listMap) {
+        categoryList.add(Category.fromMap(map));
+      }
     }
+
     return categoryList;
   }
 

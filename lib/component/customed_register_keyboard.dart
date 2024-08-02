@@ -1,26 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/component/customed_keyboard_component.dart';
+import 'package:household_expenses_project/model/category.dart';
+import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expenses_project/view_model/category_db_provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class RegisterKeyboardAction {
   RegisterKeyboardAction({
-    required this.paymentAmountTextController,
-    required this.subCategoryController,
+    required this.moneyTextController,
+    required this.moneyNode,
     required this.cateoryNotifer,
-    required this.amountOfMoneyNode,
+    required this.subCateoryNotifer,
     required this.categoryNode,
     required this.subCategoryNode,
   });
 
   //フォームコントローラー
-  final TextEditingController paymentAmountTextController;
-  final TextEditingController subCategoryController;
+  final TextEditingController moneyTextController;
   //customKeyboard用
-  final cateoryNotifer;
+  final ValueNotifier<Category?> cateoryNotifer;
+  final ValueNotifier<Category?> subCateoryNotifer;
   //FocusNode
-  final CustomFocusNode amountOfMoneyNode;
+  final CustomFocusNode moneyNode;
   final CustomFocusNode categoryNode;
   final CustomFocusNode subCategoryNode;
 
@@ -28,8 +32,8 @@ class RegisterKeyboardAction {
   bool mathFlag = false;
 
   KeyboardActionsConfig buildConfig(BuildContext context) {
-    amountOfMoneyNode.addListener(() {
-      if (!amountOfMoneyNode.hasFocus) {
+    moneyNode.addListener(() {
+      if (!moneyNode.hasFocus) {
         computeMath();
       }
     });
@@ -43,7 +47,7 @@ class RegisterKeyboardAction {
       defaultDoneWidget: const KeyboardClosedIcon(),
       actions: [
         KeyboardActionsItem(
-          focusNode: amountOfMoneyNode,
+          focusNode: moneyNode,
           toolbarButtons: [
             (node) => Padding(
                   padding: keyboardInkWellPadding,
@@ -98,29 +102,35 @@ class RegisterKeyboardAction {
           keyboardCustom: true,
           footerBuilder: (_) => CategoryPickerKeyboard(
             notifier: cateoryNotifer,
+            subNotifier: subCateoryNotifer,
           ),
         ),
         KeyboardActionsItem(
           focusNode: subCategoryNode,
+          keyboardCustom: true,
+          footerBuilder: (_) => CategoryPickerKeyboard(
+            notifier: subCateoryNotifer,
+            sub: true,
+          ),
         ),
       ],
     );
   }
 
   void inputMath(MathSymbol symbol) {
-    String? inputText = paymentAmountTextController.text;
+    String? inputText = moneyTextController.text;
     if (inputText.isNotEmpty) {
       if (int.tryParse(inputText.substring(inputText.length - 1)) != null) {
-        paymentAmountTextController.text = inputText + symbol.value;
+        moneyTextController.text = inputText + symbol.value;
       } else {
-        paymentAmountTextController.text =
+        moneyTextController.text =
             inputText.substring(0, inputText.length - 1) + symbol.value;
       }
     }
   }
 
   void computeMath() {
-    String? inputText = paymentAmountTextController.text;
+    String? inputText = moneyTextController.text;
     bool errorFlag = false;
     if (inputText.isNotEmpty) {
       if (int.tryParse(inputText.substring(inputText.length - 1)) != null) {
@@ -171,70 +181,82 @@ class RegisterKeyboardAction {
             }
           }
 
-          paymentAmountTextController.text = numList[0].round().toString();
+          moneyTextController.text = numList[0].round().toString();
         }
       } else {
-        paymentAmountTextController.text =
-            inputText.substring(0, inputText.length - 1);
+        moneyTextController.text = inputText.substring(0, inputText.length - 1);
       }
     }
   }
 }
 
 //-----CategoryKeyboard-----
-class CategoryPickerKeyboard extends StatelessWidget
-    with KeyboardCustomPanelMixin<Color>
+class CategoryPickerKeyboard extends ConsumerWidget
+    with KeyboardCustomPanelMixin<Category?>
     implements PreferredSizeWidget {
   @override
-  final ValueNotifier<Color> notifier;
+  final ValueNotifier<Category?> notifier;
   static const double _kKeyboardHeight = 280;
+  final bool sub;
+  final ValueNotifier<Category?>? subNotifier;
 
-  CategoryPickerKeyboard({super.key, required this.notifier});
+  CategoryPickerKeyboard({
+    super.key,
+    required this.notifier,
+    this.sub = false,
+    this.subNotifier,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final mediaQuery = MediaQuery.of(context);
     final double screenWidth = MediaQuery.of(context).size.width;
-    final double itemWidth = screenWidth / 5;
+    final double itemWidth = (screenWidth - (small * 2)) / 3;
     final double itemHeight =
-        (_kKeyboardHeight - mediaQuery.viewPadding.bottom) / 2;
+        (_kKeyboardHeight - mediaQuery.viewPadding.bottom) / 3;
+    final AsyncValue<List<Category>> categoryListProvider;
+    if (sub) {
+      categoryListProvider = ref.watch(subCategorListNotifierProvider);
+    } else {
+      categoryListProvider = ref.watch(categorListNotifierProvider);
+    }
 
     return SafeArea(
       top: false,
-      child: SizedBox(
+      child: Container(
         height: _kKeyboardHeight - mediaQuery.viewPadding.bottom,
+        padding: smallHorizontalEdgeInsets,
+        width: double.infinity,
         child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
+          child: Wrap(
             children: <Widget>[
-              for (final color in Colors.primaries)
-                GestureDetector(
-                  onTap: () {
-                    updateValue(color);
-                  },
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        Container(
-                          width: itemWidth,
-                          height: itemHeight,
-                          decoration: BoxDecoration(
-                            color: color,
-                            border: Border.all(color: Colors.black),
-                          ),
-                        ),
-                        Container(
-                          width: itemWidth,
-                          height: itemHeight,
-                          decoration: BoxDecoration(
-                            color: color,
-                            border: Border.all(color: Colors.black),
-                          ),
-                        ),
-                      ],
-                    ),
+              sub
+                  ? CategoryKeyboardPanel(
+                      category: null,
+                      onTap: () => updateValue(null),
+                      width: itemWidth,
+                      height: itemHeight,
+                      notifier: notifier,
+                    )
+                  : const SizedBox(),
+              if (categoryListProvider.value != null &&
+                  categoryListProvider.value!.isNotEmpty)
+                for (final category in categoryListProvider.value!)
+                  CategoryKeyboardPanel(
+                    category: category,
+                    onTap: sub
+                        ? () => updateValue(category)
+                        : () {
+                            updateValue(category);
+                            ref
+                                .read(selectCategoryNotifierProvider.notifier)
+                                .updateCategory(category);
+                            subNotifier?.value = null;
+                          },
+                    width: itemWidth,
+                    height: itemHeight,
+                    notifier: notifier,
                   ),
-                )
             ],
           ),
         ),
@@ -244,4 +266,84 @@ class CategoryPickerKeyboard extends StatelessWidget
 
   @override
   Size get preferredSize => const Size.fromHeight(_kKeyboardHeight);
+}
+
+//カテゴリーキーボードパネル
+class CategoryKeyboardPanel extends StatefulWidget {
+  final Category? category;
+  final double width;
+  final double height;
+  final VoidCallback onTap;
+  final ValueNotifier<Category?> notifier;
+
+  const CategoryKeyboardPanel({
+    super.key,
+    required this.category,
+    required this.height,
+    required this.width,
+    required this.onTap,
+    required this.notifier,
+  });
+
+  @override
+  State<CategoryKeyboardPanel> createState() => _CategoryKeyboardPanelState();
+}
+
+class _CategoryKeyboardPanelState extends State<CategoryKeyboardPanel> {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedBuilder(
+        animation: widget.notifier,
+        builder: (context, _) {
+          return Container(
+            width: widget.width - ssmall * 2,
+            height: widget.height - ssmall * 2,
+            margin: ssmallEdgeInsets,
+            padding: widget.notifier.value == widget.category
+                ? smallEdgeInsets
+                : const EdgeInsets.all(small + 1),
+            decoration: BoxDecoration(
+              border: widget.notifier.value == widget.category
+                  ? Border.all(color: theme.colorScheme.primary, width: 2)
+                  : Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.8),
+                      width: 1),
+              //color: theme.colorScheme.surfaceContainer.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(small),
+            ),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: widget.onTap,
+              child: (widget.category != null)
+                  ? Column(
+                      children: [
+                        Expanded(
+                          child: FittedBox(
+                            fit: BoxFit.contain,
+                            child: Icon(
+                              widget.category!.icon,
+                              color: widget.category!.color,
+                              weight: 400,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          widget.category!.name,
+                          style: TextStyle(
+                              color: theme.colorScheme.onSurfaceVariant),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    )
+                  : const Center(
+                      child: Text(
+                        "サブカテゴリー\nなし",
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+            ),
+          );
+        });
+  }
 }

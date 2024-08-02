@@ -81,12 +81,12 @@ class CategoryIconPickerKeyboard extends StatelessWidget
         child: SingleChildScrollView(
           child: Wrap(
             children: <Widget>[
-              for (var i = 0; i < keyboardIcons.length; i++)
+              for (var keyboardIcon in keyboardIcons)
                 IconKeyboardButton(
-                  onTap: () => updateValue(keyboardIcons[i]),
+                  onTap: () => updateValue(keyboardIcon),
                   itemWidth: itemWidth,
                   itemHeight: itemHeight,
-                  itemIcon: keyboardIcons[i],
+                  itemIcon: keyboardIcon,
                   notifier: notifier,
                 ),
             ],

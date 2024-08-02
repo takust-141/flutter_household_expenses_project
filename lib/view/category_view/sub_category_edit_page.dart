@@ -42,6 +42,23 @@ class _CategoryEditPageState extends ConsumerState<SubCategoryEditPage> {
     cateoryColorNotifer =
         ValueNotifier<Color>(selectSubCategoryProvider?.color ?? defaultColor);
     categoryNameController.text = selectSubCategoryProvider?.name ?? "";
+    categoryNameNode.addListener(_categoryNameFocusChange);
+  }
+
+  bool categoryNameHasFocus = false;
+  void _categoryNameFocusChange() {
+    if (categoryNameHasFocus != categoryNameNode.hasFocus) {
+      setState(() {
+        categoryNameHasFocus = categoryNameNode.hasFocus;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    categoryNameController.removeListener(_categoryNameFocusChange);
+    categoryNameController.dispose();
+    super.dispose();
   }
 
   @override
@@ -143,6 +160,48 @@ class _CategoryEditPageState extends ConsumerState<SubCategoryEditPage> {
       );
     }
 
+    //フォームビルダー
+    Widget Function(BuildContext, T, bool?) categoryFormBulder<T>(
+        String title, Widget Function(T) inputWidgetBuilder) {
+      return (context, val, hasFocus) {
+        return Container(
+          margin: mediumEdgeInsets,
+          height: formItemHeight,
+          child: Row(
+            children: [
+              SizedBox(
+                width: formItemNameWidth,
+                child: Text(title, textAlign: TextAlign.center),
+              ),
+              const SizedBox(width: medium),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: formInputBoarderRadius,
+                    border: hasFocus ?? false
+                        ? Border.all(
+                            color: theme.colorScheme.primary,
+                            width: formInputBoarderWidth)
+                        : Border.all(
+                            color: Colors.transparent,
+                            width: formInputBoarderWidth),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: formInputBoarderRadius,
+                      color: theme.colorScheme.surfaceBright,
+                    ),
+                    height: formItemHeight,
+                    child: inputWidgetBuilder(val),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      };
+    }
+
     return Container(
       color: theme.colorScheme.surfaceContainer,
       child: KeyboardActions(
@@ -214,85 +273,63 @@ class _CategoryEditPageState extends ConsumerState<SubCategoryEditPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       //カテゴリ名
-                      CategoryEditItem(
-                        categoryName: "サブ\nカテゴリー名",
-                        inputWidget: CustomTextFormField(
-                          focusNode: categoryNameNode,
-                          inputWidgetHPaddding: small,
-                          inputWidgetHeight: formItemHeight - 4,
-                          child: TextFormField(
-                            autofocus: false,
-                            onChanged: (value) => ref
-                                .read(doneButtonProvider.notifier)
-                                .setState(value),
-                            // Form送信処理
-                            onSaved: (value) async {
-                              if (value?.trim().isNotEmpty ?? false) {
-                                debugPrint("send form sub");
-                                if (selectSubCategoryProvider == null) {
-                                  debugPrint("insert");
+                      categoryFormBulder<String>(
+                        "サブ\nカテゴリー名",
+                        (_) => TextFormField(
+                          autofocus: false,
+                          onChanged: (value) => ref
+                              .read(doneButtonProvider.notifier)
+                              .setState(value),
+                          // Form送信処理
+                          onSaved: (value) async {
+                            if (value?.trim().isNotEmpty ?? false) {
+                              debugPrint("send form sub");
+                              if (selectSubCategoryProvider == null) {
+                                debugPrint("insert");
 
-                                  await subCategoryListProvider
-                                      .insertSubCategory(
-                                          name: value!.trim(),
-                                          icon: cateoryIconNotifer.value,
-                                          color: cateoryColorNotifer.value,
-                                          parentId: selectCategoryProvider!.id!)
-                                      .catchError((err) =>
-                                          {debugPrint(err.toString())});
-                                } else {
-                                  debugPrint("edit");
-                                  await subCategoryListProvider.updateCategory(
-                                      selectSubCategoryProvider.copyWith(
-                                          name: value!.trim(),
-                                          icon: cateoryIconNotifer.value,
-                                          color: cateoryColorNotifer.value));
-                                }
-                                navigator.pop();
+                                await subCategoryListProvider
+                                    .insertSubCategory(
+                                        name: value!.trim(),
+                                        icon: cateoryIconNotifer.value,
+                                        color: cateoryColorNotifer.value,
+                                        parentId: selectCategoryProvider!.id!)
+                                    .catchError(
+                                        (err) => {debugPrint(err.toString())});
+                              } else {
+                                debugPrint("edit");
+                                await subCategoryListProvider.updateCategory(
+                                    selectSubCategoryProvider.copyWith(
+                                        name: value!.trim(),
+                                        icon: cateoryIconNotifer.value,
+                                        color: cateoryColorNotifer.value));
                               }
-                            },
-                            focusNode: categoryNameNode,
-                            keyboardType: TextInputType.text,
-                            controller: categoryNameController,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding: smallHorizontalEdgeInsets,
-                            ),
+                              navigator.pop();
+                            }
+                          },
+                          focusNode: categoryNameNode,
+                          keyboardType: TextInputType.text,
+                          controller: categoryNameController,
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            contentPadding: smallHorizontalEdgeInsets,
+                          ),
+                        ),
+                      )(context, "val", categoryNameHasFocus),
+
+                      //アイコン
+                      KeyboardCustomInput<IconData>(
+                        focusNode: categoryIconNode,
+                        notifier: cateoryIconNotifer,
+                        builder: categoryFormBulder<IconData>(
+                          "アイコン",
+                          (val) => Icon(
+                            val,
+                            size: 30,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                       ),
 
-                      //アイコン
-                      CategoryEditItem(
-                        categoryName: "アイコン",
-                        inputWidget: KeyboardCustomInput<IconData>(
-                          focusNode: categoryIconNode,
-                          notifier: cateoryIconNotifer,
-                          builder: (context, val, hasFocus) {
-                            return Icon(
-                              val,
-                              size: 30,
-                              color: theme.colorScheme.onSurface,
-                            );
-                          },
-                        ),
-                      ),
-                      //色
-                      CategoryEditItem(
-                        categoryName: "カラー",
-                        inputWidget: KeyboardCustomInput<Color>(
-                          focusNode: categoryColorNode,
-                          notifier: cateoryColorNotifer,
-                          builder: (context, val, hasFocus) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: val,
-                                borderRadius: formInputInnerBoarderRadius,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
                       const SizedBox(height: large),
 
                       if (selectSubCategoryProvider != null)
@@ -357,12 +394,6 @@ class _CategoryEditPageState extends ConsumerState<SubCategoryEditPage> {
       ),
     );
   }
-
-  @override
-  void dispose() {
-    categoryNameController.dispose();
-    super.dispose();
-  }
 }
 
 //カテゴリカード
@@ -394,67 +425,6 @@ class CategoryCard extends StatelessWidget {
           Text(
             categoryName,
             style: TextStyle(color: color),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-//カテゴリーEdit Item
-class CategoryEditItem extends HookWidget {
-  final CustomFocusNode? focusNode;
-  final Widget inputWidget;
-  final String categoryName;
-  const CategoryEditItem({
-    super.key,
-    required this.inputWidget,
-    required this.categoryName,
-    this.focusNode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final hasFocusState = useState<bool>(false);
-
-    return Container(
-      margin: mediumEdgeInsets,
-      height: formItemHeight,
-      child: Row(
-        children: [
-          SizedBox(
-            width: formItemNameWidth,
-            child: Text(categoryName, textAlign: TextAlign.center),
-          ),
-          const SizedBox(width: medium),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: formInputBoarderRadius,
-                border: hasFocusState.value
-                    ? Border.all(
-                        color: theme.colorScheme.primary,
-                        width: formInputBoarderWidth)
-                    : Border.all(
-                        color: Colors.transparent,
-                        width: formInputBoarderWidth),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: formInputBoarderRadius,
-                  color: theme.colorScheme.surfaceBright,
-                ),
-                height: formItemHeight,
-                child: Focus(
-                  focusNode: focusNode,
-                  child: inputWidget,
-                  onFocusChange: (hasFocus) {
-                    hasFocusState.value = hasFocus;
-                  },
-                ),
-              ),
-            ),
           ),
         ],
       ),

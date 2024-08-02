@@ -796,24 +796,3 @@ class CustomFocusNode extends FocusNode {
     resizeRect();
   }
 }
-
-class CustomTextFormField extends StatelessWidget {
-  final Widget child;
-  final CustomFocusNode focusNode;
-  final double inputWidgetHPaddding;
-  final double inputWidgetHeight;
-
-  const CustomTextFormField({
-    super.key,
-    required this.child,
-    required this.focusNode,
-    required this.inputWidgetHPaddding,
-    required this.inputWidgetHeight,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    focusNode.resizeInput(inputWidgetHPaddding, inputWidgetHeight);
-    return child;
-  }
-}

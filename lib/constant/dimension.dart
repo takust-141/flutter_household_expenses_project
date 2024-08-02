@@ -57,3 +57,7 @@ const double categoryCardWidth = 130;
 
 //画面用
 const viewEdgeInsets = EdgeInsets.fromLTRB(medium, large, medium, medium);
+
+//register
+const double registerItemHeight = 50;
+const double registerItemTitleWidth = 120;
