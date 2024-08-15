@@ -35,12 +35,17 @@ class _CategoryEditPageState extends ConsumerState<SubCategoryEditPage> {
   @override
   void initState() {
     super.initState();
+    final selectCategoryProvider = ref.read(selectCategoryNotifierProvider);
     final selectSubCategoryProvider =
         ref.read(selectSubCategoryNotifierProvider);
-    cateoryIconNotifer =
-        ValueNotifier<IconData>(selectSubCategoryProvider?.icon ?? defaultIcon);
-    cateoryColorNotifer =
-        ValueNotifier<Color>(selectSubCategoryProvider?.color ?? defaultColor);
+    cateoryIconNotifer = ValueNotifier<IconData>(
+        selectSubCategoryProvider?.icon ??
+            selectCategoryProvider?.icon ??
+            defaultIcon);
+    cateoryColorNotifer = ValueNotifier<Color>(
+        selectSubCategoryProvider?.color ??
+            selectCategoryProvider?.color ??
+            defaultColor);
     categoryNameController.text = selectSubCategoryProvider?.name ?? "";
     categoryNameNode.addListener(_categoryNameFocusChange);
   }
@@ -69,7 +74,7 @@ class _CategoryEditPageState extends ConsumerState<SubCategoryEditPage> {
     final selectSubCategoryProvider =
         ref.read(selectSubCategoryNotifierProvider);
     final subCategoryListProvider =
-        ref.read(subCategorListNotifierProvider.notifier);
+        ref.read(subCategoryListNotifierProvider.notifier);
 
     final CategoryKeyboardAction categoryKeyboardAction =
         CategoryKeyboardAction(
@@ -326,6 +331,21 @@ class _CategoryEditPageState extends ConsumerState<SubCategoryEditPage> {
                             val,
                             size: 30,
                             color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+
+                      //色
+                      KeyboardCustomInput<Color>(
+                        focusNode: categoryColorNode,
+                        notifier: cateoryColorNotifer,
+                        builder: categoryFormBulder<Color>(
+                          "カラー",
+                          (val) => Container(
+                            decoration: BoxDecoration(
+                              color: val,
+                              borderRadius: formInputInnerBoarderRadius,
+                            ),
                           ),
                         ),
                       ),

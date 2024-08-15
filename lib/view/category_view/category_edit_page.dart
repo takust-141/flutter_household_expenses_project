@@ -68,9 +68,10 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final navigator = Navigator.of(context);
-    final selectCategoryProvider = ref.read(selectCategoryNotifierProvider);
-    final categoryListProvider = ref.read(categorListNotifierProvider.notifier);
-    final subCategoryListProvider = ref.watch(subCategorListNotifierProvider);
+    final selectCategoryProvider = ref.watch(selectCategoryNotifierProvider);
+    final categoryListProvider =
+        ref.read(categoryListNotifierProvider.notifier);
+    final subCategoryListProvider = ref.watch(subCategoryListNotifierProvider);
     final int numOfCategory = subCategoryListProvider.value?.length ?? 0;
 
     final CategoryKeyboardAction categoryKeyboardAction =
@@ -510,7 +511,7 @@ class SubCategoryListItem extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
-    var goRoute = GoRouter.of(context);
+    final GoRouter goRoute = GoRouter.of(context);
     final Color defaultColor = theme.colorScheme.onSurfaceVariant;
 
     return GestureDetector(

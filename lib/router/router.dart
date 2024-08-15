@@ -18,6 +18,9 @@ final GlobalKey<NavigatorState> _shellNavigatorKey =
 GlobalKey<FormState>? formkey;
 GlobalKey<FormState>? subFormkey;
 
+final RouteObserver<PageRoute> registerRouteObserver =
+    RouteObserver<PageRoute>();
+
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   debugLogDiagnostics: true,
@@ -30,11 +33,14 @@ final router = GoRouter(
       },
       branches: [
         StatefulShellBranch(
+          observers: [registerRouteObserver],
           routes: <RouteBase>[
             GoRoute(
               path: '/register',
               name: rootNameRegister,
-              builder: (context, state) => RegisterPage(),
+              builder: (context, state) => RegisterPage(
+                routeObserver: registerRouteObserver,
+              ),
             ),
           ],
         ),

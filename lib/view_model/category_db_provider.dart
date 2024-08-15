@@ -8,11 +8,11 @@ import 'package:path_provider/path_provider.dart';
 import 'package:household_expenses_project/model/category.dart';
 
 //Provider
-final categorListNotifierProvider =
+final categoryListNotifierProvider =
     AsyncNotifierProvider<CategoryNotifier, List<Category>>(
         CategoryNotifier.new);
 
-final subCategorListNotifierProvider =
+final subCategoryListNotifierProvider =
     AsyncNotifierProvider<SubCategoryNotifier, List<Category>>(
         SubCategoryNotifier.new);
 
@@ -162,25 +162,33 @@ class SubCategoryNotifier extends CategoryNotifier {
   @override
   Future<List<Category>> build() async {
     await _open();
+    ref.listen(selectCategoryNotifierProvider, (previous, next) async {
+      updateSubCategory();
+    });
     return await getAllCategory();
+  }
+
+  Future<void> updateSubCategory() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async => await getAllCategory());
   }
 
   @override
   Future<List<Category>> getAllCategory() async {
-    final selectCategoryProvider = ref.watch(selectCategoryNotifierProvider);
+    debugPrint("getAll subCategory");
+    final selectCategoryProvider = ref.read(selectCategoryNotifierProvider);
     List<Category> categoryList = [];
     if (selectCategoryProvider != null) {
       List<Map> listMap = await _database.query(
         categoryTable,
         where: '$categotyParentId IS NOT NULL AND $categotyParentId = ?',
-        whereArgs: [selectCategoryProvider!.id],
+        whereArgs: [selectCategoryProvider.id],
         orderBy: "$categoryOrder ASC",
       );
       for (var map in listMap) {
         categoryList.add(Category.fromMap(map));
       }
     }
-
     return categoryList;
   }
 

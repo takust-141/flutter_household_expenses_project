@@ -17,7 +17,7 @@ class CategoryListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
-    final categoryListProvider = ref.watch(categorListNotifierProvider);
+    final categoryListProvider = ref.watch(categoryListNotifierProvider);
     final int numOfCategory = categoryListProvider.value?.length ?? 0;
 
     return Container(
@@ -83,7 +83,7 @@ class CategoryListItem extends HookConsumerWidget {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
+      onTap: () async {
         ref
             .read(selectCategoryNotifierProvider.notifier)
             .updateCategory(category);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expenses_project/constant/dimension.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/view_model/category_db_provider.dart';
@@ -10,31 +11,66 @@ import 'package:household_expenses_project/component/customed_register_keyboard.
 
 //-------入力画面------------
 class RegisterPage extends ConsumerStatefulWidget {
-  const RegisterPage({super.key});
+  final RouteObserver<PageRoute> routeObserver;
+  const RegisterPage({super.key, required this.routeObserver});
 
   @override
   ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends ConsumerState<RegisterPage> {
+class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
   //フォームコントローラー
   final TextEditingController paymentAmountTextController =
       TextEditingController();
+  final TextEditingController memoTextController = TextEditingController();
 
   //customKeyboard用
-  late ValueNotifier<Category?> cateoryNotifer;
-  late ValueNotifier<Category?> subCateoryNotifer;
+  late ValueNotifier<Category?> cateoryNotifier;
+  late ValueNotifier<Category?> subCateoryNotifier;
+  late ValueNotifier<DateTime> dateNotifier;
 
   //FocusNode
   final CustomFocusNode amountOfMoneyNode = CustomFocusNode();
   final CustomFocusNode categoryNode = CustomFocusNode();
   final CustomFocusNode subCategoryNode = CustomFocusNode();
+  final CustomFocusNode memoNode = CustomFocusNode();
+  final CustomFocusNode dateNode = CustomFocusNode();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    widget.routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
 
   @override
   void initState() {
     super.initState();
-    cateoryNotifer = ValueNotifier<Category?>(null);
-    subCateoryNotifer = ValueNotifier<Category?>(null);
+    cateoryNotifier = ValueNotifier<Category?>(null);
+    subCateoryNotifier = ValueNotifier<Category?>(null);
+    dateNotifier = ValueNotifier<DateTime>(DateTime.now());
+  }
+
+  @override
+  void dispose() {
+    paymentAmountTextController.dispose();
+    widget.routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  //カテゴリー新規登録からpopした時に呼ばれる
+  @override
+  void didPopNext() {
+    initCategoryKeyboardNotifier(
+        ref.read(categoryListNotifierProvider).value?[0]);
+  }
+
+  void initCategoryKeyboardNotifier(Category? initCategoryData) {
+    cateoryNotifier.value = initCategoryData;
+    subCateoryNotifier.value = null;
+    primaryFocus?.unfocus();
+    Future.delayed(const Duration(seconds: 1), () {
+      ref.read(selectCategoryNotifierProvider.notifier).updateCategory(null);
+    });
   }
 
   @override
@@ -44,18 +80,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final Color defaultColor = theme.colorScheme.onSurfaceVariant;
     final registerTextColor = theme.colorScheme.inverseSurface;
     ref.listen<AsyncValue<List<Category>>>(
-      categorListNotifierProvider,
+      categoryListNotifierProvider,
       (_, state) {
         state.when(
             data: (data) {
-              cateoryNotifer.value = data[0];
-              ref
-                  .read(selectCategoryNotifierProvider.notifier)
-                  .updateCategory(data[0]);
-              subCateoryNotifer.value = null;
+              initCategoryKeyboardNotifier(data[0]);
             },
-            error: (error, _) => cateoryNotifer.value = null,
-            loading: () => cateoryNotifer.value = null);
+            error: (error, _) => cateoryNotifier.value = null,
+            loading: () => cateoryNotifier.value = null);
       },
     );
 
@@ -71,7 +103,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 title,
                 style: theme.textTheme.titleMedium
                     ?.copyWith(color: registerTextColor),
-                //textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(width: small),
@@ -115,13 +146,53 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       };
     }
 
+    //フォームアイテム
+    Widget registerFormItem(String title, Widget formWidget) {
+      return Row(
+        children: [
+          SizedBox(
+            width: registerItemTitleWidth,
+            child: Text(
+              title,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(color: registerTextColor),
+            ),
+          ),
+          const SizedBox(width: small),
+          Expanded(
+            child: Container(
+              transformAlignment: Alignment.center,
+              height: registerItemHeight,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: formInputBoarderRadius,
+                /*border: hasFocus ?? false
+                    ? Border.all(
+                        color: theme.colorScheme.primary,
+                        width: formInputBoarderWidth)
+                    : Border.all(
+                        color: Colors.transparent,
+                        width: formInputBoarderWidth),*/
+              ),
+              child: formWidget,
+            ),
+          ),
+        ],
+      );
+    }
+
     RegisterKeyboardAction registerKeyboardAction = RegisterKeyboardAction(
       moneyTextController: paymentAmountTextController,
       moneyNode: amountOfMoneyNode,
-      cateoryNotifer: cateoryNotifer,
+      cateoryNotifier: cateoryNotifier,
       categoryNode: categoryNode,
       subCategoryNode: subCategoryNode,
-      subCateoryNotifer: subCateoryNotifer,
+      subCateoryNotifier: subCateoryNotifier,
+      memoTextController: memoTextController,
+      memoNode: memoNode,
+      dateNode: dateNode,
+      dateNotifier: dateNotifier,
     );
 
     return KeyboardActions(
@@ -138,7 +209,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                //金額
+                //-----金額-----
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.max,
@@ -182,22 +253,100 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   ],
                 ),
                 const SizedBox(height: large),
-                //カテゴリー
+                //-----カテゴリー-----
                 KeyboardCustomInput<Category?>(
                   focusNode: categoryNode,
                   height: registerItemHeight,
-                  notifier: cateoryNotifer,
+                  notifier: cateoryNotifier,
                   builder: categoryFormBulder("カテゴリー"),
                 ),
                 const SizedBox(height: medium),
-                //サブカテゴリー
+                //-----サブカテゴリー-----
                 KeyboardCustomInput<Category?>(
                   focusNode: subCategoryNode,
                   height: registerItemHeight,
-                  notifier: subCateoryNotifer,
+                  notifier: subCateoryNotifier,
                   builder: categoryFormBulder("サブカテゴリー"),
                 ),
-
+                const SizedBox(height: medium),
+                //-----メモ-----
+                registerFormItem(
+                    "メモ",
+                    TextField(
+                      keyboardType: TextInputType.text,
+                      maxLines: 1,
+                      controller: memoTextController,
+                      focusNode: memoNode,
+                      decoration: InputDecoration(
+                        isDense: true,
+                        border: OutlineInputBorder(
+                          borderRadius: formInputBoarderRadius,
+                          borderSide: const BorderSide(
+                            color: Colors.transparent,
+                            width: formInputBoarderWidth,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: formInputBoarderRadius,
+                          borderSide: BorderSide(
+                            color: theme.colorScheme.primary,
+                            width: formInputBoarderWidth,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: formInputBoarderRadius,
+                          borderSide: const BorderSide(
+                            color: Colors.transparent,
+                            width: formInputBoarderWidth,
+                          ),
+                        ),
+                      ),
+                    )),
+                const SizedBox(height: medium),
+                //日付
+                KeyboardCustomInput<DateTime>(
+                  focusNode: dateNode,
+                  height: registerItemHeight,
+                  notifier: dateNotifier,
+                  builder: (context, val, hasFocus) {
+                    return Row(
+                      children: [
+                        SizedBox(
+                          width: registerItemTitleWidth,
+                          child: Text(
+                            "日付",
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(color: registerTextColor),
+                          ),
+                        ),
+                        const SizedBox(width: small),
+                        Expanded(
+                          child: Container(
+                            height: registerItemHeight,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surface,
+                              borderRadius: formInputBoarderRadius,
+                              border: hasFocus ?? false
+                                  ? Border.all(
+                                      color: theme.colorScheme.primary,
+                                      width: formInputBoarderWidth)
+                                  : Border.all(
+                                      color: Colors.transparent,
+                                      width: formInputBoarderWidth),
+                            ),
+                            child: Padding(
+                              padding: ssmallHorizontalEdgeInsets,
+                              child: Text(
+                                val.toString(),
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
                 SizedBox(height: 120),
                 TextButton(
                   style: ButtonStyle(
@@ -212,7 +361,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           : theme.colorScheme.primary;
                     }),
                   ),
-                  onPressed: (null),
+                  onPressed: null,
                   child: const Text('送信'),
                 ),
               ],
@@ -221,11 +370,5 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    paymentAmountTextController.dispose();
-    super.dispose();
   }
 }
