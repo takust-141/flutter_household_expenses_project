@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/view/category_view/sub_category_edit_page.dart';
+import 'package:household_expenses_project/view/settings_view/calendar_setting_page.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/view/view.dart';
@@ -85,6 +86,11 @@ final router = GoRouter(
                       ],
                     ),
                   ],
+                ),
+                GoRoute(
+                  path: 'calendar_setting',
+                  name: rootNameCalendarSetting,
+                  builder: (context, state) => CalendarSettingPage(),
                 ),
               ],
             ),

@@ -13,6 +13,7 @@ const rootNameSetting = 'setting';
 const rootNameCategoryList = 'category_list';
 const rootNameCategoryEdit = 'category_edit';
 const rootNameSubCategoryEdit = 'sub_category_edit';
+const rootNameCalendarSetting = 'calendar_setting';
 
 //Provider
 final appBarProvider =
@@ -135,6 +136,10 @@ class AppBarStateCollection {
     AppBarState(name: rootNameRegister, appBarTitle: null, appBarBack: false),
     AppBarState(
         name: rootNameCategoryList, appBarTitle: 'カテゴリー', appBarBack: true),
+    AppBarState(
+        name: rootNameCalendarSetting,
+        appBarTitle: 'カレンダー設定',
+        appBarBack: true),
     AppBarState(
       name: rootNameCategoryEdit,
       appBarTitle: null,

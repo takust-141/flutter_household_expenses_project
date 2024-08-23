@@ -5,6 +5,7 @@ import 'package:household_expenses_project/constant/dimension.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/view_model/category_db_provider.dart';
+import 'package:intl/intl.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/component/customed_register_keyboard.dart';
@@ -35,6 +36,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
   final CustomFocusNode subCategoryNode = CustomFocusNode();
   final CustomFocusNode memoNode = CustomFocusNode();
   final CustomFocusNode dateNode = CustomFocusNode();
+
+  final formatter = DateFormat('yyyy年 M月 d日');
 
   @override
   void didChangeDependencies() {
@@ -161,19 +164,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
           const SizedBox(width: small),
           Expanded(
             child: Container(
-              transformAlignment: Alignment.center,
               height: registerItemHeight,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
                 borderRadius: formInputBoarderRadius,
-                /*border: hasFocus ?? false
-                    ? Border.all(
-                        color: theme.colorScheme.primary,
-                        width: formInputBoarderWidth)
-                    : Border.all(
-                        color: Colors.transparent,
-                        width: formInputBoarderWidth),*/
               ),
               child: formWidget,
             ),
@@ -278,6 +273,16 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
                       controller: memoTextController,
                       focusNode: memoNode,
                       decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: medium,
+                            vertical: (registerItemHeight -
+                                        (Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.fontSize ??
+                                            0)) /
+                                    2 -
+                                formInputBoarderWidth * 2),
                         isDense: true,
                         border: OutlineInputBorder(
                           borderRadius: formInputBoarderRadius,
@@ -334,10 +339,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
                                       color: Colors.transparent,
                                       width: formInputBoarderWidth),
                             ),
-                            child: Padding(
-                              padding: ssmallHorizontalEdgeInsets,
+                            child: Container(
+                              alignment: Alignment.centerLeft,
+                              padding: mediumHorizontalEdgeInsets,
                               child: Text(
-                                val.toString(),
+                                formatter.format(val),
                                 style: theme.textTheme.bodyLarge,
                               ),
                             ),
@@ -348,6 +354,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
                   },
                 ),
                 SizedBox(height: 120),
+
                 TextButton(
                   style: ButtonStyle(
                     foregroundColor: WidgetStateProperty.resolveWith((states) {

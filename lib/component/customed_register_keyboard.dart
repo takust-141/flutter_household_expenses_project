@@ -341,24 +341,24 @@ class _CategoryKeyboardPanelState extends State<CategoryKeyboardPanel> {
     return AnimatedBuilder(
         animation: widget.notifier,
         builder: (context, _) {
-          return Container(
-            width: widget.width - ssmall * 2,
-            height: widget.height - ssmall * 2,
-            margin: ssmallEdgeInsets,
-            padding: widget.notifier.value == widget.category
-                ? smallEdgeInsets
-                : const EdgeInsets.all(small + 1),
-            decoration: BoxDecoration(
-              border: widget.notifier.value == widget.category
-                  ? Border.all(color: theme.colorScheme.primary, width: 2)
-                  : Border.all(
-                      color: theme.colorScheme.outline.withOpacity(0.8),
-                      width: 1),
-              borderRadius: BorderRadius.circular(small),
-            ),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: widget.onTap,
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: widget.onTap,
+            child: Container(
+              width: widget.width - ssmall * 2,
+              height: widget.height - ssmall * 2,
+              margin: ssmallEdgeInsets,
+              padding: widget.notifier.value == widget.category
+                  ? smallEdgeInsets
+                  : const EdgeInsets.all(small + 1),
+              decoration: BoxDecoration(
+                border: widget.notifier.value == widget.category
+                    ? Border.all(color: theme.colorScheme.primary, width: 2)
+                    : Border.all(
+                        color: theme.colorScheme.outline.withOpacity(0.8),
+                        width: 1),
+                borderRadius: BorderRadius.circular(small),
+              ),
               child: (widget.category != null)
                   ? Column(
                       children: [

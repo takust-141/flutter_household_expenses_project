@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:household_expenses_project/provider/app_bar_provider.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:household_expenses_project/component/setting_component.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 
 //-------設定ページ---------------------------
@@ -37,55 +34,13 @@ class SettingPage extends StatelessWidget {
                   color: theme.colorScheme.outline,
                 ),
                 SettingListItem(
-                  setText: "設定",
-                  onTapRoute: () => goRoute.pushNamed('category_edit'),
+                  setText: "カレンダー設定",
+                  onTapRoute: () => goRoute.push('/setting/calendar_setting'),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class SettingListItem extends HookWidget {
-  final String setText;
-  final Function onTapRoute;
-  const SettingListItem(
-      {required this.setText, required this.onTapRoute, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => onTapRoute(),
-      onTapDown: (_) =>
-          {listItemColor.value = theme.colorScheme.surfaceContainerHighest},
-      onTapUp: (_) => {listItemColor.value = theme.colorScheme.surfaceBright},
-      onTapCancel: () =>
-          {listItemColor.value = theme.colorScheme.surfaceBright},
-      child: AnimatedContainer(
-        color: listItemColor.value,
-        duration: listItemAnimationDuration,
-        height: listHeight,
-        padding: smallEdgeInsets,
-        child: Row(
-          children: [
-            Padding(
-              padding: ssmallLeftEdgeInsets,
-              child: Text(setText),
-            ),
-            const Spacer(),
-            Icon(Symbols.chevron_right,
-                weight: 300,
-                size: 25,
-                color: theme.colorScheme.onSurfaceVariant),
-          ],
-        ),
       ),
     );
   }

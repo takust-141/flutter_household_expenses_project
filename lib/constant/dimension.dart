@@ -16,6 +16,9 @@ const mediumEdgeInsets = EdgeInsets.all(medium);
 const largeEdgeInsets = EdgeInsets.all(large);
 
 const ssmallLeftEdgeInsets = EdgeInsets.only(left: ssmall);
+const mediumLeftEdgeInsets = EdgeInsets.only(left: medium);
+const mediumLightEdgeInsets = EdgeInsets.only(right: medium);
+
 const smallVerticalEdgeInsets = EdgeInsets.symmetric(vertical: small);
 const ssmallVerticalEdgeInsets = EdgeInsets.symmetric(vertical: ssmall);
 const ssmallHorizontalEdgeInsets = EdgeInsets.symmetric(horizontal: ssmall);
@@ -38,6 +41,9 @@ const double containreBorderRadius = 6;
 const double dialogRadius = 10;
 
 const double boarderWidth = 1.2;
+
+const double keyboardMonthHeight = 45.0;
+const double weekHeight = 28.0;
 
 //リストアイテム
 const double listHeight = 45;
