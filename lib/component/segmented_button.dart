@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:household_expenses_project/constant/constant.dart';
+import 'package:household_expenses_project/provider/select_expenses_provider.dart';
 
 //-----SegmentedButton-----
-
-enum SelectExpenses { outgo, income }
-
 class SelectExpensesButton extends StatefulWidget {
   const SelectExpensesButton({super.key});
 
@@ -13,31 +11,32 @@ class SelectExpensesButton extends StatefulWidget {
 }
 
 class _SelectExpensesButtonState extends State<SelectExpensesButton> {
-  SelectExpenses selectedExpenses = SelectExpenses.outgo;
-
   @override
   Widget build(BuildContext context) {
-    return SegmentedButton<SelectExpenses>(
-      segments: const <ButtonSegment<SelectExpenses>>[
-        ButtonSegment<SelectExpenses>(
-          value: SelectExpenses.outgo,
-          label: Text(labelOutgo),
-          //icon: Icon(Icons.calendar_view_day)
-        ),
-        ButtonSegment<SelectExpenses>(
-          value: SelectExpenses.income,
-          label: Text(labelIncome),
-          //icon: Icon(Icons.calendar_view_week)
-        ),
-      ],
-      selected: <SelectExpenses>{selectedExpenses},
-      onSelectionChanged: (Set<SelectExpenses> newSelection) {
-        setState(() {
-          selectedExpenses = newSelection.first;
-        });
-      },
-      showSelectedIcon: false,
-      style: segmentedButtonStyle,
+    final theme = Theme.of(context);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: theme.colorScheme.inverseSurface.withOpacity(0.1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          GestureDetector(
+              child: Container(
+                  child: const Padding(
+            padding: segmentedButtonPadding,
+            child: Text("収入"),
+          ))),
+          GestureDetector(
+              child: Container(
+                  child: const Padding(
+            padding: segmentedButtonPadding,
+            child: Text("支出"),
+          ))),
+        ],
+      ),
     );
   }
 }

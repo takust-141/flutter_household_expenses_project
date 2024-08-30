@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expenses_project/component/category_component.dart';
 import 'package:household_expenses_project/component/customed_setting_keyboard.dart';
 import 'package:household_expenses_project/constant/keyboard_components.dart';
 import 'package:household_expenses_project/model/category.dart';
@@ -15,7 +16,8 @@ import 'package:household_expenses_project/constant/constant.dart';
 //-------カテゴリ編集ページ---------------------------
 class CategoryEditPage extends ConsumerStatefulWidget {
   final GlobalKey<FormState>? formKey;
-  const CategoryEditPage(this.formKey, {super.key});
+  final bool isSubPage;
+  const CategoryEditPage({this.formKey, this.isSubPage = false, super.key});
 
   @override
   ConsumerState<CategoryEditPage> createState() => _CategoryEditPageState();
@@ -35,17 +37,49 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
   final CustomFocusNode categoryIconNode = CustomFocusNode();
   final CustomFocusNode categoryColorNode = CustomFocusNode();
 
+  final _categoryKey = GlobalKey();
+
+  late final String categoryTitle;
+  late Category? selectedCategory;
+  late final CategoryNotifier currentListProvider;
+
   @override
   void initState() {
     super.initState();
-    final selectCategoryProvider = ref.read(selectCategoryNotifierProvider);
-    cateoryIconNotifer =
-        ValueNotifier<IconData>(selectCategoryProvider?.icon ?? defaultIcon);
-    cateoryColorNotifer =
-        ValueNotifier<Color>(selectCategoryProvider?.color ?? defaultColor);
-    categoryNameController.text = selectCategoryProvider?.name ?? "";
+
+    final selectSubCategoryProvider =
+        ref.read(selectSubCategoryNotifierProvider);
+
+    if (widget.isSubPage) {
+      categoryTitle = "サブカテゴリー";
+      currentListProvider = ref.read(subCategoryListNotifierProvider.notifier);
+      selectedCategory = ref.read(selectSubCategoryNotifierProvider);
+      cateoryIconNotifer = ValueNotifier<IconData>(
+          selectSubCategoryProvider?.icon ??
+              selectedCategory?.icon ??
+              defaultIcon);
+      cateoryColorNotifer = ValueNotifier<Color>(
+          selectSubCategoryProvider?.color ??
+              selectedCategory?.color ??
+              defaultColor);
+      categoryNameController.text = selectSubCategoryProvider?.name ?? "";
+    } else {
+      categoryTitle = "カテゴリー";
+      currentListProvider = ref.read(categoryListNotifierProvider.notifier);
+      selectedCategory = ref.read(selectCategoryNotifierProvider);
+      cateoryIconNotifer =
+          ValueNotifier<IconData>(selectedCategory?.icon ?? defaultIcon);
+      cateoryColorNotifer =
+          ValueNotifier<Color>(selectedCategory?.color ?? defaultColor);
+      categoryNameController.text = selectedCategory?.name ?? "";
+    }
 
     categoryNameNode.addListener(_categoryNameFocusChange);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final RenderBox? renderBox =
+          _categoryKey.currentContext?.findRenderObject() as RenderBox?;
+      categoryNameNode.setRenderBox(renderBox);
+    });
   }
 
   bool categoryNameHasFocus = false;
@@ -61,6 +95,9 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
   void dispose() {
     categoryNameController.removeListener(_categoryNameFocusChange);
     categoryNameController.dispose();
+    categoryNameNode.dispose();
+    categoryIconNode.dispose();
+    categoryColorNode.dispose();
     super.dispose();
   }
 
@@ -68,11 +105,14 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final navigator = Navigator.of(context);
-    final selectCategoryProvider = ref.watch(selectCategoryNotifierProvider);
+
     final categoryListProvider =
         ref.read(categoryListNotifierProvider.notifier);
+
     final subCategoryListProvider = ref.watch(subCategoryListNotifierProvider);
-    final int numOfCategory = subCategoryListProvider.value?.length ?? 0;
+
+    final int numOfCategory =
+        ref.read(subCategoryListNotifierProvider).value?.length ?? 0;
 
     final CategoryKeyboardAction categoryKeyboardAction =
         CategoryKeyboardAction(
@@ -84,125 +124,14 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
       categoryColorNode: categoryColorNode,
     );
 
-    //ダイアログ
-    void openDialog({
-      required BuildContext context,
-      required String title,
-      required String text,
-      required Future Function() onTap,
-    }) async {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(dialogRadius),
-            ),
-            child: Container(
-              padding: largeEdgeInsets,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(dialogRadius),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    "カテゴリー$title",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: large),
-                  Text(text, textAlign: TextAlign.center),
-                  const SizedBox(height: large),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: theme.colorScheme.primary,
-                          side: BorderSide(
-                              color: theme.colorScheme.primary, width: 1.3),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(containreBorderRadius),
-                          ),
-                        ),
-                        child: const SizedBox(
-                            width: 75,
-                            child: Text("キャンセル", textAlign: TextAlign.center)),
-                      ),
-                      FilledButton(
-                        onPressed: () async {
-                          await onTap();
-                          if (!context.mounted) return;
-                          Navigator.pop(context);
-                          navigator.pop();
-                        },
-                        style: FilledButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(containreBorderRadius),
-                          ),
-                        ),
-                        child: SizedBox(
-                            width: 75,
-                            child: Text(title, textAlign: TextAlign.center)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    }
-
-    //フォームビルダー
-    Widget Function(BuildContext, T, bool?) categoryFormBulder<T>(
-        String title, Widget Function(T) inputWidgetBuilder) {
-      return (context, val, hasFocus) {
-        return Container(
-          margin: mediumEdgeInsets,
-          height: formItemHeight,
-          child: Row(
-            children: [
-              SizedBox(
-                width: formItemNameWidth,
-                child: Text(title, textAlign: TextAlign.center),
-              ),
-              const SizedBox(width: medium),
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: formInputBoarderRadius,
-                    border: hasFocus ?? false
-                        ? Border.all(
-                            color: theme.colorScheme.primary,
-                            width: formInputBoarderWidth)
-                        : Border.all(
-                            color: Colors.transparent,
-                            width: formInputBoarderWidth),
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: formInputBoarderRadius,
-                      color: theme.colorScheme.surfaceBright,
-                    ),
-                    height: formItemHeight,
-                    child: inputWidgetBuilder(val),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      };
+    void resetSelectCategory(bool isSub) {
+      if (isSub) {
+        ref
+            .read(selectSubCategoryNotifierProvider.notifier)
+            .updateCategory(null);
+      } else {
+        ref.read(selectCategoryNotifierProvider.notifier).updateCategory(null);
+      }
     }
 
     return Container(
@@ -214,7 +143,7 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
         tapOutsideBehavior: TapOutsideBehavior.translucentDismiss,
         config: categoryKeyboardAction.buildConfig(context),
         child: Padding(
-          padding: EdgeInsets.only(bottom: medium),
+          padding: const EdgeInsets.only(bottom: medium),
           child: Padding(
             padding: viewEdgeInsets,
             child: Column(
@@ -276,123 +205,155 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       //カテゴリ名
-                      categoryFormBulder<String>(
-                        "カテゴリー名",
-                        (_) => TextFormField(
-                          autofocus: false,
-                          onChanged: (value) => ref
-                              .read(doneButtonProvider.notifier)
-                              .setState(value),
-                          // Form送信処理
-                          onSaved: (value) async {
-                            if (value?.trim().isNotEmpty ?? false) {
-                              debugPrint("send form");
-                              if (selectCategoryProvider == null) {
-                                debugPrint("insert");
+                      Padding(
+                        padding: mediumEdgeInsets,
+                        child: categoryFormBulder<String>(
+                          title: widget.isSubPage
+                              ? "サブ\nカテゴリー名"
+                              : "$categoryTitle名",
+                          key: _categoryKey,
+                          onTap: () => categoryNameNode.requestFocus(),
+                          inputWidgetBuilder: (_) => TextFormField(
+                            autofocus: false,
+                            onChanged: (value) => ref
+                                .read(doneButtonProvider.notifier)
+                                .setState(value),
+                            // Form送信処理
+                            onSaved: (value) async {
+                              //registerから新規登録した際のパラメーター
+                              ref
+                                  .read(registerCategoryStateNotifierProvider
+                                      .notifier)
+                                  .setAddCategory();
 
-                                await categoryListProvider
-                                    .insertCategory(
-                                        name: value!.trim(),
-                                        icon: cateoryIconNotifer.value,
-                                        color: cateoryColorNotifer.value)
-                                    .catchError(
-                                        (err) => {debugPrint(err.toString())});
-                              } else {
-                                debugPrint("edit");
-                                await categoryListProvider.updateCategory(
-                                    selectCategoryProvider.copyWith(
-                                        name: value!.trim(),
-                                        icon: cateoryIconNotifer.value,
-                                        color: cateoryColorNotifer.value));
+                              if (value?.trim().isNotEmpty ?? false) {
+                                debugPrint("send form");
+                                if (selectedCategory == null) {
+                                  debugPrint("insert");
+                                  widget.isSubPage
+                                      ? await (currentListProvider
+                                              as SubCategoryNotifier)
+                                          .insertSubCategory(
+                                              name: value!.trim(),
+                                              icon: cateoryIconNotifer.value,
+                                              color: cateoryColorNotifer.value,
+                                              parentId: ref
+                                                  .read(
+                                                      selectCategoryNotifierProvider)!
+                                                  .id!)
+                                          .catchError((err) =>
+                                              {debugPrint(err.toString())})
+                                      : await currentListProvider
+                                          .insertCategory(
+                                              name: value!.trim(),
+                                              icon: cateoryIconNotifer.value,
+                                              color: cateoryColorNotifer.value)
+                                          .catchError((err) =>
+                                              {debugPrint(err.toString())});
+                                } else {
+                                  debugPrint("edit");
+                                  await currentListProvider.updateCategory(
+                                      selectedCategory!.copyWith(
+                                          name: value!.trim(),
+                                          icon: cateoryIconNotifer.value,
+                                          color: cateoryColorNotifer.value));
+                                }
+                                resetSelectCategory(widget.isSubPage);
+                                navigator.pop();
                               }
-                              navigator.pop();
-                            }
-                          },
-                          focusNode: categoryNameNode,
-                          keyboardType: TextInputType.text,
-                          controller: categoryNameController,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            contentPadding: smallHorizontalEdgeInsets,
+                            },
+                            focusNode: categoryNameNode,
+                            keyboardType: TextInputType.text,
+                            controller: categoryNameController,
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              contentPadding: smallHorizontalEdgeInsets,
+                            ),
                           ),
-                        ),
-                      )(context, "val", categoryNameHasFocus),
+                        )(context, "val", categoryNameHasFocus),
+                      ),
 
                       //アイコン
-                      KeyboardCustomInput<IconData>(
-                        focusNode: categoryIconNode,
-                        notifier: cateoryIconNotifer,
-                        builder: categoryFormBulder<IconData>(
-                          "アイコン",
-                          (val) => Icon(
-                            val,
-                            size: 30,
-                            color: theme.colorScheme.onSurface,
+                      Padding(
+                        padding: mediumEdgeInsets,
+                        child: KeyboardCustomInput<IconData>(
+                          focusNode: categoryIconNode,
+                          notifier: cateoryIconNotifer,
+                          builder: categoryFormBulder<IconData>(
+                            title: "アイコン",
+                            inputWidgetBuilder: (val) => Icon(
+                              val,
+                              size: 30,
+                              color: theme.colorScheme.onSurface,
+                            ),
                           ),
                         ),
                       ),
 
                       //色
-                      KeyboardCustomInput<Color>(
-                        focusNode: categoryColorNode,
-                        notifier: cateoryColorNotifer,
-                        builder: categoryFormBulder<Color>(
-                          "カラー",
-                          (val) => Container(
-                            decoration: BoxDecoration(
-                              color: val,
-                              borderRadius: formInputInnerBoarderRadius,
+                      Padding(
+                        padding: mediumEdgeInsets,
+                        child: KeyboardCustomInput<Color>(
+                          focusNode: categoryColorNode,
+                          notifier: cateoryColorNotifer,
+                          builder: categoryFormBulder<Color>(
+                            title: "カラー",
+                            inputWidgetBuilder: (val) => Container(
+                              decoration: BoxDecoration(
+                                color: val,
+                                borderRadius: formInputInnerBoarderRadius,
+                              ),
                             ),
                           ),
                         ),
                       ),
 
-                      if (selectCategoryProvider != null)
+                      if (selectedCategory != null)
                         Column(
                           children: [
-                            //サブカテゴリー
-                            Container(
-                              clipBehavior: Clip.antiAlias,
-                              decoration: BoxDecoration(
-                                  color: theme.colorScheme.surface,
-                                  borderRadius: formInputInnerBoarderRadius),
-                              margin: mediumEdgeInsets,
-                              child: Column(
-                                children: [
-                                  Container(
-                                    height: listHeight,
-                                    color: theme.colorScheme.outline,
-                                    alignment: Alignment.centerLeft,
-                                    padding:
-                                        const EdgeInsets.only(left: medium),
-                                    child: Text(
-                                      "サブカテゴリー",
-                                      textAlign: TextAlign.left,
-                                      style: TextStyle(
-                                          color: theme
-                                              .colorScheme.onInverseSurface,
-                                          fontWeight: FontWeight.w600),
-                                    ),
-                                  ),
-                                  for (int i = 0; i < numOfCategory; i++) ...{
-                                    SubCategoryListItem(
-                                      category:
-                                          subCategoryListProvider.value![i],
-                                    ),
-                                    Divider(
-                                      height: 0,
-                                      thickness: 0.2,
+                            if (!widget.isSubPage)
+                              //サブカテゴリー
+                              Container(
+                                clipBehavior: Clip.antiAlias,
+                                decoration: BoxDecoration(
+                                    color: theme.colorScheme.surface,
+                                    borderRadius: formInputInnerBoarderRadius),
+                                margin: mediumEdgeInsets,
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      height: listHeight,
                                       color: theme.colorScheme.outline,
+                                      alignment: Alignment.centerLeft,
+                                      padding:
+                                          const EdgeInsets.only(left: medium),
+                                      child: Text(
+                                        "サブカテゴリー",
+                                        textAlign: TextAlign.left,
+                                        style: TextStyle(
+                                            color: theme
+                                                .colorScheme.onInverseSurface,
+                                            fontWeight: FontWeight.w600),
+                                      ),
                                     ),
-                                  },
-                                  const SubCategoryListItem(
-                                    isNewAdd: true,
-                                    category: null,
-                                  )
-                                ],
+                                    for (int i = 0; i < numOfCategory; i++) ...{
+                                      SubCategoryListItem(
+                                        category:
+                                            subCategoryListProvider.value![i],
+                                      ),
+                                      Divider(
+                                        height: 0,
+                                        thickness: 0.2,
+                                        color: theme.colorScheme.outline,
+                                      ),
+                                    },
+                                    const SubCategoryListItem(
+                                      isNewAdd: true,
+                                      category: null,
+                                    )
+                                  ],
+                                ),
                               ),
-                            ),
-
                             const SizedBox(height: medium),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -403,10 +364,14 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                     context: context,
                                     title: moveCategoryTitle,
                                     text:
-                                        '"${selectCategoryProvider.name}"$moveDialogText',
-                                    onTap: () => categoryListProvider
-                                        .deleteCategoryFromId(
-                                            selectCategoryProvider.id!),
+                                        '"${selectedCategory!.name}"$moveDialogText',
+                                    onTap: () async {
+                                      await categoryListProvider
+                                          .deleteCategoryFromId(
+                                              selectedCategory!.id!);
+                                      resetSelectCategory(widget.isSubPage);
+                                    },
+                                    isSubCategory: widget.isSubPage,
                                   ),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: theme.colorScheme.primary,
@@ -418,7 +383,8 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                           containreBorderRadius),
                                     ),
                                   ),
-                                  child: const Text("カテゴリー$moveCategoryTitle"),
+                                  child:
+                                      Text(categoryTitle + moveCategoryTitle),
                                 ),
                                 //カテゴリー削除
                                 OutlinedButton(
@@ -426,10 +392,14 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                     context: context,
                                     title: delCategoryTitle,
                                     text:
-                                        '"${selectCategoryProvider.name}"$delDialogText',
-                                    onTap: () => categoryListProvider
-                                        .deleteCategoryFromId(
-                                            selectCategoryProvider.id!),
+                                        '"${selectedCategory!.name}"$delDialogText',
+                                    onTap: () async {
+                                      await categoryListProvider
+                                          .deleteCategoryFromId(
+                                              selectedCategory!.id!);
+                                      resetSelectCategory(widget.isSubPage);
+                                    },
+                                    isSubCategory: widget.isSubPage,
                                   ),
                                   style: OutlinedButton.styleFrom(
                                     foregroundColor: theme.colorScheme.primary,
@@ -441,7 +411,7 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                           containreBorderRadius),
                                     ),
                                   ),
-                                  child: const Text("カテゴリー$delCategoryTitle"),
+                                  child: Text(categoryTitle + delCategoryTitle),
                                 ),
                               ],
                             ),
@@ -455,42 +425,6 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-//カテゴリカード
-class CategoryCard extends StatelessWidget {
-  final String categoryName;
-  final Color color;
-  final IconData iconData;
-  const CategoryCard({
-    super.key,
-    required this.categoryName,
-    required this.color,
-    required this.iconData,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: color, width: 2),
-        borderRadius: BorderRadius.circular(small),
-      ),
-      padding: smallEdgeInsets,
-      child: Column(
-        children: [
-          Icon(
-            iconData,
-            color: color,
-          ),
-          Text(
-            categoryName,
-            style: TextStyle(color: color),
-          ),
-        ],
       ),
     );
   }
@@ -521,7 +455,7 @@ class SubCategoryListItem extends HookConsumerWidget {
             .read(selectSubCategoryNotifierProvider.notifier)
             .updateCategory(category);
         ref.read(doneButtonProvider.notifier).setState(category?.name);
-        goRoute.go('/setting/category_list/category_edit/sub_category_edit');
+        goRoute.push('/setting/category_list/category_edit/sub_category_edit');
       },
       onTapDown: (_) =>
           {listItemColor.value = theme.colorScheme.surfaceContainerHighest},

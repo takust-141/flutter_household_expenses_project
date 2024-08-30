@@ -113,7 +113,6 @@ class RegisterKeyboardAction {
           keyboardCustom: true,
           footerBuilder: (_) => CategoryPickerKeyboard(
             notifier: cateoryNotifier,
-            subNotifier: subCateoryNotifier,
           ),
         ),
         KeyboardActionsItem(
@@ -219,13 +218,11 @@ class CategoryPickerKeyboard extends ConsumerWidget
   final ValueNotifier<Category?> notifier;
   static const double _kKeyboardHeight = 280;
   final bool sub;
-  final ValueNotifier<Category?>? subNotifier;
 
   CategoryPickerKeyboard({
     super.key,
     required this.notifier,
     this.sub = false,
-    this.subNotifier,
   });
 
   @override
@@ -238,10 +235,13 @@ class CategoryPickerKeyboard extends ConsumerWidget
     final AsyncValue<List<Category>> categoryListProvider;
 
     if (sub) {
-      categoryListProvider = ref.watch(subCategoryListNotifierProvider);
+      categoryListProvider = ref.watch(subCategoryRegisterListNotifierProvider);
     } else {
       categoryListProvider = ref.watch(categoryListNotifierProvider);
     }
+
+    final registerCategoryStateProvider =
+        ref.read(registerCategoryStateNotifierProvider.notifier);
 
     return SafeArea(
       top: false,
@@ -256,10 +256,7 @@ class CategoryPickerKeyboard extends ConsumerWidget
                   ? CategoryKeyboardPanel(
                       category: null,
                       onTap: () {
-                        updateValue(null);
-                        ref
-                            .read(selectSubCategoryNotifierProvider.notifier)
-                            .updateCategory(null);
+                        registerCategoryStateProvider.updateSubCategory(null);
                       },
                       width: itemWidth,
                       height: itemHeight,
@@ -273,22 +270,14 @@ class CategoryPickerKeyboard extends ConsumerWidget
                     category: category,
                     onTap: sub
                         ? () {
-                            updateValue(category);
-                            ref
-                                .read(
-                                    selectSubCategoryNotifierProvider.notifier)
-                                .updateCategory(category);
+                            registerCategoryStateProvider
+                                .updateSubCategory(category);
                           }
-                        : () async {
-                            updateValue(category);
-                            ref
-                                .read(selectCategoryNotifierProvider.notifier)
-                                .updateCategory(category);
-                            ref
-                                .read(
-                                    selectSubCategoryNotifierProvider.notifier)
-                                .updateCategory(null);
-                            subNotifier?.value = null;
+                        : () {
+                            if (category != notifier.value) {
+                              registerCategoryStateProvider.updateCategory(
+                                  category, null);
+                            }
                           },
                     width: itemWidth,
                     height: itemHeight,
@@ -348,11 +337,11 @@ class _CategoryKeyboardPanelState extends State<CategoryKeyboardPanel> {
               width: widget.width - ssmall * 2,
               height: widget.height - ssmall * 2,
               margin: ssmallEdgeInsets,
-              padding: widget.notifier.value == widget.category
+              padding: widget.notifier.value?.id == widget.category?.id
                   ? smallEdgeInsets
                   : const EdgeInsets.all(small + 1),
               decoration: BoxDecoration(
-                border: widget.notifier.value == widget.category
+                border: widget.notifier.value?.id == widget.category?.id
                     ? Border.all(color: theme.colorScheme.primary, width: 2)
                     : Border.all(
                         color: theme.colorScheme.outline.withOpacity(0.8),
@@ -409,11 +398,20 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
     required this.notifier,
   });
 
-  void goCategoryEdit(GoRouter goRoute, bool sub, WidgetRef ref) {
+  void goAddCategoryView(GoRouter goRoute, bool sub, WidgetRef ref) {
+    final registerCategoryState =
+        ref.watch(registerCategoryStateNotifierProvider);
+    final registerCategoryStateProvider =
+        ref.read(registerCategoryStateNotifierProvider.notifier);
     if (sub) {
+      registerCategoryStateProvider.saveCategory();
+      ref
+          .read(selectCategoryNotifierProvider.notifier)
+          .updateCategory(registerCategoryState.category);
       ref.read(selectSubCategoryNotifierProvider.notifier).updateCategory(null);
       goRoute.push('/setting/category_list/category_edit/sub_category_edit');
     } else {
+      registerCategoryStateProvider.saveCategory();
       ref.read(selectCategoryNotifierProvider.notifier).updateCategory(null);
       goRoute.push('/setting/category_list/category_edit');
     }
@@ -445,7 +443,7 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
             ),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => goCategoryEdit(goRoute, sub, ref),
+              onTap: () => goAddCategoryView(goRoute, sub, ref),
               onTapDown: (_) => panelBoarder.value = true,
               onTapUp: (_) => panelBoarder.value = false,
               child: (category != null)

@@ -18,7 +18,7 @@ class CategoryListPage extends ConsumerWidget {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
     final categoryListProvider = ref.watch(categoryListNotifierProvider);
-    final int numOfCategory = categoryListProvider.value?.length ?? 0;
+    final int numOfCategory = categoryListProvider.valueOrNull?.length ?? 0;
 
     return Container(
       color: theme.colorScheme.surfaceContainer,

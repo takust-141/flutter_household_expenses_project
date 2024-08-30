@@ -1,14 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/model/category.dart';
-import 'package:household_expenses_project/view/category_view/sub_category_edit_page.dart';
-import 'package:household_expenses_project/view/settings_view/calendar_setting_page.dart';
-import 'package:material_symbols_icons/symbols.dart';
-import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/view/view.dart';
-import 'package:household_expenses_project/component/segmented_button.dart';
 import 'package:household_expenses_project/provider/app_bar_provider.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
@@ -65,14 +58,17 @@ final router = GoRouter(
                 GoRoute(
                   path: 'category_list',
                   name: rootNameCategoryList,
-                  builder: (context, state) => CategoryListPage(),
+                  builder: (context, state) => const CategoryListPage(),
                   routes: <RouteBase>[
                     GoRoute(
                       path: 'category_edit',
                       name: rootNameCategoryEdit,
                       builder: (context, state) {
                         formkey = GlobalKey<FormState>();
-                        return CategoryEditPage(formkey);
+                        return CategoryEditPage(
+                          formKey: formkey,
+                          isSubPage: false,
+                        );
                       },
                       routes: <RouteBase>[
                         GoRoute(
@@ -80,7 +76,10 @@ final router = GoRouter(
                           name: rootNameSubCategoryEdit,
                           builder: (context, state) {
                             subFormkey = GlobalKey<FormState>();
-                            return SubCategoryEditPage(subFormkey);
+                            return CategoryEditPage(
+                              formKey: subFormkey,
+                              isSubPage: true,
+                            );
                           },
                         ),
                       ],
@@ -90,7 +89,7 @@ final router = GoRouter(
                 GoRoute(
                   path: 'calendar_setting',
                   name: rootNameCalendarSetting,
-                  builder: (context, state) => CalendarSettingPage(),
+                  builder: (context, state) => const CalendarSettingPage(),
                 ),
               ],
             ),

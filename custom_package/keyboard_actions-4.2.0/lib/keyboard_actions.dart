@@ -554,6 +554,10 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
       _currentAction?.focusNode.resizeRect();
     });
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _currentAction?.focusNode.resizeRect();
+    });
+
     _overlayState = Overlay.of(context, rootOverlay: true);
     WidgetsBinding.instance.addObserver(this);
     if (widget.enable) {
@@ -747,8 +751,9 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
 
 //CustomFocusNode：CustomTextField(タップ反応Rectサイズ変更)、カスタムキーボードアニメーションの待機
 class CustomFocusNode extends FocusNode {
-  double? inputWidgetHPaddding;
-  double? inputWidgetHeight;
+  RenderBox? renderBox;
+  bool isCustomRenderBox = false;
+
   CustomFocusNode({
     super.debugLabel,
     super.onKeyEvent,
@@ -770,17 +775,25 @@ class CustomFocusNode extends FocusNode {
     return customRect.size.height;
   }
 
-  void resizeInput(_inputWidgetHPaddding, _inputWidgetHeight) {
-    this.inputWidgetHPaddding = _inputWidgetHPaddding;
-    this.inputWidgetHeight = _inputWidgetHeight;
+  void setRenderBox(RenderBox? _renderBox) {
+    renderBox = _renderBox;
+    isCustomRenderBox = true;
   }
 
   void resizeRect() {
-    customRect = Rect.fromCenter(
-      center: super.rect.center,
-      width: super.rect.width + (inputWidgetHPaddding ?? 0) * 2,
-      height: inputWidgetHeight ?? super.rect.height,
-    );
+    debugPrint("resizerect $isCustomRenderBox");
+    if (isCustomRenderBox && renderBox != null) {
+      final position = renderBox!.localToGlobal(Offset.zero);
+      final size = renderBox!.size;
+      customRect =
+          Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
+    } else {
+      customRect = Rect.fromCenter(
+        center: super.rect.center,
+        width: super.rect.width,
+        height: super.rect.height,
+      );
+    }
   }
 
   @override

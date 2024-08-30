@@ -221,7 +221,7 @@ class _DatePickerKeyboardState extends State<DatePickerKeyboard> {
                             controller: _listWheelYearController,
                             physics: const FixedExtentScrollPhysics(),
                             onSelectedItemChanged: (index) {
-                              HapticFeedback.mediumImpact();
+                              HapticFeedback.selectionClick();
                               viewMonth.value = DateTime(
                                   index - 100 + currentMonth.year,
                                   viewMonth.value.month);
@@ -269,7 +269,7 @@ class _DatePickerKeyboardState extends State<DatePickerKeyboard> {
                             controller: _listWheelMonthController,
                             physics: const FixedExtentScrollPhysics(),
                             onSelectedItemChanged: (index) {
-                              HapticFeedback.mediumImpact();
+                              HapticFeedback.selectionClick();
                               viewMonth.value =
                                   DateTime(viewMonth.value.year, index + 1);
                             },

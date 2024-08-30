@@ -8,6 +8,8 @@ const double smedium = 14;
 const double medium = 16;
 const double lmedium = 20;
 const double large = 24;
+const double llarge = 28;
+const double lllarge = 32;
 
 const sssmallEdgeInsets = EdgeInsets.all(sssmall);
 const ssmallEdgeInsets = EdgeInsets.all(ssmall);
@@ -17,7 +19,7 @@ const largeEdgeInsets = EdgeInsets.all(large);
 
 const ssmallLeftEdgeInsets = EdgeInsets.only(left: ssmall);
 const mediumLeftEdgeInsets = EdgeInsets.only(left: medium);
-const mediumLightEdgeInsets = EdgeInsets.only(right: medium);
+const mediumRightEdgeInsets = EdgeInsets.only(right: medium);
 
 const smallVerticalEdgeInsets = EdgeInsets.symmetric(vertical: small);
 const ssmallVerticalEdgeInsets = EdgeInsets.symmetric(vertical: ssmall);
@@ -27,6 +29,8 @@ const mediumHorizontalEdgeInsets = EdgeInsets.symmetric(horizontal: medium);
 
 //AppBar
 const appbarSidePadding = smedium;
+const segmentedButtonPadding =
+    EdgeInsets.symmetric(vertical: small, horizontal: lllarge);
 
 //カスタムキーボード
 const double keyboardIconSize = 24;
