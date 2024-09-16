@@ -5,15 +5,65 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/component/segmented_button.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expenses_project/provider/select_expenses_provider.dart';
+import 'package:household_expenses_project/view/calendar_page.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 const rootNameRegister = 'register';
+const rootNameCalendar = 'calendar';
 const rootNameChart = 'chart';
 const rootNameSetting = 'setting';
 const rootNameCategoryList = 'category_list';
 const rootNameCategoryEdit = 'category_edit';
 const rootNameSubCategoryEdit = 'sub_category_edit';
 const rootNameCalendarSetting = 'calendar_setting';
+
+//Collection
+class AppBarStateCollection {
+  static const List<AppBarState> appBarStateStateList = [
+    AppBarState(name: rootNameRegister, appBarTitle: null, appBarBack: false),
+    AppBarState(
+      name: rootNameCalendar,
+      appBarTitle: "カレンダー",
+      appBarBack: false,
+    ),
+    AppBarState(
+      name: rootNameChart,
+      appBarBack: false,
+    ),
+    AppBarState(
+        name: rootNameCategoryList, appBarTitle: 'カテゴリー', appBarBack: true),
+    AppBarState(
+        name: rootNameCalendarSetting,
+        appBarTitle: 'カレンダー設定',
+        appBarBack: true),
+    AppBarState(
+      name: rootNameCategoryEdit,
+      appBarTitle: null,
+      needBottomBar: false,
+      cancelAndDo: true,
+      appBarSideWidth: 100,
+    ),
+    AppBarState(
+      name: rootNameSubCategoryEdit,
+      appBarTitle: null,
+      needBottomBar: false,
+      cancelAndDo: true,
+      appBarSideWidth: 100,
+    ),
+  ];
+
+  static AppBarState? getAppBarState(String? name) {
+    if (name != null) {
+      for (var appBarState in appBarStateStateList) {
+        if (appBarState.name == name) {
+          return appBarState;
+        }
+      }
+    }
+    return null;
+  }
+}
 
 //Provider
 final appBarProvider =
@@ -67,7 +117,10 @@ class AppBarState {
 
   Widget? getAppBarTitleWidget(TextStyle? fontStyle) {
     if (name == rootNameRegister) {
-      return const SelectExpensesButton();
+      return SelectExpensesButton(selectExpenses);
+    }
+    if (name == rootNameCategoryList) {
+      return SelectExpensesButton(selectExpenses);
     }
 
     String? titleText = appBarTitle;
@@ -130,45 +183,7 @@ class AppBarNotifier extends Notifier<AppBarState?> {
   }
 }
 
-//Collection
-class AppBarStateCollection {
-  static const List<AppBarState> appBarStateStateList = [
-    AppBarState(name: rootNameRegister, appBarTitle: null, appBarBack: false),
-    AppBarState(
-        name: rootNameCategoryList, appBarTitle: 'カテゴリー', appBarBack: true),
-    AppBarState(
-        name: rootNameCalendarSetting,
-        appBarTitle: 'カレンダー設定',
-        appBarBack: true),
-    AppBarState(
-      name: rootNameCategoryEdit,
-      appBarTitle: null,
-      needBottomBar: false,
-      cancelAndDo: true,
-      appBarSideWidth: 100,
-    ),
-    AppBarState(
-      name: rootNameSubCategoryEdit,
-      appBarTitle: null,
-      needBottomBar: false,
-      cancelAndDo: true,
-      appBarSideWidth: 100,
-    ),
-  ];
-
-  static AppBarState? getAppBarState(String? name) {
-    if (name != null) {
-      for (var appBarState in appBarStateStateList) {
-        if (appBarState.name == name) {
-          return appBarState;
-        }
-      }
-    }
-    return null;
-  }
-}
-
-//構成要素（パーツ）
+//戻るボタン
 class AppBarBackWidget extends HookWidget {
   const AppBarBackWidget({super.key});
 
@@ -195,6 +210,7 @@ class AppBarBackWidget extends HookWidget {
   }
 }
 
+//キャンセルボタン
 class AppBarCancelWidget extends HookWidget {
   const AppBarCancelWidget({super.key});
 
@@ -227,6 +243,7 @@ class AppBarCancelWidget extends HookWidget {
   }
 }
 
+//完了ボタン
 class AppBarDoneWidget extends HookConsumerWidget {
   final GlobalKey<FormState>? formkey;
   const AppBarDoneWidget(this.formkey, {super.key});

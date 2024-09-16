@@ -48,18 +48,28 @@ class RegisterCategoryStateNotifier extends Notifier<RegisterCategoryState> {
 
   void initCategory() {
     final categoryList = ref.read(categoryListNotifierProvider);
+    Category? returnCategory;
+    if (categoryList.value == null || categoryList.value!.isEmpty) {
+      returnCategory = null;
+    } else {
+      if (state.fromRegisterView) {
+        if (state.isAddCategory) {
+          returnCategory = categoryList.value!.last;
+        } else {
+          returnCategory = state.saveCategory;
+        }
+      } else {
+        returnCategory = categoryList.value![0];
+      }
+    }
+
     state = state.copyWith(
-      category: state.fromRegisterView
-          ? (state.isAddCategory
-              ? categoryList.value?.last
-              : state.saveCategory)
-          : categoryList.value?[0],
+      category: returnCategory,
       subCategory: null,
     );
   }
 
   void initSubCategory(Category? lastCategory) {
-    debugPrint("initsub ${state.isAddCategory} ${state.fromRegisterView}");
     state = state.copyWith(
       category: state.category,
       subCategory: state.fromRegisterView
@@ -89,8 +99,8 @@ class RegisterCategoryState {
   final Category? subCategory;
   final Category? saveCategory;
   final Category? saveSubCategory;
-  final bool isAddCategory;
   final bool fromRegisterView;
+  final bool isAddCategory;
 
   RegisterCategoryState({
     this.category,
@@ -119,6 +129,10 @@ class RegisterCategoryState {
     return RegisterCategoryState(
       category: category,
       subCategory: subCategory,
+      saveCategory: null,
+      saveSubCategory: null,
+      fromRegisterView: false,
+      isAddCategory: false,
     );
   }
 
@@ -139,7 +153,7 @@ class RegisterCategoryState {
       saveCategory: category,
       saveSubCategory: subCategory,
       isAddCategory: true,
-      fromRegisterView: true,
+      fromRegisterView: fromRegisterView,
     );
   }
 }

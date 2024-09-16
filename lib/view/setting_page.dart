@@ -5,7 +5,7 @@ import 'package:household_expenses_project/constant/constant.dart';
 
 //-------設定ページ---------------------------
 class SettingPage extends StatelessWidget {
-  SettingPage({super.key});
+  const SettingPage({super.key});
 
   @override
   Widget build(BuildContext context) {

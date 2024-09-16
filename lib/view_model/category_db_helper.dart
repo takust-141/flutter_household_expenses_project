@@ -1,3 +1,4 @@
+import 'package:household_expenses_project/provider/select_expenses_provider.dart';
 import 'package:household_expenses_project/view_model/db_helper.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:household_expenses_project/model/category.dart';
@@ -12,7 +13,7 @@ class CategoryDBHelper {
   late final Database _database;
 
   Future openDataBase() async {
-    final dbpass = await DbHelper.getDbPath();
+    final dbpass = await DbHelper.getDbPath('category');
     _database = await openDatabase(
       dbpass,
       version: 1,
@@ -23,19 +24,21 @@ class CategoryDBHelper {
           $categoryName TEXT NOT NULL,
           $categoryIcon TEXT NOT NULL,
           $categoryColor TEXT NOT NULL,
-          $categotyParentId INTEGER,
-          $categoryOrder INTEGER NOT NULL
+          $categoryParentId INTEGER,
+          $categoryOrder INTEGER NOT NULL,
+          $categoryExpenses TEXT NOT NULL
           )
         ''');
       },
     );
   }
 
-  Future<List<Category>> getAllCategory() async {
+  Future<List<Category>> getAllCategory(SelectExpenses expenses) async {
     List<Category> categoryList = [];
     List<Map> listMap = await _database.query(
       categoryTable,
-      where: "$categotyParentId IS NULL",
+      where: "$categoryParentId IS NULL AND $categoryExpenses = ?",
+      whereArgs: [expenses.name],
       orderBy: "$categoryOrder ASC",
     );
     for (var map in listMap) {
@@ -44,13 +47,15 @@ class CategoryDBHelper {
     return categoryList;
   }
 
-  Future<List<Category>> getAllSubCategory(int? parentId) async {
+  Future<List<Category>> getAllSubCategory(
+      SelectExpenses expenses, int? parentId) async {
     List<Category> categoryList = [];
     if (parentId != null) {
       List<Map> listMap = await _database.query(
         categoryTable,
-        where: '$categotyParentId IS NOT NULL AND $categotyParentId = ?',
-        whereArgs: [parentId],
+        where:
+            '$categoryParentId IS NOT NULL AND $categoryExpenses = ? AND $categoryParentId = ?',
+        whereArgs: [expenses.name, parentId],
         orderBy: "$categoryOrder ASC",
       );
       for (var map in listMap) {

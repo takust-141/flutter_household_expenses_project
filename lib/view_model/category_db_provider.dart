@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expenses_project/provider/select_expenses_provider.dart';
 import 'package:household_expenses_project/view_model/category_db_helper.dart';
 import 'package:household_expenses_project/model/category.dart';
 
@@ -26,17 +27,19 @@ class CategoryNotifier extends AsyncNotifier<List<Category>> {
   @override
   Future<List<Category>> build() async {
     debugPrint("CategoryNotifier build");
-    return await getAllCategory();
+    return await getAllCategory(SelectExpenses.income);
   }
 
-  Future<List<Category>> getAllCategory() async {
-    return await _categoryDBHelper.getAllCategory();
+  Future<List<Category>> getAllCategory(SelectExpenses expenses) async {
+    return await _categoryDBHelper.getAllCategory(expenses);
   }
 
-  Future insertCategory(
-      {required String name,
-      required IconData icon,
-      required Color color}) async {
+  Future insertCategory({
+    required String name,
+    required IconData icon,
+    required Color color,
+    required SelectExpenses expenses,
+  }) async {
     final List<Category>? list = state.value;
 
     state = const AsyncValue.loading();
@@ -54,17 +57,18 @@ class CategoryNotifier extends AsyncNotifier<List<Category>> {
         icon: icon,
         color: color,
         order: maxOrder + 1,
+        expenses: expenses,
       );
       await _categoryDBHelper.insertCategory(category);
-      return await getAllCategory();
+      return await getAllCategory(expenses);
     });
   }
 
-  Future deleteCategoryFromId(int id) async {
+  Future deleteCategoryFromId(int id, SelectExpenses expenses) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await _categoryDBHelper.deleteCategoryFromId(id);
-      return await getAllCategory();
+      return await getAllCategory(expenses);
     });
   }
 
@@ -72,8 +76,13 @@ class CategoryNotifier extends AsyncNotifier<List<Category>> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await _categoryDBHelper.updateCategory(category);
-      return await getAllCategory();
+      return await getAllCategory(category.expenses);
     });
+  }
+
+  void reacquisitionCategoryList(SelectExpenses expenses) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async => await getAllCategory(expenses));
   }
 
   //idは一意のため一件のみ返す
@@ -90,22 +99,22 @@ class SubCategoryNotifier extends CategoryNotifier {
     ref.listen(
       selectCategoryNotifierProvider,
       (previous, next) async {
-        updateSubCategory();
+        updateSubCategory(ref.watch(selectExpenses));
       },
     );
-    return await getAllCategory();
+    return await getAllCategory(SelectExpenses.income);
   }
 
   @override
-  Future<List<Category>> getAllCategory() async {
+  Future<List<Category>> getAllCategory(SelectExpenses expenses) async {
     final selectCategoryProvider = ref.watch(selectCategoryNotifierProvider);
-    return await _categoryDBHelper
-        .getAllSubCategory(selectCategoryProvider?.id);
+    return await _categoryDBHelper.getAllSubCategory(
+        expenses, selectCategoryProvider?.id);
   }
 
-  Future<void> updateSubCategory() async {
+  Future<void> updateSubCategory(SelectExpenses expenses) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async => await getAllCategory());
+    state = await AsyncValue.guard(() async => await getAllCategory(expenses));
   }
 
   Future<void> insertSubCategory({
@@ -113,6 +122,7 @@ class SubCategoryNotifier extends CategoryNotifier {
     required IconData icon,
     required Color color,
     required int parentId,
+    required SelectExpenses expenses,
   }) async {
     final List<Category>? list = state.value;
 
@@ -132,9 +142,10 @@ class SubCategoryNotifier extends CategoryNotifier {
         color: color,
         order: maxOrder + 1,
         parentId: parentId,
+        expenses: expenses,
       );
       await _categoryDBHelper.insertCategory(category);
-      return await getAllCategory();
+      return await getAllCategory(expenses);
     });
   }
 }
@@ -149,24 +160,24 @@ class SubCategoryRegisterNotifier extends SubCategoryNotifier {
       registerCategoryStateNotifierProvider
           .select((categoryState) => categoryState.category),
       (previous, next) async {
-        updateSubCategory();
+        updateSubCategory(ref.watch(selectExpenses));
       },
     );
     //サブカテゴリーリストのリスナー
     ref.listen(
       subCategoryListNotifierProvider,
       (previous, next) async {
-        updateSubCategory();
+        updateSubCategory(ref.watch(selectExpenses));
       },
     );
-    return await getAllCategory();
+    return await getAllCategory(SelectExpenses.income);
   }
 
   @override
-  Future<List<Category>> getAllCategory() async {
+  Future<List<Category>> getAllCategory(SelectExpenses expenses) async {
     final selectCategoryProvider =
         ref.watch(registerCategoryStateNotifierProvider);
-    return await _categoryDBHelper
-        .getAllSubCategory(selectCategoryProvider.category?.id);
+    return await _categoryDBHelper.getAllSubCategory(
+        expenses, selectCategoryProvider.category?.id);
   }
 }

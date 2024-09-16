@@ -32,6 +32,9 @@ const appbarSidePadding = smedium;
 const segmentedButtonPadding =
     EdgeInsets.symmetric(vertical: small, horizontal: lllarge);
 
+const double bottomAppBarHeight = 70;
+const double bottomNavIconSize = 25;
+
 //カスタムキーボード
 const double keyboardIconSize = 24;
 const double customIconSize = 20;
@@ -66,8 +69,14 @@ const double categoryCardHeight = 100;
 const double categoryCardWidth = 130;
 
 //画面用
-const viewEdgeInsets = EdgeInsets.fromLTRB(medium, large, medium, medium);
+const viewEdgeInsets = EdgeInsets.fromLTRB(medium, large, medium, large);
 
 //register
 const double registerItemHeight = 50;
 const double registerItemTitleWidth = 120;
+const double moneyFontsize = 20;
+const double amountOfMoneyFormHeight = 62;
+const double registerButtonHeight = 50;
+
+BorderRadius segmentedButtomRadius = BorderRadius.circular(msmall);
+BorderRadius registerButtomRadius = BorderRadius.circular(msmall);

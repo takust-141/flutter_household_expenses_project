@@ -4,8 +4,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/provider/preferences_service.dart';
+import 'package:household_expenses_project/provider/setting_data_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 const Map<int, String> weeks = {
@@ -49,14 +51,14 @@ class CalendarSettingPage extends StatelessWidget {
   }
 }
 
-class StartOfWeek extends StatefulHookWidget {
+class StartOfWeek extends StatefulHookConsumerWidget {
   const StartOfWeek({super.key});
 
   @override
-  State<StartOfWeek> createState() => _StartOfWeekState();
+  ConsumerState<StartOfWeek> createState() => _StartOfWeekState();
 }
 
-class _StartOfWeekState extends State<StartOfWeek> {
+class _StartOfWeekState extends ConsumerState<StartOfWeek> {
   final FocusNode _startOfWeekFocusNode = FocusNode();
   final MenuController _menuController = MenuController();
 
@@ -121,7 +123,9 @@ class _StartOfWeekState extends State<StartOfWeek> {
                             theme.colorScheme.surfaceBright)),
                     onPressed: () {
                       isSelectedWeek.value = week;
-                      PreferencesService.setStartOfWeek(week);
+                      ref
+                          .read(settingDataProvider.notifier)
+                          .updateStartOfWeek(week);
                     },
                     child: Text(
                       weeks[week]!,

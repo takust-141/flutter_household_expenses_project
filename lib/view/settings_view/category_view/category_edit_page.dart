@@ -8,6 +8,7 @@ import 'package:household_expenses_project/constant/keyboard_components.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/provider/app_bar_provider.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expenses_project/provider/select_expenses_provider.dart';
 import 'package:household_expenses_project/view_model/category_db_provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -98,6 +99,8 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
     categoryNameNode.dispose();
     categoryIconNode.dispose();
     categoryColorNode.dispose();
+    cateoryIconNotifer.dispose();
+    cateoryColorNotifer.dispose();
     super.dispose();
   }
 
@@ -110,6 +113,8 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
         ref.read(categoryListNotifierProvider.notifier);
 
     final subCategoryListProvider = ref.watch(subCategoryListNotifierProvider);
+
+    final currentExpenses = ref.watch(selectExpenses);
 
     final int numOfCategory =
         ref.read(subCategoryListNotifierProvider).value?.length ?? 0;
@@ -234,20 +239,24 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                       ? await (currentListProvider
                                               as SubCategoryNotifier)
                                           .insertSubCategory(
-                                              name: value!.trim(),
-                                              icon: cateoryIconNotifer.value,
-                                              color: cateoryColorNotifer.value,
-                                              parentId: ref
-                                                  .read(
-                                                      selectCategoryNotifierProvider)!
-                                                  .id!)
+                                            name: value!.trim(),
+                                            icon: cateoryIconNotifer.value,
+                                            color: cateoryColorNotifer.value,
+                                            parentId: ref
+                                                .read(
+                                                    selectCategoryNotifierProvider)!
+                                                .id!,
+                                            expenses: currentExpenses,
+                                          )
                                           .catchError((err) =>
                                               {debugPrint(err.toString())})
                                       : await currentListProvider
                                           .insertCategory(
-                                              name: value!.trim(),
-                                              icon: cateoryIconNotifer.value,
-                                              color: cateoryColorNotifer.value)
+                                            name: value!.trim(),
+                                            icon: cateoryIconNotifer.value,
+                                            color: cateoryColorNotifer.value,
+                                            expenses: currentExpenses,
+                                          )
                                           .catchError((err) =>
                                               {debugPrint(err.toString())});
                                 } else {
@@ -368,7 +377,8 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                     onTap: () async {
                                       await categoryListProvider
                                           .deleteCategoryFromId(
-                                              selectedCategory!.id!);
+                                              selectedCategory!.id!,
+                                              currentExpenses);
                                       resetSelectCategory(widget.isSubPage);
                                     },
                                     isSubCategory: widget.isSubPage,
@@ -396,7 +406,8 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                     onTap: () async {
                                       await categoryListProvider
                                           .deleteCategoryFromId(
-                                              selectedCategory!.id!);
+                                              selectedCategory!.id!,
+                                              currentExpenses);
                                       resetSelectCategory(widget.isSubPage);
                                     },
                                     isSubCategory: widget.isSubPage,

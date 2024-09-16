@@ -3,12 +3,14 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/router/router.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/view_model/category_db_helper.dart';
+import 'package:household_expenses_project/view_model/register_db_helper.dart';
 
 void main() async {
   //sqlite初期化用
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await CategoryDBHelper().openDataBase();
+    await RegisterDBHelper().openDataBase();
   } catch (e) {
     rethrow;
   }

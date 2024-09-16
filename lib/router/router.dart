@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/view/view.dart';
+import 'package:household_expenses_project/constant/dimension.dart';
 import 'package:household_expenses_project/provider/app_bar_provider.dart';
+import 'package:household_expenses_project/view/view.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -41,9 +42,18 @@ final router = GoRouter(
         StatefulShellBranch(
           routes: <RouteBase>[
             GoRoute(
+              path: '/calendar',
+              name: rootNameCalendar,
+              builder: (context, state) => CalendarPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: <RouteBase>[
+            GoRoute(
               path: '/chart',
               name: rootNameChart,
-              builder: (context, state) => ListViewPage(),
+              builder: (context, state) => ChartPage(),
             ),
           ],
         ),
@@ -53,7 +63,7 @@ final router = GoRouter(
             GoRoute(
               path: '/setting',
               name: rootNameSetting,
-              builder: (context, state) => SettingPage(),
+              builder: (context, state) => const SettingPage(),
               routes: <RouteBase>[
                 GoRoute(
                   path: 'category_list',
@@ -113,15 +123,31 @@ class ScaffoldWithNavBar extends ConsumerStatefulWidget {
 
   static const List<NavigationDestination> allDestinations = [
     NavigationDestination(
-      icon: Icon(Icons.edit),
+      icon: Icon(
+        Icons.edit,
+        size: bottomNavIconSize,
+      ),
       label: '入力',
     ),
     NavigationDestination(
-      icon: Icon(Icons.list),
-      label: '一覧表示',
+      icon: Icon(
+        Icons.calendar_month,
+        size: bottomNavIconSize,
+      ),
+      label: 'カレンダー',
     ),
     NavigationDestination(
-      icon: Icon(Icons.settings),
+      icon: Icon(
+        Icons.pie_chart,
+        size: bottomNavIconSize,
+      ),
+      label: 'グラフ',
+    ),
+    NavigationDestination(
+      icon: Icon(
+        Icons.settings,
+        size: bottomNavIconSize,
+      ),
       label: '設定',
     ),
   ];
@@ -151,6 +177,7 @@ class _ScaffoldWithNavBarState extends ConsumerState<ScaffoldWithNavBar>
               surfaceTintColor: theme.scaffoldBackgroundColor,
               selectedIndex: widget.navigationShell.currentIndex,
               destinations: ScaffoldWithNavBar.allDestinations,
+              height: bottomAppBarHeight,
               onDestinationSelected: (index) {
                 widget.navigationShell.goBranch(
                   index,

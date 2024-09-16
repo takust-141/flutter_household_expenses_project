@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:household_expenses_project/provider/app_bar_provider.dart';
 
-//-------ページ１（ホーム）---------------------------
-class ListViewPage extends StatelessWidget {
-  ListViewPage({super.key});
+//-------チャートページ---------------------------
+class ChartPage extends StatelessWidget {
+  ChartPage({super.key});
 
   final ScrollController _scrollController = ScrollController();
 

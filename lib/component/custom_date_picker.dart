@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/provider/preferences_service.dart';
+import 'package:household_expenses_project/provider/setting_data_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 
 //-----DatePickerKeyboard-----
-class DatePickerKeyboard extends StatefulHookWidget
+class DatePickerKeyboard extends StatefulHookConsumerWidget
     with KeyboardCustomPanelMixin<DateTime?>
     implements PreferredSizeWidget {
   @override
@@ -20,14 +22,14 @@ class DatePickerKeyboard extends StatefulHookWidget
   });
 
   @override
-  State<DatePickerKeyboard> createState() => _DatePickerKeyboardState();
+  ConsumerState<DatePickerKeyboard> createState() => _DatePickerKeyboardState();
 
   @override
   Size get preferredSize =>
       const Size.fromHeight(DatePickerKeyboard._kKeyboardHeight);
 }
 
-class _DatePickerKeyboardState extends State<DatePickerKeyboard> {
+class _DatePickerKeyboardState extends ConsumerState<DatePickerKeyboard> {
   final formatter = DateFormat('yyyy年 M月');
   final Duration swipeDuration = const Duration(milliseconds: 250);
   final Curve swipeCurve = Curves.easeInOutCirc;
@@ -81,20 +83,10 @@ class _DatePickerKeyboardState extends State<DatePickerKeyboard> {
 
     final double itemWidth = (screenWidth - (small * 2)) / 7;
     final double itemHeight = keyboardPanelAreaHeight / 6;
-    final isSelectedWeek = useState(1);
-    final ValueNotifier<List<String>> weeks = useState([]);
-    const defaultWeeks = ["月", "火", "水", "木", "金", "土", "日"];
 
-    //週始まりの初期処理
-    useEffect(() {
-      PreferencesService.getStartOfWeek().then((value) {
-        isSelectedWeek.value = value;
-        List<String> weeksSub = defaultWeeks.sublist(value - 1, 7);
-        weeksSub.addAll(defaultWeeks.sublist(0, value - 1));
-        weeks.value = weeksSub;
-      });
-      return null;
-    }, []);
+    final weeks = ref.watch(settingDataProvider.select((value) => value.weeks));
+    final isSelectedWeek = ref
+        .watch(settingDataProvider.select((value) => value.calendarStartWeek));
 
     final viewMonth = useState<DateTime>(widget.notifier.value ?? currentMonth);
 
@@ -104,12 +96,11 @@ class _DatePickerKeyboardState extends State<DatePickerKeyboard> {
 
     //パネルエリアを返す
     Widget getPanelAreaOfMonth(DateTime month) {
-      int spaceWeek = (DateTime(month.year, month.month, 1).weekday -
-              isSelectedWeek.value) %
-          7;
-      int endSpaceWeek = (isSelectedWeek.value -
-              DateTime(month.year, month.month + 1, 0).weekday) %
-          7;
+      int spaceWeek =
+          (DateTime(month.year, month.month, 1).weekday - isSelectedWeek) % 7;
+      int endSpaceWeek =
+          (isSelectedWeek - DateTime(month.year, month.month + 1, 0).weekday) %
+              7;
       return Wrap(
         alignment: WrapAlignment.spaceBetween,
         children: <Widget>[
@@ -319,7 +310,7 @@ class _DatePickerKeyboardState extends State<DatePickerKeyboard> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               //曜日表示
-                              for (final week in weeks.value)
+                              for (final week in weeks)
                                 Container(
                                   alignment: Alignment.center,
                                   width: itemWidth - 1,

@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DbHelper {
-  static Future<String> getDbPath() async {
+  static Future<String> getDbPath(String dbName) async {
     var dbFilePath = '';
     if (Platform.isAndroid) {
       dbFilePath = await getDatabasesPath();
@@ -22,8 +22,9 @@ class DbHelper {
     } catch (e) {
       rethrow;
     }
+    dbName = '$dbName.db';
 
-    String path = join(dbFilePath, 'category.db');
+    String path = join(dbFilePath, dbName);
     return path;
   }
 }

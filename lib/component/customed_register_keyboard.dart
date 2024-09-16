@@ -20,8 +20,8 @@ class RegisterKeyboardAction {
     required this.subCategoryNode,
     required this.memoNode,
     required this.dateNode,
-    required this.cateoryNotifier,
-    required this.subCateoryNotifier,
+    required this.categoryNotifier,
+    required this.subCategoryNotifier,
     required this.dateNotifier,
   });
 
@@ -29,8 +29,8 @@ class RegisterKeyboardAction {
   final TextEditingController moneyTextController;
   final TextEditingController memoTextController;
   //customKeyboard用
-  final ValueNotifier<Category?> cateoryNotifier;
-  final ValueNotifier<Category?> subCateoryNotifier;
+  final ValueNotifier<Category?> categoryNotifier;
+  final ValueNotifier<Category?> subCategoryNotifier;
   final ValueNotifier<DateTime?> dateNotifier;
   //FocusNode
   final CustomFocusNode moneyNode;
@@ -42,13 +42,14 @@ class RegisterKeyboardAction {
   //四則演算
   bool mathFlag = false;
 
-  KeyboardActionsConfig buildConfig(BuildContext context) {
-    moneyNode.addListener(() {
-      if (!moneyNode.hasFocus) {
-        computeMath();
-      }
-    });
+  //アンフォーカス時のリスナー
+  void focusChange() {
+    if (!moneyNode.hasFocus) {
+      computeMath();
+    }
+  }
 
+  KeyboardActionsConfig buildConfig(BuildContext context) {
     return KeyboardActionsConfig(
       keyboardBarElevation: 1,
       keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
@@ -112,14 +113,14 @@ class RegisterKeyboardAction {
           focusNode: categoryNode,
           keyboardCustom: true,
           footerBuilder: (_) => CategoryPickerKeyboard(
-            notifier: cateoryNotifier,
+            notifier: categoryNotifier,
           ),
         ),
         KeyboardActionsItem(
           focusNode: subCategoryNode,
           keyboardCustom: true,
           footerBuilder: (_) => CategoryPickerKeyboard(
-            notifier: subCateoryNotifier,
+            notifier: subCategoryNotifier,
             sub: true,
           ),
         ),
@@ -153,58 +154,62 @@ class RegisterKeyboardAction {
     String? inputText = moneyTextController.text;
     bool errorFlag = false;
     if (inputText.isNotEmpty) {
-      if (int.tryParse(inputText.substring(inputText.length - 1)) != null) {
-        //記号と数字を分割
-        final symbolPattern = RegExp(
-            "[${MathSymbol.diff.value}${MathSymbol.sum.value}/${MathSymbol.multiplication.value}${MathSymbol.division.value}]");
-        List<double> numList = inputText
-            .split(symbolPattern)
-            .map((e) => double.parse(e == "" ? "0" : e))
-            .toList();
-        List<String?> symbolList =
-            symbolPattern.allMatches(inputText).map((e) => e.group(0)).toList();
+      if (int.tryParse(inputText.substring(inputText.length - 1)) == null) {
+        inputText = inputText.substring(0, inputText.length - 1);
+      }
+      //記号と数字を分割
+      final symbolPattern = RegExp(
+          "[${MathSymbol.diff.value}${MathSymbol.sum.value}/${MathSymbol.multiplication.value}${MathSymbol.division.value}]");
+      List<double> numList = inputText
+          .split(symbolPattern)
+          .map((e) => double.parse(e == "" ? "0" : e))
+          .toList();
+      List<String?> symbolList =
+          symbolPattern.allMatches(inputText).map((e) => e.group(0)).toList();
 
-        if (symbolList.isNotEmpty) {
-          //掛割算
-          var multIndex = symbolList.indexOf(MathSymbol.multiplication.value);
-          var divIndex = symbolList.indexOf(MathSymbol.division.value);
-          while (multIndex > -1 || divIndex > -1) {
-            if (multIndex > -1
-                ? (divIndex > -1 ? multIndex < divIndex : true)
-                : false) {
-              numList[multIndex] = numList[multIndex] * numList[multIndex + 1];
-              numList.removeAt(multIndex + 1);
-              symbolList.removeAt(multIndex);
-              multIndex = symbolList.indexOf(MathSymbol.multiplication.value);
-            } else {
-              if (numList[divIndex + 1] == 0) {
-                errorFlag = true;
-                break;
-              }
-              numList[divIndex] = numList[divIndex] / numList[divIndex + 1];
-              numList.removeAt(divIndex + 1);
-              symbolList.removeAt(divIndex);
-              divIndex = symbolList.indexOf(MathSymbol.division.value);
-            }
-          }
-
-          if (errorFlag) {
-            numList[0] = 0;
+      if (symbolList.isNotEmpty) {
+        //掛割算
+        var multIndex = symbolList.indexOf(MathSymbol.multiplication.value);
+        var divIndex = symbolList.indexOf(MathSymbol.division.value);
+        while (0 <= multIndex || 0 <= divIndex) {
+          if (0 <= multIndex
+              ? (0 <= divIndex ? multIndex < divIndex : true)
+              : false) {
+            //掛け算
+            numList[multIndex] = numList[multIndex] * numList[multIndex + 1];
+            numList.removeAt(multIndex + 1);
+            symbolList.removeAt(multIndex);
+            multIndex = symbolList.indexOf(MathSymbol.multiplication.value);
+            divIndex = symbolList.indexOf(MathSymbol.division.value);
           } else {
-            //加減算
-            for (var i = 0; i < symbolList.length; i++) {
-              if (symbolList[i] == MathSymbol.sum.value) {
-                numList[0] += numList[i + 1];
-              } else {
-                numList[0] -= numList[i + 1];
-              }
+            //割り算
+            if (numList[divIndex + 1] == 0) {
+              errorFlag = true;
+              break;
+            }
+            numList[divIndex] = numList[divIndex] / numList[divIndex + 1];
+            numList.removeAt(divIndex + 1);
+            symbolList.removeAt(divIndex);
+            multIndex = symbolList.indexOf(MathSymbol.multiplication.value);
+            divIndex = symbolList.indexOf(MathSymbol.division.value);
+          }
+        }
+
+        if (errorFlag) {
+          numList[0] = 0;
+        } else {
+          //加減算
+          for (var i = 0; i < symbolList.length; i++) {
+            if (symbolList[i] == MathSymbol.sum.value) {
+              numList[0] += numList[i + 1];
+            } else {
+              numList[0] -= numList[i + 1];
             }
           }
-
-          moneyTextController.text = numList[0].round().toString();
         }
+        moneyTextController.text = numList[0].round().toString();
       } else {
-        moneyTextController.text = inputText.substring(0, inputText.length - 1);
+        moneyTextController.text = (int.tryParse(inputText) ?? 0).toString();
       }
     }
   }
