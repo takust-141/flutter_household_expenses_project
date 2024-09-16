@@ -1,7 +1,4 @@
-import 'dart:collection';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 
@@ -45,8 +42,8 @@ class BottomAreaAvoider extends ConsumerStatefulWidget {
 
   final ScrollController scrollController;
 
-  BottomAreaAvoider({
-    Key? key,
+  const BottomAreaAvoider({
+    super.key,
     required this.child,
     this.autoScroll = false,
     this.overscroll = defaultOverscroll,
@@ -54,10 +51,9 @@ class BottomAreaAvoider extends ConsumerStatefulWidget {
     required this.scrollController,
     this.duration = _defaultDuration,
     this.curve = _defaultCurve,
-  }) : //assert(child is ScrollView ? child.controller != null : true),
-        //assert(areaToAvoid >= 0, 'Cannot avoid a negative area'),
-        super(key: key);
+  });
 
+  @override
   BottomAreaAvoiderState createState() => BottomAreaAvoiderState();
 }
 
@@ -75,8 +71,18 @@ class BottomAreaAvoiderState extends ConsumerState<BottomAreaAvoider> {
   }
 
   Widget _wrapScrollView(Widget? child) {
+    final mediaQuery = MediaQuery.of(context);
+    final double offset;
+    if (ref.read(offsetProvider) < mediaQuery.padding.bottom) {
+      offset = ref.read(offsetProvider);
+    } else {
+      offset = ref.read(offsetProvider) - mediaQuery.padding.bottom;
+    }
+
     return SingleChildScrollView(
-      physics: widget.physics,
+      physics: (ref.watch(offsetProvider) != 0)
+          ? const NeverScrollableScrollPhysics()
+          : widget.physics,
       controller: widget.scrollController,
       child: Column(
         children: [
@@ -84,7 +90,7 @@ class BottomAreaAvoiderState extends ConsumerState<BottomAreaAvoider> {
           AnimatedSize(
             duration: widget.duration,
             curve: widget.curve,
-            child: SizedBox(height: ref.watch(offsetProvider)),
+            child: SizedBox(height: offset),
           )
         ],
       ),
@@ -92,6 +98,14 @@ class BottomAreaAvoiderState extends ConsumerState<BottomAreaAvoider> {
   }
 
   Widget _rewrapScrollView(Widget scrollableWidget) {
+    final mediaQuery = MediaQuery.of(context);
+    final double offset;
+    if (ref.read(offsetProvider) < mediaQuery.padding.bottom) {
+      offset = ref.read(offsetProvider);
+    } else {
+      offset = ref.read(offsetProvider) - mediaQuery.padding.bottom;
+    }
+
     // scrollableWidgetの中身を取り出して、新しい子リストを作成
     List<Widget> children;
     if (scrollableWidget is SingleChildScrollView) {
@@ -99,7 +113,7 @@ class BottomAreaAvoiderState extends ConsumerState<BottomAreaAvoider> {
       if (scrollView.child is Column) {
         Column column = scrollView.child as Column;
         children = List.from(column.children);
-        children.add(SizedBox(height: ref.watch(offsetProvider)));
+        children.add(SizedBox(height: offset));
         return _wrapScrollView(
           SingleChildScrollView(
             physics: widget.physics,

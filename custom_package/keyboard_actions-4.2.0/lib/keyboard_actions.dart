@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:keyboard_actions/external/keyboard_avoider/bottom_area_avoider.dart';
@@ -15,11 +14,14 @@ export 'keyboard_custom.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 const double _kBarSize = 45.0;
-const Duration _timeToDismiss = Duration(milliseconds: 200);
-const Duration _timeToDismissBottomArea = Duration(milliseconds: 200);
-const Duration _timeToDismissBar = Duration(milliseconds: 200);
+const Duration _timeToDismiss = Duration(milliseconds: 300);
+const Duration _reverseTimeToDismiss = Duration(milliseconds: 220);
+const Duration _timeToDismissBottomArea = Duration(milliseconds: 300);
+const Duration _timeToDismissBar = Duration(milliseconds: 260);
+const Duration _reverseTimeToDismissBar = Duration(milliseconds: 220);
 const Duration _scrollAdditionalTime = Duration(milliseconds: 150);
-const Cubic animationCurve = Curves.easeOutCubic;
+const Cubic animationCurve = Curves.easeInOutSine;
+const Cubic barAnimationCurve = Curves.easeOutSine;
 const Curve defaultCurve = Curves.easeIn;
 
 enum KeyboardActionsPlatform {
@@ -94,7 +96,8 @@ class KeyboardActions extends ConsumerStatefulWidget {
   final bool keepFocusOnTappingNode;
 
   const KeyboardActions(
-      {this.child,
+      {super.key,
+      this.child,
       this.bottomAvoiderScrollPhysics,
       this.enable = true,
       this.autoScroll = true,
@@ -119,11 +122,10 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
   KeyboardActionsConfig? config;
 
   /// private state
-  Map<int, KeyboardActionsItem> _map = Map();
+  Map<int, KeyboardActionsItem> _map = {};
   KeyboardActionsItem? _currentAction;
   int? _currentIndex = 0;
   OverlayEntry? _overlayEntry;
-  double _offset = 0;
   PreferredSizeWidget? _currentFooter;
   bool _dismissAnimationNeeded = true;
   final _keyParent = GlobalKey();
@@ -205,24 +207,25 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
   }
 
   void _clearAllFocusNode() {
-    _map = Map();
+    _map = <int, KeyboardActionsItem>{};
   }
 
   void _clearFocus() {
     _currentAction?.focusNode.unfocus();
   }
 
+  bool hasFocusFound = false;
   Future<Null> _focusNodeListener() async {
-    bool hasFocusFound = false;
-    _map.keys.forEach((key) {
+    hasFocusFound = false;
+    for (var key in _map.keys) {
       final currentAction = _map[key]!;
       if (currentAction.focusNode.hasFocus) {
         hasFocusFound = true;
         _currentAction = currentAction;
         _currentIndex = key;
-        return;
+        continue;
       }
-    });
+    }
     _focusChanged(hasFocusFound);
   }
 
@@ -265,9 +268,12 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
   ///
   /// Called every time the focus changes, and when the app is resumed on Android.
 
+  Completer<void>? _softwearKeyboardOpenCompleter;
+
   void _focusChanged(bool showBar) async {
     if (_isAvailable) {
       if (!showBar && _isShowing) {
+        _softwearKeyboardOpenCompleter = null;
         await _removeOverlay();
         _dismissAnimation?.complete();
         _dismissAnimation = null;
@@ -278,6 +284,10 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
             (!_isShowing ||
                 (_currentFooter == null ||
                     _currentAction!.keyboardCustom == false))) {
+          if (!_currentAction!.keyboardCustom) {
+            _softwearKeyboardOpenCompleter = Completer<void>();
+          }
+          await _softwearKeyboardOpenCompleter?.future;
           _insertOverlay();
           _dismissAnimation = Completer<void>();
           CustomFocusNode.waitAnimation = _dismissAnimation;
@@ -294,16 +304,26 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
       _onKeyboardChanged(keyboardIsOpen);
       isKeyboardOpen = keyboardIsOpen;
     }
+
+    //ソフトウェアキーボードが開いているかどうかの判定
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    if (bottomInset > 0 &&
+        _softwearKeyboardOpenCompleter != null &&
+        !_softwearKeyboardOpenCompleter!.isCompleted) {
+      _softwearKeyboardOpenCompleter!.complete(); // キーボードが開いたことを検知
+    }
   }
 
   void _startListeningFocus() {
-    _map.values
-        .forEach((action) => action.focusNode.addListener(_focusNodeListener));
+    for (var action in _map.values) {
+      action.focusNode.addListener(_focusNodeListener);
+    }
   }
 
   void _dismissListeningFocus() {
-    _map.values.forEach(
-        (action) => action.focusNode.removeListener(_focusNodeListener));
+    for (var action in _map.values) {
+      action.focusNode.removeListener(_focusNodeListener);
+    }
   }
 
   bool _inserted = false;
@@ -360,11 +380,11 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
                     if (_currentAction!.displayActionBar)
                       _buildBar(_currentAction!.displayArrows),
                     if (_currentFooter != null)
-                      Container(
-                        child: _currentFooter,
+                      SizedBox(
                         height: _inserted
                             ? _currentFooter!.preferredSize.height
                             : 0,
+                        child: _currentFooter,
                       ),
                     SizedBox(
                       height: queryData.viewInsets.bottom,
@@ -384,10 +404,10 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
                   children: <Widget>[
                     if (_currentAction!.displayActionBar)
                       _buildBar(_currentAction!.displayArrows),
-                    Container(
-                      child: _currentFooter,
+                    SizedBox(
                       height:
                           _inserted ? _currentFooter!.preferredSize.height : 0,
+                      child: _currentFooter,
                     ),
                   ],
                 ),
@@ -467,7 +487,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
     if (newOffset < 0) newOffset = 0;
 
     // Update state if changed
-    if (_offset != newOffset) {
+    if (ref.watch(offsetProvider) != newOffset) {
       ref.read(offsetProvider.notifier).state = newOffset;
       scrollToObject(_bottomAvoidScrollController, _timeToDismissBottomArea,
           animationCurve);
@@ -483,7 +503,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
   }
 
   void scrollToObject(
-      ScrollController _scrollController, Duration _duration, Cubic? _curve) {
+      ScrollController scrollController, Duration duration, Cubic? curve) {
     final focusNode = ref.read(offsetFocus);
     final offset = ref.read(offsetProvider);
     final voidSpan = (focusNode?.customRectHeight ?? 0) + widget.overscroll;
@@ -495,10 +515,10 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
         final keyboardOffset = screenHeight - offset;
         if (focusOffset + voidSpan > keyboardOffset) {
           double scrollOffset = focusOffset + voidSpan - keyboardOffset;
-          _scrollController.animateTo(
-            _scrollController.offset + scrollOffset,
-            duration: _duration,
-            curve: _curve ?? defaultCurve,
+          scrollController.animateTo(
+            scrollController.offset + scrollOffset,
+            duration: duration,
+            curve: curve ?? defaultCurve,
           );
         }
       }
@@ -581,24 +601,26 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
     _slideKeyboardAnimationController = AnimationController(
       vsync: this,
       duration: _timeToDismiss,
+      reverseDuration: _reverseTimeToDismiss,
     );
     _slideBarAnimationController = AnimationController(
       vsync: this,
       duration: _timeToDismissBar,
+      reverseDuration: _reverseTimeToDismissBar,
     );
 
-    final Curve _slideCurve = animationCurve;
     _slideKeyboardAnimation = Tween<Offset>(
       begin: const Offset(0, 1),
       end: const Offset(0, 0),
     )
-        .chain(CurveTween(curve: _slideCurve))
+        .chain(CurveTween(curve: animationCurve))
         .animate(_slideKeyboardAnimationController);
+
     _slideBarAnimation = Tween<double>(
       begin: 0,
       end: 1,
     )
-        .chain(CurveTween(curve: _slideCurve))
+        .chain(CurveTween(curve: barAnimationCurve))
         .animate(_slideBarAnimationController);
 
     _slideKeyboardAnimationController
@@ -658,7 +680,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
           children: [
             if (config!.nextFocus && displayArrows) ...[
               IconButton(
-                icon: Icon(Icons.keyboard_arrow_up),
+                icon: const Icon(Icons.keyboard_arrow_up),
                 tooltip: 'Previous',
                 iconSize: IconTheme.of(context).size!,
                 color: IconTheme.of(context).color,
@@ -666,7 +688,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
                 onPressed: _previousIndex != null ? _onTapUp : null,
               ),
               IconButton(
-                icon: Icon(Icons.keyboard_arrow_down),
+                icon: const Icon(Icons.keyboard_arrow_down),
                 tooltip: 'Next',
                 iconSize: IconTheme.of(context).size!,
                 color: IconTheme.of(context).color,
@@ -689,10 +711,10 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
                     _clearFocus();
                   },
                   child: Container(
-                    padding:
-                        EdgeInsets.symmetric(vertical: 5.0, horizontal: 12.0),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 5.0, horizontal: 12.0),
                     child: config?.defaultDoneWidget ??
-                        Text(
+                        const Text(
                           "Done",
                           style: TextStyle(
                             fontSize: 16.0,
@@ -705,7 +727,6 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
             if (_currentAction?.toolbarButtons != null)
               ..._currentAction!.toolbarButtons!
                   .map((item) => item(_currentAction!.focusNode))
-                  .toList()
           ],
         ),
       ),
@@ -740,8 +761,8 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
                 overscroll: widget.overscroll,
                 autoScroll: widget.autoScroll,
                 physics: widget.bottomAvoiderScrollPhysics,
-                child: widget.child,
                 scrollController: _bottomAvoidScrollController,
+                child: widget.child,
               ),
             ),
           )
@@ -775,13 +796,12 @@ class CustomFocusNode extends FocusNode {
     return customRect.size.height;
   }
 
-  void setRenderBox(RenderBox? _renderBox) {
-    renderBox = _renderBox;
+  void setRenderBox(RenderBox? renderBox) {
+    renderBox = renderBox;
     isCustomRenderBox = true;
   }
 
   void resizeRect() {
-    debugPrint("resizerect $isCustomRenderBox");
     if (isCustomRenderBox && renderBox != null) {
       final position = renderBox!.localToGlobal(Offset.zero);
       final size = renderBox!.size;
@@ -798,7 +818,9 @@ class CustomFocusNode extends FocusNode {
 
   @override
   void requestFocus([FocusNode? node]) async {
-    await _waitAnimation?.future;
+    if (!hasFocus) {
+      await _waitAnimation?.future;
+    }
     super.requestFocus(node);
     resizeRect();
   }
