@@ -171,8 +171,7 @@ class CalendarPageNotifier extends AsyncNotifier<CalendarPageState> {
   //カレンダーパネルタップ
   void tapCalendarPanel(BuildContext context, DateTime date, WidgetRef ref) {
     if (LogicComponent.matchDates(state.valueOrNull?.selectDate, date)) {
-      //新規register追加
-
+      //新規register追加モーダル表示
       ref.read(registerEditCategoryStateNotifierProvider.notifier).setInit();
       showRegisterModal(context, ref, null, calendarPageProvider);
     } else {
@@ -188,19 +187,25 @@ class CalendarPageNotifier extends AsyncNotifier<CalendarPageState> {
   //Listコントローラの移動（現在のselectDateまで）
   void scrollListController() {
     if (state.valueOrNull != null) {
+      ScrollController controller = state.valueOrNull!.listScrollController;
       int count = 0;
       const double calendarListHeight = 50;
       for (Register register in state.valueOrNull!.registerList) {
         if (state.valueOrNull!.selectDate.day <= register.date.day) {
-          debugPrint("count: $count");
-          state.valueOrNull!.listScrollController.animateTo(
-              calendarListHeight * count + small,
+          double movePosition = ((calendarListHeight * count + small) >
+                  controller.position.maxScrollExtent)
+              ? controller.position.maxScrollExtent
+              : (calendarListHeight * count + small);
+          controller.animateTo(movePosition,
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOutCubic);
           return;
         }
         count++;
       }
+      controller.animateTo(controller.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOutCubic);
     }
   }
 

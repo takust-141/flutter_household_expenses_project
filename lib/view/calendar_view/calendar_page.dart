@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/constant/dimension.dart';
 import 'package:household_expenses_project/provider/calendar_page_provider.dart';
@@ -350,7 +351,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 }
 
 //日付パネル
-class DatePickerPanel extends ConsumerWidget {
+class DatePickerPanel extends HookConsumerWidget {
   final DateTime date;
   final double width;
   final AsyncNotifierProvider<CalendarPageNotifier, CalendarPageState>
@@ -366,6 +367,7 @@ class DatePickerPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final panelItemColor = useState<Color>(theme.colorScheme.surfaceBright);
     final calendarPageState = ref.watch(calendarProvider);
     final calendarProviderNotifier = ref.read(calendarProvider.notifier);
 
@@ -379,11 +381,14 @@ class DatePickerPanel extends ConsumerWidget {
         {};
 
     return GestureDetector(
-      onTap: () async {
-        ref
-            .read(calendarProvider.notifier)
-            .tapCalendarPanel(context, date, ref);
-      },
+      onTap: () => ref
+          .read(calendarProvider.notifier)
+          .tapCalendarPanel(context, date, ref),
+      onTapDown: (_) =>
+          {panelItemColor.value = theme.colorScheme.surfaceContainerHighest},
+      onTapUp: (_) => {panelItemColor.value = theme.colorScheme.surfaceBright},
+      onTapCancel: () =>
+          {panelItemColor.value = theme.colorScheme.surfaceBright},
       child: Container(
         alignment: Alignment.center,
         width: width,
@@ -394,12 +399,12 @@ class DatePickerPanel extends ConsumerWidget {
         decoration: isSelectedDate
             ? BoxDecoration(
                 color: Color.lerp(theme.colorScheme.primaryContainer,
-                    theme.colorScheme.surfaceBright, 0.5),
+                    panelItemColor.value, 0.5),
                 border:
                     Border.all(color: theme.colorScheme.primary, width: 1.5),
               )
             : BoxDecoration(
-                color: theme.colorScheme.surfaceBright,
+                color: panelItemColor.value,
                 border:
                     Border.all(color: theme.colorScheme.outline, width: 0.1),
               ),
