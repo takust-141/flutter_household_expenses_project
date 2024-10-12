@@ -1,39 +1,13 @@
-import 'package:household_expenses_project/provider/select_expenses_provider.dart';
+import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/view_model/db_helper.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:household_expenses_project/model/category.dart';
 
 //DBHelper
 class CategoryDBHelper {
-  //シングルトンパターン（インスタンスが1つで静的）
-  static final CategoryDBHelper _instance = CategoryDBHelper._();
-  factory CategoryDBHelper() => _instance;
-  CategoryDBHelper._();
+  static final Database _database = DbHelper.database;
 
-  late final Database _database;
-
-  Future openDataBase() async {
-    final dbpass = await DbHelper.getDbPath('category');
-    _database = await openDatabase(
-      dbpass,
-      version: 1,
-      onCreate: (Database db, int version) async {
-        await db.execute('''
-          CREATE TABLE $categoryTable ( 
-          $categoryId INTEGER PRIMARY KEY, 
-          $categoryName TEXT NOT NULL,
-          $categoryIcon TEXT NOT NULL,
-          $categoryColor TEXT NOT NULL,
-          $categoryParentId INTEGER,
-          $categoryOrder INTEGER NOT NULL,
-          $categoryExpenses TEXT NOT NULL
-          )
-        ''');
-      },
-    );
-  }
-
-  Future<List<Category>> getAllCategory(SelectExpenses expenses) async {
+  static Future<List<Category>> getAllCategory(SelectExpenses expenses) async {
     List<Category> categoryList = [];
     List<Map> listMap = await _database.query(
       categoryTable,
@@ -47,15 +21,13 @@ class CategoryDBHelper {
     return categoryList;
   }
 
-  Future<List<Category>> getAllSubCategory(
-      SelectExpenses expenses, int? parentId) async {
+  static Future<List<Category>> getAllSubCategory(int? parentId) async {
     List<Category> categoryList = [];
     if (parentId != null) {
       List<Map> listMap = await _database.query(
         categoryTable,
-        where:
-            '$categoryParentId IS NOT NULL AND $categoryExpenses = ? AND $categoryParentId = ?',
-        whereArgs: [expenses.name, parentId],
+        where: '$categoryParentId IS NOT NULL AND $categoryParentId = ?',
+        whereArgs: [parentId],
         orderBy: "$categoryOrder ASC",
       );
       for (var map in listMap) {
@@ -65,12 +37,12 @@ class CategoryDBHelper {
     return categoryList;
   }
 
-  Future<void> insertCategory(Category category) async {
+  static Future<void> insertCategory(Category category) async {
     await _database.insert(categoryTable, category.toMap());
   }
 
   //idは一意のため一件のみ返す
-  Future<Category?> getCategoryFromId(int id) async {
+  static Future<Category?> getCategoryFromId(int id) async {
     List<Map> maps = await _database.query(
       categoryTable,
       where: '$categoryId = ?',
@@ -83,7 +55,7 @@ class CategoryDBHelper {
     }
   }
 
-  Future<void> deleteCategoryFromId(int id) async {
+  static Future<void> deleteCategoryFromId(int id) async {
     await _database.delete(
       categoryTable,
       where: '$categoryId = ?',
@@ -91,7 +63,7 @@ class CategoryDBHelper {
     );
   }
 
-  Future<void> updateCategory(Category category) async {
+  static Future<void> updateCategory(Category category) async {
     await _database.update(
       categoryTable,
       category.toMap(),
@@ -100,5 +72,5 @@ class CategoryDBHelper {
     );
   }
 
-  Future close() async => _database.close();
+  static Future close() async => _database.close();
 }

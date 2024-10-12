@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:household_expenses_project/constant/keyboard_components.dart';
-import 'package:household_expenses_project/provider/select_expenses_provider.dart';
+import 'package:household_expenses_project/provider/select_category_provider.dart';
 
 const String categoryTable = 'category';
 const String categoryId = '_id';
@@ -50,14 +50,15 @@ class Category {
     required this.expenses,
   });
 
-  Category.fromMap(Map map)
-      : id = map[categoryId],
-        name = map[categoryName]!,
-        icon = getCategoryIcon(map[categoryIcon]),
-        color = getCategoryColor(map[categoryColor]),
-        parentId = map[categoryParentId],
-        order = map[categoryOrder],
-        expenses = SelectExpenses.values.byName(map[categoryExpenses]);
+  Category.fromMap(Map map, {List<String>? mapKeyList})
+      : id = map[mapKeyList?[0] ?? categoryKeyList[0]],
+        name = map[mapKeyList?[1] ?? categoryKeyList[1]]!,
+        icon = getCategoryIcon(map[mapKeyList?[2] ?? categoryKeyList[2]]),
+        color = getCategoryColor(map[mapKeyList?[3] ?? categoryKeyList[3]]),
+        parentId = map[mapKeyList?[4] ?? categoryKeyList[4]],
+        order = map[mapKeyList?[5] ?? categoryKeyList[5]],
+        expenses = SelectExpenses.values
+            .byName(map[mapKeyList?[6] ?? categoryKeyList[6]]);
 
   Map<String, Object?> toMap() {
     return {

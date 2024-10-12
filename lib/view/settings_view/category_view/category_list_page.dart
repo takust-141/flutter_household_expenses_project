@@ -5,7 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/provider/app_bar_provider.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
-import 'package:household_expenses_project/view_model/category_db_provider.dart';
+import 'package:household_expenses_project/provider/category_list_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 
@@ -17,8 +17,13 @@ class CategoryListPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
-    final categoryListProvider = ref.watch(categoryListNotifierProvider);
-    final int numOfCategory = categoryListProvider.valueOrNull?.length ?? 0;
+
+    final settingCategoryState =
+        ref.watch(settingCategoryStateNotifierProvider);
+    final categoryList = ref
+        .watch(categoryListNotifierProvider)
+        .valueOrNull?[settingCategoryState.selectExpenses];
+    final int numOfCategory = categoryList?.length ?? 0;
 
     return Container(
       color: theme.colorScheme.surfaceContainer,
@@ -36,7 +41,7 @@ class CategoryListPage extends ConsumerWidget {
               children: [
                 for (int i = 0; i < numOfCategory; i++) ...{
                   CategoryListItem(
-                    category: categoryListProvider.value![i],
+                    category: categoryList![i],
                   ),
                   if (i != numOfCategory - 1)
                     Divider(
@@ -85,10 +90,14 @@ class CategoryListItem extends HookConsumerWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () async {
         ref
-            .read(selectCategoryNotifierProvider.notifier)
-            .updateCategory(category);
-        ref.read(doneButtonProvider.notifier).setState(category?.name);
-        goRoute.go('/setting/category_list/category_edit');
+            .read(settingCategoryStateNotifierProvider.notifier)
+            .updateSelectParentCategory(category);
+        ref
+            .read(appBarProvider.notifier)
+            .updateActiveCategoryDoneButton(category?.name);
+
+        goRoute.go('/setting/category_list/category_edit',
+            extra: settingCategoryStateNotifierProvider);
       },
       onTapDown: (_) =>
           {listItemColor.value = theme.colorScheme.surfaceContainerHighest},
@@ -124,8 +133,13 @@ class CategoryListItem extends HookConsumerWidget {
                     ),
                   ),
             const SizedBox(width: small),
-            Text(category?.name ?? _defaultName),
-            const Spacer(),
+            Expanded(
+              child: Text(
+                category?.name ?? _defaultName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
             Icon(Symbols.chevron_right,
                 weight: 300,
                 size: 25,

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/constant/dimension.dart';
 import 'package:household_expenses_project/provider/app_bar_provider.dart';
+import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/view/view.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
@@ -44,7 +45,7 @@ final router = GoRouter(
             GoRoute(
               path: '/calendar',
               name: rootNameCalendar,
-              builder: (context, state) => CalendarPage(),
+              builder: (context, state) => const CalendarPage(),
             ),
           ],
         ),
@@ -74,10 +75,16 @@ final router = GoRouter(
                       path: 'category_edit',
                       name: rootNameCategoryEdit,
                       builder: (context, state) {
+                        final NotifierProvider<SelectCategoryStateNotifier,
+                                SelectCategoryState> provider =
+                            state.extra as NotifierProvider<
+                                SelectCategoryStateNotifier,
+                                SelectCategoryState>;
                         formkey = GlobalKey<FormState>();
                         return CategoryEditPage(
                           formKey: formkey,
                           isSubPage: false,
+                          provider: provider,
                         );
                       },
                       routes: <RouteBase>[
@@ -85,10 +92,16 @@ final router = GoRouter(
                           path: 'sub_category_edit',
                           name: rootNameSubCategoryEdit,
                           builder: (context, state) {
+                            final NotifierProvider<SelectCategoryStateNotifier,
+                                    SelectCategoryState> provider =
+                                state.extra as NotifierProvider<
+                                    SelectCategoryStateNotifier,
+                                    SelectCategoryState>;
                             subFormkey = GlobalKey<FormState>();
                             return CategoryEditPage(
                               formKey: subFormkey,
                               isSubPage: true,
+                              provider: provider,
                             );
                           },
                         ),
@@ -171,21 +184,23 @@ class _ScaffoldWithNavBarState extends ConsumerState<ScaffoldWithNavBar>
       ),
       backgroundColor: theme.colorScheme.surfaceContainer,
       resizeToAvoidBottomInset: false, //キーボードによるレイアウト変更を制御
-      bottomNavigationBar: (ref.watch(appBarProvider)?.needBottomBar ?? true)
-          ? NavigationBar(
-              backgroundColor: theme.scaffoldBackgroundColor,
-              surfaceTintColor: theme.scaffoldBackgroundColor,
-              selectedIndex: widget.navigationShell.currentIndex,
-              destinations: ScaffoldWithNavBar.allDestinations,
-              height: bottomAppBarHeight,
-              onDestinationSelected: (index) {
-                widget.navigationShell.goBranch(
-                  index,
-                  initialLocation: index == widget.navigationShell.currentIndex,
-                );
-              },
-            )
-          : null,
+      bottomNavigationBar:
+          (ref.watch(appBarProvider.select((p) => p.needBottomBar)) ?? true)
+              ? NavigationBar(
+                  backgroundColor: theme.scaffoldBackgroundColor,
+                  surfaceTintColor: theme.scaffoldBackgroundColor,
+                  selectedIndex: widget.navigationShell.currentIndex,
+                  destinations: ScaffoldWithNavBar.allDestinations,
+                  height: bottomAppBarHeight,
+                  onDestinationSelected: (index) {
+                    widget.navigationShell.goBranch(
+                      index,
+                      initialLocation:
+                          index == widget.navigationShell.currentIndex,
+                    );
+                  },
+                )
+              : null,
     );
   }
 }
@@ -198,22 +213,23 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appBarState = ref.watch(appBarProvider);
+    final appBarStateNotifier = ref.read(appBarProvider.notifier);
     final theme = Theme.of(context);
 
     final List<Widget> appBarWidget = [
       SizedBox(
-        width: appBarState?.appBarSideWidth ?? 0,
-        child: appBarState?.getAppBarLeadingWidget(),
+        width: appBarState.appBarSideWidth,
+        child: appBarStateNotifier.getAppBarLeadingWidget(),
       ),
       Expanded(
         child: Center(
-          child: appBarState
-              ?.getAppBarTitleWidget(Theme.of(context).textTheme.titleMedium),
+          child: appBarStateNotifier
+              .getAppBarTitleWidget(Theme.of(context).textTheme.titleMedium),
         ),
       ),
       SizedBox(
-        width: appBarState?.appBarSideWidth ?? 0,
-        child: appBarState?.getAppBarTailingWidget(formkey, subFormkey),
+        width: appBarState.appBarSideWidth,
+        child: appBarStateNotifier.getAppBarTailingWidget(formkey, subFormkey),
       ),
     ];
 
@@ -222,7 +238,7 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
     });
 
     return Material(
-      elevation: 2.0,
+      elevation: 3.0,
       child: Container(
         color: theme.scaffoldBackgroundColor,
         child: SafeArea(

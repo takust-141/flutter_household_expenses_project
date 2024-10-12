@@ -1,32 +1,220 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expenses_project/component/segmented_button.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/model/register.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expenses_project/provider/calendar_page_provider.dart';
 import 'package:household_expenses_project/provider/register_db_provider.dart';
+import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/component/customed_register_keyboard.dart';
 
-//-------入力画面------------
-class RegisterPage extends StatefulHookConsumerWidget {
-  final RouteObserver<PageRoute> routeObserver;
-  const RegisterPage({super.key, required this.routeObserver});
+//更新用provider
+final formKeyNotifier = NotifierProvider<FormKeyNotifier, GlobalKey<FormState>>(
+    FormKeyNotifier.new);
 
+class FormKeyNotifier extends Notifier<GlobalKey<FormState>> {
   @override
-  ConsumerState<RegisterPage> createState() => _RegisterPageState();
+  GlobalKey<FormState> build() {
+    return GlobalKey<FormState>();
+  }
+
+  Future<void> save() async {
+    state.currentState?.save();
+  }
 }
 
-class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
-  final _formkey = GlobalKey();
+void showRegisterModal(
+    BuildContext context,
+    WidgetRef ref,
+    Register? register,
+    AsyncNotifierProvider<CalendarPageNotifier, CalendarPageState>
+        calendarStateProvider) {
+  ref.read(calendarStateProvider.notifier).initRegisterButtonState();
+  final theme = Theme.of(context);
+  showModalBottomSheet<void>(
+    clipBehavior: Clip.antiAlias,
+    useSafeArea: true,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+    ),
+    backgroundColor: theme.colorScheme.surfaceContainer,
+    context: Navigator.of(context, rootNavigator: true).context,
+    builder: (BuildContext context) {
+      return RegisterEditView(register, calendarStateProvider);
+    },
+  );
+}
 
+//-----編集View-----
+class RegisterEditView extends ConsumerWidget {
+  RegisterEditView(this.register, this.calendarStateProvider, {super.key});
+  final Register? register;
+  final AsyncNotifierProvider<CalendarPageNotifier, CalendarPageState>
+      calendarStateProvider;
+
+  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
+      selectCategoryStateProvider = registerEditCategoryStateNotifierProvider;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    double appBarHeight = AppBar().preferredSize.height;
+
+    return Column(
+      children: [
+        //appbar
+        Material(
+          elevation: 2,
+          color: theme.scaffoldBackgroundColor,
+          child: SizedBox(
+            height: appBarHeight,
+            child: Row(
+              children: [
+                const Expanded(flex: 1, child: AppBarCancelWidget()),
+                //segmendedButton
+                SelectExpensesButton(selectCategoryStateProvider),
+                Expanded(
+                    flex: 1, child: AppBarDoneWidget(calendarStateProvider)),
+              ],
+            ),
+          ),
+        ),
+
+        //body
+        Expanded(
+          child: Container(
+            color: theme.colorScheme.surfaceContainer,
+            child: RegisterEditBodyView(
+              register: register,
+              selectCategoryStateProvider: selectCategoryStateProvider,
+              calendarStateProvider: calendarStateProvider,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+//キャンセルボタン
+class AppBarCancelWidget extends HookWidget {
+  const AppBarCancelWidget({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cancelTextColor = useState<Color>(theme.colorScheme.onSurface);
+
+    return GestureDetector(
+      child: AnimatedContainer(
+        duration: listItemAnimationDuration,
+        child: Padding(
+          padding: const EdgeInsets.only(left: appbarSidePadding),
+          child: Text(
+            "キャンセル",
+            textAlign: TextAlign.left,
+            style: TextStyle(
+              color: cancelTextColor.value,
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ),
+      ),
+      onTap: () => Navigator.of(context).pop(),
+      onTapDown: (_) => {cancelTextColor.value = theme.colorScheme.outline},
+      onTapUp: (_) => {cancelTextColor.value = theme.colorScheme.onSurface},
+      onTapCancel: () => {cancelTextColor.value = theme.colorScheme.onSurface},
+    );
+  }
+}
+
+//完了ボタン
+class AppBarDoneWidget extends HookConsumerWidget {
+  const AppBarDoneWidget(this.calendarStateProvider, {super.key});
+  final AsyncNotifierProvider<CalendarPageNotifier, CalendarPageState>
+      calendarStateProvider;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final doneTextColor = useState<Color>(theme.colorScheme.onSurface);
+
+    return (ref
+                .watch(calendarStateProvider)
+                .valueOrNull
+                ?.isActiveRegisterButton ??
+            false)
+        ? GestureDetector(
+            child: AnimatedContainer(
+              duration: listItemAnimationDuration,
+              child: Padding(
+                padding: const EdgeInsets.only(right: appbarSidePadding),
+                child: Text(
+                  "完了",
+                  textAlign: TextAlign.right,
+                  style: TextStyle(
+                    color: doneTextColor.value,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ),
+            ),
+            onTap: () {
+              ref.read(formKeyNotifier.notifier).save();
+            },
+            onTapDown: (_) => {doneTextColor.value = theme.colorScheme.outline},
+            onTapUp: (_) => {doneTextColor.value = theme.colorScheme.onSurface},
+            onTapCancel: () =>
+                {doneTextColor.value = theme.colorScheme.onSurface},
+          )
+        : Padding(
+            padding: const EdgeInsets.only(right: appbarSidePadding),
+            child: Text(
+              "完了",
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: theme.colorScheme.outline,
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          );
+  }
+}
+
+//
+//-------register編集------------
+class RegisterEditBodyView extends StatefulHookConsumerWidget {
+  const RegisterEditBodyView({
+    super.key,
+    required this.register,
+    required this.calendarStateProvider,
+    required this.selectCategoryStateProvider,
+  });
+  final Register? register;
+  final AsyncNotifierProvider<CalendarPageNotifier, CalendarPageState>
+      calendarStateProvider;
+  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
+      selectCategoryStateProvider;
+
+  @override
+  ConsumerState<RegisterEditBodyView> createState() =>
+      _RegisterEditBodyViewState();
+}
+
+class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
   //フォームコントローラー
-  final TextEditingController amountOfMoneyTextController =
-      TextEditingController();
-  final TextEditingController memoTextController = TextEditingController();
+  late final TextEditingController amountOfMoneyTextController;
+  late final TextEditingController memoTextController;
 
   //customKeyboard用
   late ValueNotifier<Category?> categoryNotifier;
@@ -42,29 +230,32 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
 
   final formatter = DateFormat('yyyy年 M月 d日');
   final double suffixIconSize = 20;
-  final amountOfMoneyFormKey = GlobalKey();
   final memoFormKey = GlobalKey();
+  final textFormKey = GlobalKey();
 
-  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
-      selectCategoryStateProvider = registerCategoryStateNotifierProvider;
+  late final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
+      selectCategoryStateProvider;
 
   late RegisterKeyboardAction registerKeyboardAction;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    //画面遷移検出
-    widget.routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
-  }
+  late VoidCallback formInputCheck;
 
   @override
   void initState() {
     super.initState();
+    selectCategoryStateProvider = widget.selectCategoryStateProvider;
+    Category? initCategory = ref.read(selectCategoryStateProvider).category;
+    Category? initSubCategory =
+        ref.read(selectCategoryStateProvider).subCategory;
 
-    categoryNotifier = ValueNotifier<Category?>(null);
-    subCategoryNotifier = ValueNotifier<Category?>(null);
-
-    dateNotifier = ValueNotifier<DateTime>(DateTime.now());
+    categoryNotifier = ValueNotifier<Category?>(initCategory);
+    subCategoryNotifier = ValueNotifier<Category?>(initSubCategory);
+    DateTime initDate = ref.read(widget.calendarStateProvider
+            .select((p) => p.valueOrNull?.selectDate)) ??
+        DateTime.now();
+    dateNotifier = ValueNotifier<DateTime>(widget.register?.date ?? initDate);
+    amountOfMoneyTextController =
+        TextEditingController(text: widget.register?.amount.toString());
+    memoTextController = TextEditingController(text: widget.register?.memo);
 
     registerKeyboardAction = RegisterKeyboardAction(
       moneyTextController: amountOfMoneyTextController,
@@ -78,15 +269,24 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
       dateNode: dateNode,
       dateNotifier: dateNotifier,
       provider: selectCategoryStateProvider,
-      enableNewAdd: true,
+      enableNewAdd: false,
     );
 
     //金額Focusのcomputeリスナー
     amountOfMoneyNode.addListener(registerKeyboardAction.focusChange);
 
+    //完了ボタンのリスナー追加
+    formInputCheck = () => ref
+        .read(widget.calendarStateProvider.notifier)
+        .formInputCheck(amountOfMoneyTextController, categoryNotifier);
+
+    amountOfMoneyTextController.addListener(formInputCheck);
+    categoryNotifier.addListener(formInputCheck);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      //要検討
       final RenderBox? amountRenderBox =
-          amountOfMoneyFormKey.currentContext?.findRenderObject() as RenderBox?;
+          textFormKey.currentContext?.findRenderObject() as RenderBox?;
       amountOfMoneyNode.setRenderBox(amountRenderBox);
       final RenderBox? memoRenderBox =
           memoFormKey.currentContext?.findRenderObject() as RenderBox?;
@@ -96,8 +296,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
 
   @override
   void dispose() {
+    categoryNotifier.removeListener(formInputCheck);
+    amountOfMoneyTextController.removeListener(formInputCheck);
     amountOfMoneyTextController.dispose();
-    widget.routeObserver.unsubscribe(this);
     amountOfMoneyNode.dispose();
     categoryNode.dispose();
     subCategoryNode.dispose();
@@ -109,16 +310,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
     super.dispose();
   }
 
-  //カテゴリー新規登録からpopした時に呼ばれる
-  @override
-  void didPopNext() {
-    primaryFocus?.unfocus();
-    debugPrint("pop");
-    ref
-        .read(selectCategoryStateProvider.notifier)
-        .resetSelectCategoryStateFromRegister();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -126,33 +317,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
     final Color defaultColor = theme.colorScheme.onSurfaceVariant;
     final registerTextColor = theme.colorScheme.inverseSurface;
 
-    //registerButton用
-    final pushedDownRegisterButton = useState<bool>(false);
-    final isActiveRegisterButton = useState<bool>(false);
-
-    //フォーム入力チェック
-    void formInputCheck() {
-      debugPrint("formInput check");
-      isActiveRegisterButton.value =
-          amountOfMoneyTextController.text.isNotEmpty &&
-              (categoryNotifier.value != null);
-    }
-
-    //フォーム入力チェックリスナー
-    useEffect(() {
-      amountOfMoneyTextController.addListener(formInputCheck);
-      categoryNotifier.addListener(formInputCheck);
-      return () {
-        categoryNotifier.removeListener(formInputCheck);
-        amountOfMoneyTextController.removeListener(formInputCheck);
-      };
-    }, []);
-
     //画面サイズ取得
     double appBarHeight = AppBar().preferredSize.height;
-    double registerSpacerHeight = mediaQuery.size.height -
+    final double registerSpacerHeight = mediaQuery.size.height -
         appBarHeight -
-        mediaQuery.padding.bottom -
+        mediaQuery.viewPadding.bottom -
         MediaQueryData.fromView(View.of(context)).padding.top -
         ((large * 3) +
             (medium * 4) +
@@ -276,25 +445,30 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
       );
     }
 
-    //登録処理
-    void onTapRegister() {
-      Register register;
+    //更新or新規登録　処理
+    Future<void> onTapUpdateRegister(context) async {
+      Register newRegister;
+
       if (amountOfMoneyTextController.text.isNotEmpty ||
           categoryNotifier.value != null) {
         int amount = int.tryParse(amountOfMoneyTextController.text) ?? 0;
 
-        register = Register(
+        newRegister = Register(
+          id: widget.register?.id,
           amount: amount,
           category: categoryNotifier.value,
           subCategory: subCategoryNotifier.value,
           memo: memoTextController.text,
           date: dateNotifier.value,
         );
-        RegisterDBProvider.insertRegister(register, ref);
 
-        //フォームリセット
-        amountOfMoneyTextController.clear();
-        memoTextController.clear();
+        if (newRegister.id == null) {
+          RegisterDBProvider.insertRegister(newRegister, ref);
+        } else {
+          RegisterDBProvider.updateRegister(newRegister, ref);
+        }
+
+        Navigator.of(context).pop();
       } else {
         //エラー表示
         const snackBar = SnackBar(
@@ -302,6 +476,95 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
         );
         ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
+    }
+
+    //削除確認ダイアログ
+    void openConfDialog(Function onTap) async {
+      final theme = Theme.of(context);
+      final navigator = Navigator.of(context);
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(dialogRadius),
+            ),
+            child: Container(
+              padding: largeEdgeInsets,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(dialogRadius),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  AutoSizeText(
+                    "この明細を削除します\nよろしいですか？",
+                    style: theme.textTheme.bodyLarge,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: large),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: smallEdgeInsets,
+                            foregroundColor: theme.colorScheme.primary,
+                            side: BorderSide(
+                                color: theme.colorScheme.primary, width: 1.3),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(containreBorderRadius),
+                            ),
+                          ),
+                          child: const AutoSizeText(
+                            "キャンセル",
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () async {
+                            await onTap();
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            navigator.pop();
+                          },
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(containreBorderRadius),
+                            ),
+                          ),
+                          child: const AutoSizeText(
+                            "削除",
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    //削除処理
+    void onTapDeleteRegister() {
+      openConfDialog(
+          () => {RegisterDBProvider.deleteRegister(widget.register!, ref)});
     }
 
     return KeyboardActions(
@@ -315,7 +578,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
         child: Padding(
           padding: viewEdgeInsets,
           child: Form(
-            key: _formkey,
+            key: ref.watch(formKeyNotifier),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -328,7 +591,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
                     children: [
                       Expanded(
                         child: TextFormField(
-                          key: amountOfMoneyFormKey,
+                          key: textFormKey,
+                          onSaved: (_) async {
+                            await onTapUpdateRegister(context);
+                          },
                           keyboardType: TextInputType.number,
                           focusNode: amountOfMoneyNode,
                           controller: amountOfMoneyTextController,
@@ -484,38 +750,35 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
                     height: registerSpacerHeight.isNegative
                         ? 0
                         : registerSpacerHeight),
-
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: isActiveRegisterButton.value
-                      ? () => onTapRegister()
-                      : null,
-                  onTapDown: (_) => {pushedDownRegisterButton.value = true},
-                  onTapUp: (_) => {pushedDownRegisterButton.value = false},
-                  onTapCancel: () => {pushedDownRegisterButton.value = false},
-                  child: Container(
-                    margin: mediumHorizontalEdgeInsets,
-                    alignment: Alignment.center,
-                    height: registerButtonHeight,
-                    decoration: BoxDecoration(
-                      color: isActiveRegisterButton.value
-                          ? (pushedDownRegisterButton.value
-                              ? Color.lerp(theme.colorScheme.primary,
-                                  theme.colorScheme.surfaceContainer, 0.3)
-                              : theme.colorScheme.primary)
-                          : Color.lerp(theme.colorScheme.primary,
-                              theme.colorScheme.surfaceContainer, 0.5),
-                      borderRadius: registerButtomRadius,
-                    ),
-                    child: Text(
-                      '登　　録',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                          color: theme.colorScheme.onPrimary,
-                          fontSize:
-                              (theme.textTheme.titleMedium?.fontSize ?? 0) + 2),
-                    ),
-                  ),
-                ),
+                (widget.register != null)
+                    ? Padding(
+                        padding: mediumHorizontalEdgeInsets,
+                        child: OutlinedButton(
+                          onPressed: () => onTapDeleteRegister(),
+                          style: OutlinedButton.styleFrom(
+                            fixedSize: const Size(
+                                double.maxFinite, registerButtonHeight),
+                            padding: smallEdgeInsets,
+                            foregroundColor: theme.colorScheme.primary,
+                            side: BorderSide(
+                                color: theme.colorScheme.primary, width: 1.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: registerButtomRadius,
+                            ),
+                          ),
+                          child: AutoSizeText(
+                            "削  除",
+                            style: theme.textTheme.titleMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontSize:
+                                    (theme.textTheme.titleMedium?.fontSize ??
+                                            0) +
+                                        2),
+                            maxLines: 1,
+                          ),
+                        ),
+                      )
+                    : SizedBox(),
               ],
             ),
           ),

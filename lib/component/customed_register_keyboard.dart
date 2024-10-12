@@ -7,9 +7,10 @@ import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/component/customed_keyboard_component.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
-import 'package:household_expenses_project/view_model/category_db_provider.dart';
+import 'package:household_expenses_project/provider/category_list_provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 class RegisterKeyboardAction {
   RegisterKeyboardAction({
@@ -23,6 +24,8 @@ class RegisterKeyboardAction {
     required this.categoryNotifier,
     required this.subCategoryNotifier,
     required this.dateNotifier,
+    required this.enableNewAdd,
+    required this.provider,
   });
 
   //フォームコントローラー
@@ -38,6 +41,11 @@ class RegisterKeyboardAction {
   final CustomFocusNode subCategoryNode;
   final CustomFocusNode memoNode;
   final CustomFocusNode dateNode;
+
+  final bool enableNewAdd;
+
+  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
+      provider;
 
   //四則演算
   bool mathFlag = false;
@@ -114,6 +122,8 @@ class RegisterKeyboardAction {
           keyboardCustom: true,
           footerBuilder: (_) => CategoryPickerKeyboard(
             notifier: categoryNotifier,
+            enableNewAdd: enableNewAdd,
+            provider: provider,
           ),
         ),
         KeyboardActionsItem(
@@ -122,6 +132,9 @@ class RegisterKeyboardAction {
           footerBuilder: (_) => CategoryPickerKeyboard(
             notifier: subCategoryNotifier,
             sub: true,
+            enableNewAdd: enableNewAdd,
+            parentNotifier: categoryNotifier,
+            provider: provider,
           ),
         ),
         KeyboardActionsItem(
@@ -223,11 +236,18 @@ class CategoryPickerKeyboard extends ConsumerWidget
   final ValueNotifier<Category?> notifier;
   static const double _kKeyboardHeight = 280;
   final bool sub;
+  final bool enableNewAdd;
+  final ValueNotifier<Category?>? parentNotifier;
+  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
+      provider;
 
   CategoryPickerKeyboard({
     super.key,
     required this.notifier,
     this.sub = false,
+    required this.enableNewAdd,
+    this.parentNotifier,
+    required this.provider,
   });
 
   @override
@@ -237,16 +257,18 @@ class CategoryPickerKeyboard extends ConsumerWidget
     final double itemWidth = (screenWidth - (small * 2)) / 3;
     final double itemHeight =
         (_kKeyboardHeight - mediaQuery.viewPadding.bottom) / 3;
-    final AsyncValue<List<Category>> categoryListProvider;
+
+    final List<Category> categoryList;
 
     if (sub) {
-      categoryListProvider = ref.watch(subCategoryRegisterListNotifierProvider);
+      categoryList = ref.watch(provider.select((p) => p.subCategoryList)) ?? [];
     } else {
-      categoryListProvider = ref.watch(categoryListNotifierProvider);
+      categoryList = ref.watch(categoryListNotifierProvider).valueOrNull?[
+              ref.watch(provider.select((p) => p.selectExpenses))] ??
+          [];
     }
 
-    final registerCategoryStateProvider =
-        ref.read(registerCategoryStateNotifierProvider.notifier);
+    final selectCategoryStateProvider = ref.read(provider.notifier);
 
     return SafeArea(
       top: false,
@@ -261,41 +283,42 @@ class CategoryPickerKeyboard extends ConsumerWidget
                   ? CategoryKeyboardPanel(
                       category: null,
                       onTap: () {
-                        registerCategoryStateProvider.updateSubCategory(null);
+                        selectCategoryStateProvider
+                            .updateSelectSubCategory(null);
                       },
                       width: itemWidth,
                       height: itemHeight,
                       notifier: notifier,
                     )
                   : const SizedBox(),
-              if (categoryListProvider.value != null &&
-                  categoryListProvider.value!.isNotEmpty)
-                for (final category in categoryListProvider.value!)
-                  CategoryKeyboardPanel(
-                    category: category,
-                    onTap: sub
-                        ? () {
-                            registerCategoryStateProvider
-                                .updateSubCategory(category);
+              for (final category in categoryList)
+                CategoryKeyboardPanel(
+                  category: category,
+                  onTap: sub
+                      ? () {
+                          selectCategoryStateProvider
+                              .updateSelectSubCategory(category);
+                        }
+                      : () {
+                          if (category != notifier.value) {
+                            selectCategoryStateProvider
+                                .updateSelectParentCategory(category);
                           }
-                        : () {
-                            if (category != notifier.value) {
-                              registerCategoryStateProvider.updateCategory(
-                                  category, null);
-                            }
-                          },
-                    width: itemWidth,
-                    height: itemHeight,
-                    notifier: notifier,
-                  ),
-              //新規 カテゴリー
-              AddCategoryKeyboardPanel(
-                category: null,
-                sub: sub,
-                width: itemWidth,
-                height: itemHeight,
-                notifier: notifier,
-              )
+                        },
+                  width: itemWidth,
+                  height: itemHeight,
+                  notifier: notifier,
+                ),
+              if (enableNewAdd)
+                //新規 カテゴリー
+                AddCategoryKeyboardPanel(
+                  category: null,
+                  sub: sub,
+                  width: itemWidth,
+                  height: itemHeight,
+                  notifier: notifier,
+                  provider: provider,
+                )
             ],
           ),
         ),
@@ -357,8 +380,8 @@ class _CategoryKeyboardPanelState extends State<CategoryKeyboardPanel> {
                   ? Column(
                       children: [
                         Expanded(
+                          flex: 1,
                           child: FittedBox(
-                            fit: BoxFit.contain,
                             child: Icon(
                               widget.category!.icon,
                               color: widget.category!.color,
@@ -366,18 +389,29 @@ class _CategoryKeyboardPanelState extends State<CategoryKeyboardPanel> {
                             ),
                           ),
                         ),
-                        Text(
-                          widget.category!.name,
-                          style: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant),
-                          overflow: TextOverflow.ellipsis,
+                        Expanded(
+                          flex: 1,
+                          child: Center(
+                            child: AutoSizeText(
+                              widget.category!.name,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  height: 1.2),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              minFontSize: 11,
+                            ),
+                          ),
                         ),
                       ],
                     )
-                  : const Center(
+                  : const FittedBox(
+                      fit: BoxFit.scaleDown,
                       child: Text(
                         "サブカテゴリー\nなし",
                         textAlign: TextAlign.center,
+                        maxLines: 2,
                       ),
                     ),
             ),
@@ -393,6 +427,8 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
   final double height;
   final bool sub;
   final ValueNotifier<Category?> notifier;
+  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
+      provider;
 
   const AddCategoryKeyboardPanel({
     super.key,
@@ -401,24 +437,22 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
     required this.width,
     required this.sub,
     required this.notifier,
+    required this.provider,
   });
 
-  void goAddCategoryView(GoRouter goRoute, bool sub, WidgetRef ref) {
-    final registerCategoryState =
-        ref.watch(registerCategoryStateNotifierProvider);
-    final registerCategoryStateProvider =
-        ref.read(registerCategoryStateNotifierProvider.notifier);
+  void goAddCategoryView(
+      GoRouter goRoute,
+      bool sub,
+      WidgetRef ref,
+      NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
+          provider) {
     if (sub) {
-      registerCategoryStateProvider.saveCategory();
-      ref
-          .read(selectCategoryNotifierProvider.notifier)
-          .updateCategory(registerCategoryState.category);
-      ref.read(selectSubCategoryNotifierProvider.notifier).updateCategory(null);
-      goRoute.push('/setting/category_list/category_edit/sub_category_edit');
+      ref.read(provider.notifier).setNextInitState(sub);
+      goRoute.push('/setting/category_list/category_edit/sub_category_edit',
+          extra: provider);
     } else {
-      registerCategoryStateProvider.saveCategory();
-      ref.read(selectCategoryNotifierProvider.notifier).updateCategory(null);
-      goRoute.push('/setting/category_list/category_edit');
+      ref.read(provider.notifier).setNextInitState(sub);
+      goRoute.push('/setting/category_list/category_edit', extra: provider);
     }
   }
 
@@ -448,9 +482,10 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
             ),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => goAddCategoryView(goRoute, sub, ref),
+              onTap: () => goAddCategoryView(goRoute, sub, ref, provider),
               onTapDown: (_) => panelBoarder.value = true,
               onTapUp: (_) => panelBoarder.value = false,
+              onTapCancel: () => panelBoarder.value = false,
               child: (category != null)
                   ? Column(
                       children: [
@@ -472,10 +507,12 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
                         ),
                       ],
                     )
-                  : const Center(
+                  : const FittedBox(
+                      fit: BoxFit.scaleDown,
                       child: Text(
                         "新規追加",
                         textAlign: TextAlign.center,
+                        maxLines: 1,
                       ),
                     ),
             ),

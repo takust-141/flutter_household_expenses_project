@@ -74,19 +74,20 @@ class _DatePickerKeyboardState extends ConsumerState<DatePickerKeyboard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenWidth = mediaQuery.size.width;
     final double keyboardContainerHeight =
         DatePickerKeyboard._kKeyboardHeight - mediaQuery.viewPadding.bottom;
     final double keyboardPanelAreaHeight =
         keyboardContainerHeight - keyboardMonthHeight - weekHeight;
-    final double keyboardPanelAreaWidth = mediaQuery.size.width - (small * 2);
+    final double keyboardPanelAreaWidth = screenWidth - (small * 2);
 
-    final double itemWidth = (screenWidth - (small * 2)) / 7;
+    final double itemWidth = keyboardPanelAreaWidth / 7;
     final double itemHeight = keyboardPanelAreaHeight / 6;
 
-    final weeks = ref.watch(settingDataProvider.select((value) => value.weeks));
-    final isSelectedWeek = ref
-        .watch(settingDataProvider.select((value) => value.calendarStartWeek));
+    final weeks = ref.watch(
+        settingDataProvider.select((p) => p.value?.weeks ?? defaultWeeks));
+    final isSelectedWeek = ref.watch(settingDataProvider
+        .select((p) => p.value?.calendarStartWeek ?? defaultStartWeek));
 
     final viewMonth = useState<DateTime>(widget.notifier.value ?? currentMonth);
 

@@ -19,6 +19,7 @@ const largeEdgeInsets = EdgeInsets.all(large);
 
 const ssmallLeftEdgeInsets = EdgeInsets.only(left: ssmall);
 const mediumLeftEdgeInsets = EdgeInsets.only(left: medium);
+const msmallRightEdgeInsets = EdgeInsets.only(right: msmall);
 const mediumRightEdgeInsets = EdgeInsets.only(right: medium);
 
 const smallVerticalEdgeInsets = EdgeInsets.symmetric(vertical: small);
@@ -34,6 +35,13 @@ const segmentedButtonPadding =
 
 const double bottomAppBarHeight = 70;
 const double bottomNavIconSize = 25;
+
+//CalendarSliver用
+const calendarSliverEdgeInsets =
+    EdgeInsets.symmetric(vertical: smedium, horizontal: msmall);
+
+const sumContainerEdgeInsets =
+    EdgeInsets.symmetric(vertical: ssmall, horizontal: small);
 
 //カスタムキーボード
 const double keyboardIconSize = 24;
@@ -65,7 +73,7 @@ const double formInputBoarderWidth = 2.0;
 const double formInputpadding = smedium;
 
 //カテゴリedit
-const double categoryCardHeight = 100;
+const double categoryCardHeight = 130;
 const double categoryCardWidth = 130;
 
 //画面用

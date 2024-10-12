@@ -20,18 +20,18 @@ class KeyboardCustomInput<T> extends StatefulWidget {
   final ValueNotifier<T> notifier;
 
   const KeyboardCustomInput({
-    Key? key,
+    super.key,
     required this.focusNode,
     required this.builder,
     required this.notifier,
     this.height,
-  }) : super(key: key);
+  });
 
   @override
-  _KeyboardCustomInputState<T> createState() => _KeyboardCustomInputState<T>();
+  KeyboardCustomInputState<T> createState() => KeyboardCustomInputState<T>();
 }
 
-class _KeyboardCustomInputState<T> extends State<KeyboardCustomInput<T>>
+class KeyboardCustomInputState<T> extends State<KeyboardCustomInput<T>>
     with AutomaticKeepAliveClientMixin {
   bool? _hasFocus;
 
@@ -53,7 +53,7 @@ class _KeyboardCustomInputState<T> extends State<KeyboardCustomInput<T>>
             widget.focusNode.requestFocus();
           }
         },
-        child: Container(
+        child: SizedBox(
           height: widget.height,
           width: double.maxFinite,
           child: ValueListenableBuilder(

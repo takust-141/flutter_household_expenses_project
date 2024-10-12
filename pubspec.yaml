@@ -37,6 +37,7 @@ dependencies:
   hooks_riverpod: ^2.5.1
   flutter_hooks: ^0.20.5
   shared_preferences: ^2.3.2
+  auto_size_text: ^3.0.0
 
 dev_dependencies:
   flutter_test:

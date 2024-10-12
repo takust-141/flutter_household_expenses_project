@@ -5,8 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/component/segmented_button.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
-import 'package:household_expenses_project/provider/select_expenses_provider.dart';
-import 'package:household_expenses_project/view/calendar_page.dart';
+import 'package:household_expenses_project/view/calendar_view/calendar_page.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 const rootNameRegister = 'register';
@@ -18,73 +17,40 @@ const rootNameCategoryEdit = 'category_edit';
 const rootNameSubCategoryEdit = 'sub_category_edit';
 const rootNameCalendarSetting = 'calendar_setting';
 
-//Collection
-class AppBarStateCollection {
-  static const List<AppBarState> appBarStateStateList = [
-    AppBarState(name: rootNameRegister, appBarTitle: null, appBarBack: false),
-    AppBarState(
-      name: rootNameCalendar,
-      appBarTitle: "カレンダー",
-      appBarBack: false,
-    ),
-    AppBarState(
-      name: rootNameChart,
-      appBarBack: false,
-    ),
-    AppBarState(
-        name: rootNameCategoryList, appBarTitle: 'カテゴリー', appBarBack: true),
-    AppBarState(
-        name: rootNameCalendarSetting,
-        appBarTitle: 'カレンダー設定',
-        appBarBack: true),
-    AppBarState(
-      name: rootNameCategoryEdit,
-      appBarTitle: null,
-      needBottomBar: false,
-      cancelAndDo: true,
-      appBarSideWidth: 100,
-    ),
-    AppBarState(
-      name: rootNameSubCategoryEdit,
-      appBarTitle: null,
-      needBottomBar: false,
-      cancelAndDo: true,
-      appBarSideWidth: 100,
-    ),
-  ];
-
-  static AppBarState? getAppBarState(String? name) {
-    if (name != null) {
-      for (var appBarState in appBarStateStateList) {
-        if (appBarState.name == name) {
-          return appBarState;
-        }
-      }
-    }
-    return null;
-  }
-}
+const List<AppBarState> appBarStateStateList = [
+  AppBarState(name: rootNameRegister, appBarTitle: null, appBarBack: false),
+  AppBarState(
+    name: rootNameCalendar,
+    appBarBack: false,
+    appBarSideWidth: 0,
+  ),
+  AppBarState(
+    name: rootNameChart,
+    appBarBack: false,
+  ),
+  AppBarState(
+      name: rootNameCategoryList, appBarTitle: 'カテゴリー', appBarBack: true),
+  AppBarState(
+      name: rootNameCalendarSetting, appBarTitle: 'カレンダー設定', appBarBack: true),
+  AppBarState(
+    name: rootNameCategoryEdit,
+    appBarTitle: null,
+    needBottomBar: false,
+    cancelAndDo: true,
+    appBarSideWidth: 100,
+  ),
+  AppBarState(
+    name: rootNameSubCategoryEdit,
+    appBarTitle: null,
+    needBottomBar: false,
+    cancelAndDo: true,
+    appBarSideWidth: 100,
+  ),
+];
 
 //Provider
 final appBarProvider =
-    NotifierProvider<AppBarNotifier, AppBarState?>(AppBarNotifier.new);
-final doneButtonProvider =
-    NotifierProvider<DoneButtonNotifier, bool>(DoneButtonNotifier.new);
-
-class DoneButtonNotifier extends Notifier<bool> {
-  @override
-  bool build() {
-    return false;
-  }
-
-  void setState(String? text) {
-    if (text == null || text.trim().isEmpty) {
-      state = false;
-    } else {
-      state = true;
-    }
-  }
-}
+    NotifierProvider<AppBarNotifier, AppBarState>(AppBarNotifier.new);
 
 const double _defauldAppBarSideWidth = 56;
 
@@ -97,6 +63,7 @@ class AppBarState {
   final bool cancelAndDo;
   final bool needBottomBar;
   final double appBarSideWidth;
+  final bool isActiveCategoryDoneButton;
   const AppBarState({
     required this.name,
     this.appBarTitle,
@@ -104,38 +71,114 @@ class AppBarState {
     this.needBottomBar = true,
     this.cancelAndDo = false,
     this.appBarSideWidth = _defauldAppBarSideWidth,
+    this.isActiveCategoryDoneButton = false,
   });
 
+  AppBarState copyWith({String? name}) {
+    return AppBarState(
+      name: name ?? this.name,
+      appBarTitle: appBarTitle,
+      appBarBack: appBarBack,
+      cancelAndDo: cancelAndDo,
+      needBottomBar: needBottomBar,
+      appBarSideWidth: appBarSideWidth,
+      isActiveCategoryDoneButton: isActiveCategoryDoneButton,
+    );
+  }
+
+  AppBarState copyWithCategoryDoneButton(bool isActive) {
+    return AppBarState(
+      name: name,
+      appBarTitle: appBarTitle,
+      appBarBack: appBarBack,
+      cancelAndDo: cancelAndDo,
+      needBottomBar: needBottomBar,
+      appBarSideWidth: appBarSideWidth,
+      isActiveCategoryDoneButton: isActive,
+    );
+  }
+}
+
+//Notifier
+class AppBarNotifier extends Notifier<AppBarState> {
+  @override
+  AppBarState build() {
+    return const AppBarState(name: '');
+  }
+
+  void setAppBar(String? routeName) {
+    if (state.name != routeName) {
+      var newState = const AppBarState(name: '');
+      for (AppBarState appBarState in appBarStateStateList) {
+        if (appBarState.name == routeName) {
+          newState = appBarState;
+        }
+      }
+      state = newState;
+
+      //カテゴリー編集の時、完了ボタン判定
+      if (state.name == rootNameCategoryEdit) {
+        updateActiveCategoryDoneButton(ref
+            .read(
+                settingCategoryStateNotifierProvider.select((p) => p.category))
+            ?.name);
+      }
+      if (state.name == rootNameSubCategoryEdit) {
+        updateActiveCategoryDoneButton(ref
+            .read(settingCategoryStateNotifierProvider
+                .select((p) => p.subCategory))
+            ?.name);
+      }
+    }
+  }
+
+  //appbarの完了ボタン更新
+  void updateActiveCategoryDoneButton(String? text) {
+    if (text == null || text.trim().isEmpty) {
+      state = state.copyWithCategoryDoneButton(false);
+    } else {
+      state = state.copyWithCategoryDoneButton(true);
+    }
+  }
+
+  //appbar設定
   Widget? getAppBarLeadingWidget() {
-    if (cancelAndDo) {
+    if (state.cancelAndDo) {
       return const AppBarCancelWidget();
-    } else if (appBarBack) {
+    } else if (state.appBarBack) {
       return const AppBarBackWidget();
     }
     return null;
   }
 
   Widget? getAppBarTitleWidget(TextStyle? fontStyle) {
-    if (name == rootNameRegister) {
-      return SelectExpensesButton(selectExpenses);
+    if (state.name == rootNameRegister) {
+      return SelectExpensesButton(registerCategoryStateNotifierProvider);
     }
-    if (name == rootNameCategoryList) {
-      return SelectExpensesButton(selectExpenses);
+    if (state.name == rootNameCategoryList) {
+      return SelectExpensesButton(settingCategoryStateNotifierProvider);
+    }
+    if (state.name == rootNameCalendar) {
+      return CalendarAppBar();
     }
 
-    String? titleText = appBarTitle;
+    String? titleText = state.appBarTitle;
 
     return Consumer(
       builder: (context, ref, child) {
-        if (name == rootNameCategoryEdit) {
-          if (ref.read(selectCategoryNotifierProvider) == null) {
+        if (state.name == rootNameCategoryEdit) {
+          if (ref.read(settingCategoryStateNotifierProvider
+                  .select((p) => p.category)) ==
+              null) {
             titleText = "カテゴリー 新規追加";
           } else {
             titleText = "カテゴリー 編集";
           }
         }
-        if (name == rootNameSubCategoryEdit) {
-          if (ref.read(selectSubCategoryNotifierProvider) == null) {
+        if (state.name == rootNameSubCategoryEdit) {
+          if (ref.read(settingCategoryStateNotifierProvider
+                  .select((p) => p.subCategory)) ==
+              null) {
             titleText = "サブカテゴリー 新規追加";
           } else {
             titleText = "サブカテゴリー 編集";
@@ -145,7 +188,7 @@ class AppBarState {
           return Text(
             titleText!,
             style: fontStyle?.copyWith(fontSize: 18),
-            key: ValueKey<String?>(appBarTitle),
+            key: ValueKey<String?>(state.appBarTitle),
             overflow: TextOverflow.ellipsis,
           );
         } else {
@@ -157,29 +200,15 @@ class AppBarState {
 
   Widget? getAppBarTailingWidget(
       GlobalKey<FormState>? formkey, GlobalKey<FormState>? subFormkey) {
-    if (cancelAndDo) {
-      if (name == rootNameCategoryEdit) {
+    if (state.cancelAndDo) {
+      if (state.name == rootNameCategoryEdit) {
         return AppBarDoneWidget(formkey);
       }
-      if (name == rootNameSubCategoryEdit) {
+      if (state.name == rootNameSubCategoryEdit) {
         return AppBarDoneWidget(subFormkey);
       }
     }
     return null;
-  }
-}
-
-//Notifier
-class AppBarNotifier extends Notifier<AppBarState?> {
-  @override
-  AppBarState? build() {
-    return null;
-  }
-
-  void setAppBar(String? routeName) {
-    if (state?.name != routeName) {
-      state = AppBarStateCollection.getAppBarState(routeName);
-    }
   }
 }
 
@@ -253,7 +282,9 @@ class AppBarDoneWidget extends HookConsumerWidget {
     final theme = Theme.of(context);
     final textColor = useState<Color>(theme.colorScheme.onSurface);
 
-    return ref.watch(doneButtonProvider)
+    return ref.watch(
+                appBarProvider.select((p) => p.isActiveCategoryDoneButton)) ??
+            false
         ? GestureDetector(
             child: AnimatedContainer(
               duration: listItemAnimationDuration,

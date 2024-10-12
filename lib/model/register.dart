@@ -1,8 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:household_expenses_project/constant/keyboard_components.dart';
 import 'package:household_expenses_project/model/category.dart';
-import 'package:household_expenses_project/provider/select_expenses_provider.dart';
-import 'package:household_expenses_project/view_model/category_db_helper.dart';
 
 const String registerTable = 'register';
 const String registerId = '_id';
@@ -12,9 +8,9 @@ const String registerMemo = 'memo';
 const String registerDate = 'date';
 
 final List<String> registerCategory1KeyList =
-    categoryKeyList.map((key) => 'category_1$key').toList();
+    categoryKeyList.map((key) => 'category_1_$key').toList();
 final List<String> registerCategory2KeyList =
-    categoryKeyList.map((key) => 'category_2$key').toList();
+    categoryKeyList.map((key) => 'category_2_$key').toList();
 
 class Register {
   int? id;
@@ -37,17 +33,23 @@ class Register {
   Register.fromMap(Map map)
       : id = map[registerId],
         amount = map[registerAmount]!,
-        category = Category.fromMap(Map.fromEntries(map.entries.where((entry) =>
-            ((map[registerCategory2KeyList[0]] != null)
-                    ? registerCategory2KeyList
-                    : registerCategory1KeyList)
-                .contains(entry.key)))),
+        category = Category.fromMap(
+            Map.fromEntries(map.entries.where((entry) =>
+                ((map[registerCategory2KeyList[0]] != null)
+                        ? registerCategory2KeyList
+                        : registerCategory1KeyList)
+                    .contains(entry.key))),
+            mapKeyList: (map[registerCategory2KeyList[0]] != null)
+                ? registerCategory2KeyList
+                : registerCategory1KeyList),
         subCategory = (map[registerCategory2KeyList[0]] != null)
-            ? Category.fromMap(Map.fromEntries(map.entries.where(
-                (entry) => registerCategory1KeyList.contains(entry.key))))
+            ? Category.fromMap(
+                Map.fromEntries(map.entries.where(
+                    (entry) => registerCategory1KeyList.contains(entry.key))),
+                mapKeyList: registerCategory1KeyList)
             : null,
         memo = map[registerMemo],
-        date = map[registerDate];
+        date = DateTime.fromMillisecondsSinceEpoch(map[registerDate]);
 
   Map<String, Object?> toMap() {
     int categoryId = (subCategory == null) ? category!.id! : subCategory!.id!;
