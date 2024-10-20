@@ -5,20 +5,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/constant/dimension.dart';
 import 'package:household_expenses_project/model/register.dart';
 import 'package:household_expenses_project/provider/calendar_page_provider.dart';
+import 'package:household_expenses_project/provider/register_edit_state.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/provider/setting_data_provider.dart';
-import 'package:household_expenses_project/view/calendar_view/calendar_modal_view.dart';
-
-const double calendarListHeight = 50;
-const double calendarDateWidth = 40;
-const double calendarListPadding = small;
-
-const double colorV = ssmall + 2;
-const double colorH = 6;
-const colorContainerMargin =
-    EdgeInsets.symmetric(vertical: colorV, horizontal: colorH);
-const colorContainerHeight =
-    calendarListHeight - calendarListPadding - colorV * 2;
+import 'package:household_expenses_project/view/calendar_view/register_modal_view.dart';
 
 class CalendarListView extends HookConsumerWidget {
   const CalendarListView({super.key});
@@ -42,7 +32,7 @@ class CalendarListView extends HookConsumerWidget {
             slivers: [
               //日付
               SliverConstrainedCrossAxis(
-                maxExtent: calendarDateWidth,
+                maxExtent: registerDateWidth,
                 sliver: SliberDateGroup(registerList: registerList),
               ),
 
@@ -53,11 +43,14 @@ class CalendarListView extends HookConsumerWidget {
                     SliverFixedExtentList(
                       delegate: SliverChildBuilderDelegate(
                         (BuildContext context, int index) {
-                          return RegisterListItem(index: index);
+                          return RegisterListItem(
+                            register: registerList[index],
+                            pagaProvider: calendarPageProvider,
+                          );
                         },
                         childCount: registerList.length,
                       ),
-                      itemExtent: calendarListHeight,
+                      itemExtent: registerListHeight,
                     ),
                 ],
               ),
@@ -72,28 +65,27 @@ class CalendarListView extends HookConsumerWidget {
 //
 //リストアイテム
 class RegisterListItem extends HookConsumerWidget {
-  final int index;
-  const RegisterListItem({super.key, required this.index});
+  final Register register;
+  final AsyncNotifierProvider<RegisterEditStateNotifier, RegisterEditState>
+      pagaProvider;
+  const RegisterListItem(
+      {super.key, required this.register, required this.pagaProvider});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
-    final registerList = ref.watch(
-            calendarPageProvider.select((p) => p.valueOrNull?.registerList)) ??
-        [];
 
     return Container(
-      height: calendarListHeight - calendarListPadding,
-      padding: const EdgeInsets.only(bottom: calendarListPadding),
+      height: registerListHeight - registerListPadding,
+      padding: const EdgeInsets.only(bottom: registerListPadding),
       child: GestureDetector(
         onTap: () {
-          Register selectRegister = registerList[index];
           ref
               .read(registerEditCategoryStateNotifierProvider.notifier)
               .updateSelectBothCategory(
-                  selectRegister.category, selectRegister.subCategory);
-          showRegisterModal(context, ref, selectRegister, calendarPageProvider);
+                  register.category, register.subCategory);
+          showRegisterModal(context, ref, register, pagaProvider);
         },
         onTapDown: (_) =>
             {listItemColor.value = theme.colorScheme.surfaceContainerHighest},
@@ -109,14 +101,14 @@ class RegisterListItem extends HookConsumerWidget {
           ),
           child: Row(
             children: [
-              (registerList[index].subCategory == null)
+              (register.subCategory == null)
                   ? Container(
                       margin: colorContainerMargin,
                       height: colorContainerHeight,
                       width: 4,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(2),
-                        color: registerList[index].category!.color,
+                        color: register.category!.color,
                       ),
                     )
                   : Container(
@@ -132,13 +124,13 @@ class RegisterListItem extends HookConsumerWidget {
                           Container(
                             height: colorContainerHeight * 2 / 3,
                             decoration: BoxDecoration(
-                              color: registerList[index].category!.color,
+                              color: register.category!.color,
                             ),
                           ),
                           Container(
                             height: colorContainerHeight * 1 / 3,
                             decoration: BoxDecoration(
-                              color: registerList[index].subCategory!.color,
+                              color: register.subCategory!.color,
                             ),
                           ),
                         ],
@@ -158,17 +150,17 @@ class RegisterListItem extends HookConsumerWidget {
                             Flexible(
                               flex: 2,
                               child: AutoSizeText(
-                                registerList[index].category!.name,
+                                register.category!.name,
                                 textAlign: TextAlign.start,
                                 minFontSize: 12,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (registerList[index].subCategory != null) ...{
+                            if (register.subCategory != null) ...{
                               Flexible(
                                 flex: 1,
                                 child: AutoSizeText(
-                                  " / ${registerList[index].subCategory!.name}",
+                                  " / ${register.subCategory!.name}",
                                   textAlign: TextAlign.start,
                                   minFontSize: 10,
                                   maxFontSize: 12,
@@ -182,7 +174,7 @@ class RegisterListItem extends HookConsumerWidget {
                       Expanded(
                         flex: 3,
                         child: AutoSizeText(
-                          registerList[index].memo ?? "",
+                          register.memo ?? "",
                           minFontSize: 10,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
@@ -198,16 +190,16 @@ class RegisterListItem extends HookConsumerWidget {
               Expanded(
                 flex: 1,
                 child: AutoSizeText(
-                  "${LogicComponent.addCommaToNum(registerList[index].amount)}円",
+                  "${LogicComponent.addCommaToNum(register.amount)}円",
                   maxLines: 2,
                   textAlign: TextAlign.end,
                   overflow: TextOverflow.visible,
                   minFontSize: 10,
                   style: TextStyle(
-                      color: registerList[index].category?.expenses ==
-                              SelectExpenses.income
-                          ? Colors.blue[900]
-                          : Colors.red[900]),
+                      color:
+                          register.category?.expenses == SelectExpenses.income
+                              ? Colors.blue[900]
+                              : Colors.red[900]),
                 ),
               ),
               const SizedBox(width: small),
@@ -230,7 +222,7 @@ class SliberDateGroup extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
     // 日付ごとにグループ化
     Map<int, List<DateTime?>> groupedByDay = {};
-    if (registerList == null) {
+    if (registerList == null || registerList!.isEmpty) {
       return const SliverToBoxAdapter(
         child: SizedBox.shrink(),
       );
@@ -259,7 +251,7 @@ class SliberDateGroup extends StatelessWidget {
                 SliverToBoxAdapter(
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(0, 0, small, small),
-                    height: (dayList.length - 1) * calendarListHeight,
+                    height: (dayList.length - 1) * registerListHeight,
                     child: VerticalDivider(
                       color: theme.colorScheme.outlineVariant,
                     ),
@@ -275,7 +267,7 @@ class SliberDateGroup extends StatelessWidget {
 
 //デリゲート（日付ピン留めsliber用）
 class CustomSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final double height = calendarListHeight;
+  final double height = registerListHeight;
   final DateTime date;
 
   CustomSliverHeaderDelegate({
@@ -295,7 +287,7 @@ class CustomSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
       child: Container(
         color: theme.colorScheme.surfaceContainer,
         padding: const EdgeInsets.fromLTRB(
-            sssmall, 0, small, calendarListPadding + sssmall),
+            sssmall, 0, small, registerListPadding + sssmall),
         child: Column(
           children: [
             Flexible(
@@ -346,7 +338,7 @@ class CalendarMonthSumItem extends ConsumerWidget {
         ref.read(calendarPageProvider.notifier).calcMonthSumRegister();
 
     return SizedBox(
-      height: calendarListHeight - calendarListPadding,
+      height: registerListHeight - registerListPadding,
       child: Material(
         clipBehavior: Clip.antiAlias,
         elevation: 1.0,

@@ -33,6 +33,9 @@ const appbarSidePadding = smedium;
 const segmentedButtonPadding =
     EdgeInsets.symmetric(vertical: small, horizontal: lllarge);
 
+const appbarSearchPadding =
+    EdgeInsets.symmetric(vertical: small, horizontal: medium);
+
 const double bottomAppBarHeight = 70;
 const double bottomNavIconSize = 25;
 
@@ -42,6 +45,19 @@ const calendarSliverEdgeInsets =
 
 const sumContainerEdgeInsets =
     EdgeInsets.symmetric(vertical: ssmall, horizontal: small);
+
+//registerList用
+const double registerYMListHeight = 40;
+const double registerListHeight = 50;
+const double registerDateWidth = 40;
+const double registerListPadding = small;
+
+const double colorV = ssmall + 2;
+const double colorH = 6;
+const colorContainerMargin =
+    EdgeInsets.symmetric(vertical: colorV, horizontal: colorH);
+const colorContainerHeight =
+    registerListHeight - registerListPadding - colorV * 2;
 
 //カスタムキーボード
 const double keyboardIconSize = 24;

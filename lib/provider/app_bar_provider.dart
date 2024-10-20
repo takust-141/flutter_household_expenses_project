@@ -6,11 +6,13 @@ import 'package:household_expenses_project/component/segmented_button.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/view/calendar_view/calendar_page.dart';
+import 'package:household_expenses_project/view/search_page.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 const rootNameRegister = 'register';
 const rootNameCalendar = 'calendar';
 const rootNameChart = 'chart';
+const rootNameSearch = 'search';
 const rootNameSetting = 'setting';
 const rootNameCategoryList = 'category_list';
 const rootNameCategoryEdit = 'category_edit';
@@ -27,6 +29,12 @@ const List<AppBarState> appBarStateStateList = [
   AppBarState(
     name: rootNameChart,
     appBarBack: false,
+    appBarSideWidth: 0,
+  ),
+  AppBarState(
+    name: rootNameSearch,
+    appBarBack: false,
+    appBarSideWidth: 0,
   ),
   AppBarState(
       name: rootNameCategoryList, appBarTitle: 'カテゴリー', appBarBack: true),
@@ -160,6 +168,9 @@ class AppBarNotifier extends Notifier<AppBarState> {
     }
     if (state.name == rootNameCalendar) {
       return CalendarAppBar();
+    }
+    if (state.name == rootNameSearch) {
+      return SearchAppBar();
     }
 
     String? titleText = state.appBarTitle;

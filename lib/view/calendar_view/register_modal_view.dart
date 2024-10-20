@@ -6,8 +6,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/component/segmented_button.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/model/register.dart';
-import 'package:household_expenses_project/provider/calendar_page_provider.dart';
 import 'package:household_expenses_project/provider/register_db_provider.dart';
+import 'package:household_expenses_project/provider/register_edit_state.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
@@ -33,9 +33,9 @@ void showRegisterModal(
     BuildContext context,
     WidgetRef ref,
     Register? register,
-    AsyncNotifierProvider<CalendarPageNotifier, CalendarPageState>
-        calendarStateProvider) {
-  ref.read(calendarStateProvider.notifier).initRegisterButtonState();
+    AsyncNotifierProvider<RegisterEditStateNotifier, RegisterEditState>
+        registerEditStateProvider) {
+  ref.read(registerEditStateProvider.notifier).initDoneButton();
   final theme = Theme.of(context);
   showModalBottomSheet<void>(
     clipBehavior: Clip.antiAlias,
@@ -47,17 +47,17 @@ void showRegisterModal(
     backgroundColor: theme.colorScheme.surfaceContainer,
     context: Navigator.of(context, rootNavigator: true).context,
     builder: (BuildContext context) {
-      return RegisterEditView(register, calendarStateProvider);
+      return RegisterEditView(register, registerEditStateProvider);
     },
   );
 }
 
 //-----編集View-----
 class RegisterEditView extends ConsumerWidget {
-  RegisterEditView(this.register, this.calendarStateProvider, {super.key});
+  RegisterEditView(this.register, this.registerEditStateProvider, {super.key});
   final Register? register;
-  final AsyncNotifierProvider<CalendarPageNotifier, CalendarPageState>
-      calendarStateProvider;
+  final AsyncNotifierProvider<RegisterEditStateNotifier, RegisterEditState>
+      registerEditStateProvider;
 
   final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
       selectCategoryStateProvider = registerEditCategoryStateNotifierProvider;
@@ -81,7 +81,8 @@ class RegisterEditView extends ConsumerWidget {
                 //segmendedButton
                 SelectExpensesButton(selectCategoryStateProvider),
                 Expanded(
-                    flex: 1, child: AppBarDoneWidget(calendarStateProvider)),
+                    flex: 1,
+                    child: AppBarDoneWidget(registerEditStateProvider)),
               ],
             ),
           ),
@@ -94,7 +95,7 @@ class RegisterEditView extends ConsumerWidget {
             child: RegisterEditBodyView(
               register: register,
               selectCategoryStateProvider: selectCategoryStateProvider,
-              calendarStateProvider: calendarStateProvider,
+              registerEditStateProvider: registerEditStateProvider,
             ),
           ),
         ),
@@ -138,9 +139,9 @@ class AppBarCancelWidget extends HookWidget {
 
 //完了ボタン
 class AppBarDoneWidget extends HookConsumerWidget {
-  const AppBarDoneWidget(this.calendarStateProvider, {super.key});
-  final AsyncNotifierProvider<CalendarPageNotifier, CalendarPageState>
-      calendarStateProvider;
+  const AppBarDoneWidget(this.registerEditStateProvider, {super.key});
+  final AsyncNotifierProvider<RegisterEditStateNotifier, RegisterEditState>
+      registerEditStateProvider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -148,9 +149,9 @@ class AppBarDoneWidget extends HookConsumerWidget {
     final doneTextColor = useState<Color>(theme.colorScheme.onSurface);
 
     return (ref
-                .watch(calendarStateProvider)
+                .watch(registerEditStateProvider)
                 .valueOrNull
-                ?.isActiveRegisterButton ??
+                ?.isActiveDoneButton ??
             false)
         ? GestureDetector(
             child: AnimatedContainer(
@@ -197,12 +198,12 @@ class RegisterEditBodyView extends StatefulHookConsumerWidget {
   const RegisterEditBodyView({
     super.key,
     required this.register,
-    required this.calendarStateProvider,
+    required this.registerEditStateProvider,
     required this.selectCategoryStateProvider,
   });
   final Register? register;
-  final AsyncNotifierProvider<CalendarPageNotifier, CalendarPageState>
-      calendarStateProvider;
+  final AsyncNotifierProvider<RegisterEditStateNotifier, RegisterEditState>
+      registerEditStateProvider;
   final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
       selectCategoryStateProvider;
 
@@ -249,8 +250,9 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
 
     categoryNotifier = ValueNotifier<Category?>(initCategory);
     subCategoryNotifier = ValueNotifier<Category?>(initSubCategory);
-    DateTime initDate = ref.read(widget.calendarStateProvider
-            .select((p) => p.valueOrNull?.selectDate)) ??
+    DateTime initDate = ref
+            .read(widget.registerEditStateProvider.notifier)
+            .currentSelectDate() ??
         DateTime.now();
     dateNotifier = ValueNotifier<DateTime>(widget.register?.date ?? initDate);
     amountOfMoneyTextController =
@@ -277,11 +279,15 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
 
     //完了ボタンのリスナー追加
     formInputCheck = () => ref
-        .read(widget.calendarStateProvider.notifier)
+        .read(widget.registerEditStateProvider.notifier)
         .formInputCheck(amountOfMoneyTextController, categoryNotifier);
 
+    //各コントローラーが変化した際にリスナーを実施
     amountOfMoneyTextController.addListener(formInputCheck);
     categoryNotifier.addListener(formInputCheck);
+    subCategoryNotifier.addListener(formInputCheck);
+    memoTextController.addListener(formInputCheck);
+    dateNotifier.addListener(formInputCheck);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       //要検討

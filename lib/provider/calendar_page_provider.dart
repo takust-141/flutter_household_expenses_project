@@ -4,9 +4,10 @@ import 'package:household_expenses_project/constant/dimension.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/model/register.dart';
 import 'package:household_expenses_project/provider/register_db_provider.dart';
+import 'package:household_expenses_project/provider/register_edit_state.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/provider/setting_data_provider.dart';
-import 'package:household_expenses_project/view/calendar_view/calendar_modal_view.dart';
+import 'package:household_expenses_project/view/calendar_view/register_modal_view.dart';
 import 'package:intl/intl.dart';
 
 //Provider
@@ -15,7 +16,7 @@ final calendarPageProvider =
         CalendarPageNotifier.new);
 
 @immutable
-class CalendarPageState {
+class CalendarPageState implements RegisterEditState {
   final DateTime displayMonth;
   final DateTime selectDate;
   final List<Register> registerList;
@@ -26,8 +27,9 @@ class CalendarPageState {
   final FixedExtentScrollController listWheelYearController;
   final FixedExtentScrollController listWheelMonthController;
   final double rotateIconAngle;
-  final bool isActiveRegisterButton;
   final ScrollController listScrollController;
+  @override
+  final bool isActiveDoneButton;
 
   const CalendarPageState({
     required this.displayMonth,
@@ -40,7 +42,7 @@ class CalendarPageState {
     required this.listWheelYearController,
     required this.listWheelMonthController,
     this.rotateIconAngle = 0.5,
-    this.isActiveRegisterButton = true,
+    this.isActiveDoneButton = true,
     required this.listScrollController,
   });
 
@@ -55,7 +57,7 @@ class CalendarPageState {
     PageController? pageViewController,
     FixedExtentScrollController? listWheelYearController,
     FixedExtentScrollController? listWheelMonthController,
-    bool? isActiveRegisterButton,
+    bool? isActiveDoneButton,
     ScrollController? listScrollController,
   }) {
     return CalendarPageState(
@@ -71,8 +73,7 @@ class CalendarPageState {
       listWheelMonthController:
           listWheelMonthController ?? this.listWheelMonthController,
       rotateIconAngle: rotateIconAngle ?? this.rotateIconAngle,
-      isActiveRegisterButton:
-          isActiveRegisterButton ?? this.isActiveRegisterButton,
+      isActiveDoneButton: isActiveDoneButton ?? this.isActiveDoneButton,
       listScrollController: listScrollController ?? this.listScrollController,
     );
   }
@@ -93,12 +94,13 @@ class CalendarPageState {
         listWheelMonthController =
             FixedExtentScrollController(initialItem: DateTime.now().month - 1),
         rotateIconAngle = 0.5,
-        isActiveRegisterButton = false,
+        isActiveDoneButton = false,
         listScrollController = ScrollController();
 }
 
 //Notifier
-class CalendarPageNotifier extends AsyncNotifier<CalendarPageState> {
+class CalendarPageNotifier
+    extends RegisterEditStateNotifier<CalendarPageState> {
   late CalendarPageState _defaultState;
   @override
   Future<CalendarPageState> build() async {
@@ -273,19 +275,20 @@ class CalendarPageNotifier extends AsyncNotifier<CalendarPageState> {
   }
 
   //Modal Register 編集フォーム入力チェックリスナー用（初期化）
-  void initRegisterButtonState() {
-    state = AsyncData(
-        state.valueOrNull?.copyWith(isActiveRegisterButton: false) ??
-            _defaultState);
+  @override
+  void initDoneButton() {
+    state = AsyncData(state.valueOrNull?.copyWith(isActiveDoneButton: false) ??
+        _defaultState);
   }
 
   //Modal Register 編集フォーム入力チェックリスナー用
+  @override
   void formInputCheck(
       TextEditingController controller, ValueNotifier<Category?> notifier) {
     final bool isActive =
         controller.text.isNotEmpty && (notifier.value != null);
     state = AsyncData(
-        state.valueOrNull?.copyWith(isActiveRegisterButton: isActive) ??
+        state.valueOrNull?.copyWith(isActiveDoneButton: isActive) ??
             _defaultState);
   }
 
@@ -359,6 +362,11 @@ class CalendarPageNotifier extends AsyncNotifier<CalendarPageState> {
       }
     }
     return (totalIncome, totalOutgo);
+  }
+
+  @override
+  DateTime? currentSelectDate() {
+    return state.valueOrNull?.selectDate;
   }
 }
 

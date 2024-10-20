@@ -59,6 +59,15 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          routes: <RouteBase>[
+            GoRoute(
+              path: '/search',
+              name: rootNameSearch,
+              builder: (context, state) => SearchPage(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
           navigatorKey: _shellNavigatorKey,
           routes: <RouteBase>[
             GoRoute(
@@ -155,6 +164,13 @@ class ScaffoldWithNavBar extends ConsumerStatefulWidget {
         size: bottomNavIconSize,
       ),
       label: 'グラフ',
+    ),
+    NavigationDestination(
+      icon: Icon(
+        Icons.search,
+        size: bottomNavIconSize,
+      ),
+      label: '検索',
     ),
     NavigationDestination(
       icon: Icon(
