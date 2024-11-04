@@ -6,7 +6,8 @@ import 'package:household_expenses_project/component/segmented_button.dart';
 import 'package:household_expenses_project/constant/constant.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/view/calendar_view/calendar_page.dart';
-import 'package:household_expenses_project/view/search_page.dart';
+import 'package:household_expenses_project/view/chart_view/chart_page.dart';
+import 'package:household_expenses_project/view/search_view/search_page.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 const rootNameRegister = 'register';
@@ -170,7 +171,10 @@ class AppBarNotifier extends Notifier<AppBarState> {
       return CalendarAppBar();
     }
     if (state.name == rootNameSearch) {
-      return SearchAppBar();
+      return const SearchAppBar();
+    }
+    if (state.name == rootNameChart) {
+      return const ChartAppBar();
     }
 
     String? titleText = state.appBarTitle;

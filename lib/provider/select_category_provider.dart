@@ -17,8 +17,15 @@ final registerEditCategoryStateNotifierProvider =
     NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>(
         SelectCategoryStateNotifier.new);
 
-enum SelectExpenses { outgo, income }
+enum SelectExpenses {
+  outgo("支出"),
+  income("収入");
 
+  final String text;
+  const SelectExpenses(this.text);
+}
+
+@immutable
 class SelectCategoryState {
   final Category? category;
   final Category? subCategory;
@@ -27,7 +34,7 @@ class SelectCategoryState {
   final Category? nextInitSubCategory; /*同上*/
   final SelectExpenses selectExpenses;
 
-  SelectCategoryState({
+  const SelectCategoryState({
     required this.category,
     required this.subCategory,
     required this.subCategoryList,
@@ -72,7 +79,7 @@ class SelectCategoryStateNotifier extends Notifier<SelectCategoryState> {
   @override
   SelectCategoryState build() {
     ref.read(categoryListNotifierProvider);
-    return SelectCategoryState(
+    return const SelectCategoryState(
       category: null,
       subCategory: null,
       subCategoryList: [],

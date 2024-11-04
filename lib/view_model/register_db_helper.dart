@@ -1,4 +1,5 @@
 import 'package:household_expenses_project/model/register.dart';
+import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/view_model/db_helper.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:household_expenses_project/model/category.dart';
@@ -41,12 +42,8 @@ class RegisterDBHelper {
     );
   }
 
-  static Future<List<Register>> getRegisterOfMonth(DateTime date) async {
-    int startOfMonth =
-        DateTime(date.year, date.month, 1).millisecondsSinceEpoch;
-    int endOfMonth =
-        DateTime(date.year, date.month + 1, 0).millisecondsSinceEpoch;
-
+  static Future<List<Register>> getRegisterOfRange(
+      DateTime startDate, DateTime endDate) async {
     List<Register> registerList = [];
     List<Map> listMap = await _database.rawQuery('''
     SELECT $registerTable.*, $selectColumns1, $selectColumns2
@@ -56,7 +53,7 @@ class RegisterDBHelper {
 
     WHERE $registerTable.$registerDate BETWEEN ? AND ?
     ORDER BY $registerTable.$registerDate ASC,  $registerTable.$registerId ASC
-    ''', [startOfMonth, endOfMonth]);
+    ''', [startDate.millisecondsSinceEpoch, endDate.millisecondsSinceEpoch]);
 
     for (var map in listMap) {
       registerList.add(Register.fromMap(map));
@@ -64,7 +61,7 @@ class RegisterDBHelper {
     return registerList;
   }
 
-  static Future<List<Register>> getRegisterStateOfText(String text) async {
+  static Future<List<Register>> getRegisterOfText(String text) async {
     final String searchText = "%$text%";
 
     List<Register> registerList = [];
@@ -77,6 +74,62 @@ class RegisterDBHelper {
     WHERE ( $registerTable.$registerMemo LIKE ? OR $registerTable.$registerAmount LIKE ? )
     ORDER BY $registerTable.$registerDate ASC,  $registerTable.$registerId ASC
     ''', [searchText, text]);
+
+    for (var map in listMap) {
+      registerList.add(Register.fromMap(map));
+    }
+    return registerList;
+  }
+
+  static Future<List<Register>> getRegisterOfRangeAndCategoryList(
+      DateTime startDate, DateTime endDate, List<Category> categoryList) async {
+    List<Register> registerList = [];
+
+    if (categoryList.isEmpty) return [];
+    final placeholders = List.filled(categoryList.length, '?').join(',');
+
+    List<Map> listMap = await _database.rawQuery('''
+    SELECT $registerTable.*, $selectColumns1, $selectColumns2
+    FROM $registerTable
+    INNER JOIN $categoryTable AS c1 ON $registerTable.$registerCategoryId = c1.$categoryId
+    LEFT OUTER JOIN $categoryTable AS c2 ON c1.$categoryParentId = c2.$categoryId
+
+    WHERE $registerTable.$registerDate BETWEEN ? AND ?
+    AND (c1.$categoryId IN ($placeholders)
+    OR c2.$categoryId IN ($placeholders))
+    ORDER BY $registerTable.$registerDate ASC,  $registerTable.$registerId ASC
+    ''', [
+      startDate.millisecondsSinceEpoch,
+      endDate.millisecondsSinceEpoch,
+      ...categoryList.map((category) => category.id),
+      ...categoryList.map((category) => category.id)
+    ]);
+
+    for (var map in listMap) {
+      registerList.add(Register.fromMap(map));
+    }
+    return registerList;
+  }
+
+  static Future<List<Register>> getRegisterOfRangeAndSelectExpenses(
+      DateTime startDate,
+      DateTime endDate,
+      SelectExpenses selectExpenses) async {
+    List<Register> registerList = [];
+    List<Map> listMap = await _database.rawQuery('''
+    SELECT $registerTable.*, $selectColumns1, $selectColumns2
+    FROM $registerTable
+    INNER JOIN $categoryTable AS c1 ON $registerTable.$registerCategoryId = c1.$categoryId
+    LEFT OUTER JOIN $categoryTable AS c2 ON c1.$categoryParentId = c2.$categoryId
+
+    WHERE $registerTable.$registerDate BETWEEN ? AND ?
+    AND c1.$categoryExpenses = ?
+    ORDER BY $registerTable.$registerDate ASC,  $registerTable.$registerId ASC
+    ''', [
+      startDate.millisecondsSinceEpoch,
+      endDate.millisecondsSinceEpoch,
+      selectExpenses.name
+    ]);
 
     for (var map in listMap) {
       registerList.add(Register.fromMap(map));

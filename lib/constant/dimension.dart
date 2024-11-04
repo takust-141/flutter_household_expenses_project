@@ -104,3 +104,7 @@ const double registerButtonHeight = 50;
 
 BorderRadius segmentedButtomRadius = BorderRadius.circular(msmall);
 BorderRadius registerButtomRadius = BorderRadius.circular(msmall);
+BorderRadius chartListItemRadius = BorderRadius.circular(msmall);
+
+const EdgeInsets chartSelectEdgeInsets =
+    EdgeInsets.symmetric(vertical: small, horizontal: medium);

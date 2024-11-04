@@ -172,7 +172,6 @@ class CustomYMSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
       alignment: Alignment.center,
       child: SizedBox.expand(
         child: Container(
-          //color: theme.colorScheme.surfaceContainer,
           padding: const EdgeInsets.fromLTRB(
               sssmall, 0, small, registerListPadding + sssmall),
           child: Text(formatter.format(date),
