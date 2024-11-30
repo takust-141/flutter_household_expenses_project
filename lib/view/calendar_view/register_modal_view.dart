@@ -784,7 +784,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
                           ),
                         ),
                       )
-                    : SizedBox(),
+                    : const SizedBox(),
               ],
             ),
           ),

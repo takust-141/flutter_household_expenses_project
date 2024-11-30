@@ -7,22 +7,22 @@ import 'package:household_expenses_project/provider/register_db_provider.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/provider/setting_data_provider.dart';
 
-enum RateDateRange {
+enum RateSelectState {
+  expenses("収入と支出"),
+  outgo("支出"),
+  income("収入"),
+  category("カテゴリー");
+
+  final String text;
+  const RateSelectState(this.text);
+}
+
+enum RateChartDateRange {
   month("1ヶ月"),
   year("1年");
 
   final String text;
-  const RateDateRange(this.text);
-}
-
-enum RateSelectState {
-  category("カテゴリー"),
-  income("収入"),
-  outgo("支出"),
-  expenses("収入と支出");
-
-  final String text;
-  const RateSelectState(this.text);
+  const RateChartDateRange(this.text);
 }
 
 //PieChart用
@@ -55,7 +55,7 @@ class RateChartSectionData {
       color: color ?? this.color,
       rate: rate ?? this.rate,
       rateSelectState: rateSelectState ?? this.rateSelectState,
-      category: category ?? this.category,
+      category: category,
     );
   }
 }
@@ -68,7 +68,7 @@ final rateChartProvider =
 //RateChartState
 @immutable
 class RateChartState {
-  final RateDateRange rateDateRange;
+  final RateChartDateRange rateChartDateRange;
   final RateSelectState rateSelectState;
   final Category? selectCategory;
   final DateTime selectDate;
@@ -79,7 +79,7 @@ class RateChartState {
   final FixedExtentScrollController listWheelYearController;
   final FixedExtentScrollController listWheelMonthController;
   const RateChartState({
-    required this.rateDateRange,
+    required this.rateChartDateRange,
     required this.rateSelectState,
     required this.selectCategory,
     required this.selectDate,
@@ -92,7 +92,7 @@ class RateChartState {
   });
 
   RateChartState.defaultState()
-      : rateDateRange = RateDateRange.month,
+      : rateChartDateRange = RateChartDateRange.month,
         rateSelectState = RateSelectState.expenses,
         selectCategory = null,
         selectDate = DateTime.now(),
@@ -105,7 +105,7 @@ class RateChartState {
             FixedExtentScrollController(initialItem: DateTime.now().month - 1);
 
   RateChartState copyWith({
-    RateDateRange? rateDateRange,
+    RateChartDateRange? rateChartDateRange,
     RateSelectState? rateSelectState,
     Category? selectCategory,
     DateTime? selectDate,
@@ -118,7 +118,7 @@ class RateChartState {
     FixedExtentScrollController? listWheelMonthController,
   }) {
     return RateChartState(
-      rateDateRange: rateDateRange ?? this.rateDateRange,
+      rateChartDateRange: rateChartDateRange ?? this.rateChartDateRange,
       rateSelectState: rateSelectState ?? this.rateSelectState,
       selectCategory: selectCategory ?? this.selectCategory,
       selectDate: selectDate ?? this.selectDate,
@@ -200,9 +200,9 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
   }
 
   //rateChartStateセット（期間変更）
-  void setRangeRateChartState(RateDateRange rateDateRange) async {
+  void setRangeRateChartState(RateChartDateRange rateChartDateRange) async {
     state = AsyncData(
-        state.valueOrNull?.copyWith(rateDateRange: rateDateRange) ??
+        state.valueOrNull?.copyWith(rateChartDateRange: rateChartDateRange) ??
             _defaultState);
     await reacquisitionRegisterListCallBack();
   }
@@ -254,7 +254,7 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
     if (state.valueOrNull == null) return;
     late final DateTime newDisplayDate;
     final DateTime oldDisplayDate = state.valueOrNull!.displayDate;
-    if (state.valueOrNull?.rateDateRange == RateDateRange.month) {
+    if (state.valueOrNull?.rateChartDateRange == RateChartDateRange.month) {
       //年更新
       newDisplayDate =
           DateTime(oldDisplayDate.year, oldDisplayDate.month + diff);
@@ -275,14 +275,14 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
     state = const AsyncLoading<RateChartState>().copyWithPrevious(state);
     final currentState = state.valueOrNull ?? _defaultState;
 
-    switch (currentState.rateDateRange) {
-      case RateDateRange.month:
+    switch (currentState.rateChartDateRange) {
+      case RateChartDateRange.month:
         startDate = DateTime(
             currentState.selectDate.year, currentState.selectDate.month, 1);
         endDate = DateTime(
             currentState.selectDate.year, currentState.selectDate.month + 1, 0);
         break;
-      case RateDateRange.year:
+      case RateChartDateRange.year:
         startDate = DateTime(currentState.selectDate.year, 1, 1);
         endDate = DateTime(currentState.selectDate.year + 1, 1, 0);
     }

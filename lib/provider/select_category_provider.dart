@@ -174,8 +174,11 @@ class SelectCategoryStateNotifier extends Notifier<SelectCategoryState> {
   //CategoryListの取得がかかるたびに呼び出される
   Future<void> resetSelectCategoryState(
       Map<SelectExpenses, List<Category>> map) async {
-    final categoryList = map[state.selectExpenses];
-    Category? selectCategory = state.nextInitCategory ?? categoryList?[0];
+    final List<Category>? categoryList = map[state.selectExpenses];
+    Category? selectCategory = state.nextInitCategory ??
+        (categoryList != null && categoryList.isNotEmpty
+            ? categoryList[0]
+            : null);
     state = SelectCategoryState(
       category: selectCategory,
       subCategory: state.nextInitSubCategory,

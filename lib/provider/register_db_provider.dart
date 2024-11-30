@@ -22,7 +22,6 @@ class RegisterDBProvider {
 
   static Future<void> deleteRegister(Register register, WidgetRef ref) async {
     await RegisterDBHelper.deleteRegisterFromId(register.id!);
-    await RegisterDBHelper.updateRegister(register);
     refresh(ref);
   }
 
@@ -54,6 +53,20 @@ class RegisterDBProvider {
   static Future<List<Register>> getRegisterStateOfRange(
       DateTime startDate, DateTime endDate) async {
     return await RegisterDBHelper.getRegisterOfRange(startDate, endDate);
+  }
+
+  static Future<List<Register>> getRegisterStateOfCategory(
+      Category category) async {
+    return await RegisterDBHelper.getRegisterOfCategory(category);
+  }
+
+  static Future<List<Register>> getRegisterStateOfSelectExpenses(
+      SelectExpenses selectExpenses) async {
+    return await RegisterDBHelper.getRegisterOfSelectExpenses(selectExpenses);
+  }
+
+  static Future<List<Register>> getAllRegisterState() async {
+    return await RegisterDBHelper.getAllRegister();
   }
 
   //リフレッシュ処理（DB更新時のコールバック）

@@ -13,7 +13,7 @@ class ChartRateFigure extends ConsumerWidget {
     final screenWidth = MediaQuery.of(context).size.width - medium * 2;
     final rateChartState = ref.watch(rateChartProvider);
     final rateChartNotifier = ref.read(rateChartProvider.notifier);
-    final double chartRadius = screenWidth * 0.7 / 2;
+    final double chartRadius = screenWidth * 0.7 / 2; //描画エリアも0.7
 
     //割合小数点以下1位以下切り捨て
     double floorOneDecimalPlace(double rate) {
@@ -87,7 +87,7 @@ class ChartRateFigure extends ConsumerWidget {
     }
 
     //RateChartSectionData → PieChartデータ作成
-    List<PieChartSectionData> createChartSections() {
+    List<PieChartSectionData> createPieChartSections() {
       final currentRateChartDataList = ref.watch(rateChartProvider
           .select((p) => p.valueOrNull?.rateChartSectionDataList));
       if (currentRateChartDataList == null ||
@@ -157,7 +157,7 @@ class ChartRateFigure extends ConsumerWidget {
               )
             : SizedBox(
                 width: screenWidth * 0.9,
-                height: screenWidth * 0.8,
+                height: screenWidth * 0.7,
                 child: PieChart(
                   PieChartData(
                     centerSpaceRadius: 0,
@@ -169,7 +169,7 @@ class ChartRateFigure extends ConsumerWidget {
                             color: Colors.black,
                             width: 1.0,
                             style: BorderStyle.solid)),
-                    sections: createChartSections(),
+                    sections: createPieChartSections(),
                     pieTouchData: PieTouchData(
                       enabled: true,
                       touchCallback: (touchEvent, pieTouchResponse) {
@@ -190,7 +190,7 @@ class ChartRateFigure extends ConsumerWidget {
                       },
                     ),
                   ),
-                  swapAnimationDuration: const Duration(milliseconds: 0),
+                  swapAnimationDuration: Duration.zero,
                 ),
               );
   }

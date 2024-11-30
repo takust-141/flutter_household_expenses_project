@@ -259,13 +259,17 @@ class CategoryPickerKeyboard extends ConsumerWidget
         (_kKeyboardHeight - mediaQuery.viewPadding.bottom) / 3;
 
     final List<Category> categoryList;
+    late final bool isParentCategoryNull;
 
     if (sub) {
       categoryList = ref.watch(provider.select((p) => p.subCategoryList)) ?? [];
+      isParentCategoryNull =
+          ref.watch(provider.select((p) => p.category)) != null;
     } else {
       categoryList = ref.watch(categoryListNotifierProvider).valueOrNull?[
               ref.watch(provider.select((p) => p.selectExpenses))] ??
           [];
+      isParentCategoryNull = true;
     }
 
     final selectCategoryStateProvider = ref.read(provider.notifier);
@@ -309,7 +313,7 @@ class CategoryPickerKeyboard extends ConsumerWidget
                   height: itemHeight,
                   notifier: notifier,
                 ),
-              if (enableNewAdd)
+              if (isParentCategoryNull && enableNewAdd)
                 //新規 カテゴリー
                 AddCategoryKeyboardPanel(
                   category: null,

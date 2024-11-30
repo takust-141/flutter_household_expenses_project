@@ -3,7 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/constant/dimension.dart';
 import 'package:household_expenses_project/provider/chart_page_provider/chart_page_provider.dart';
 import 'package:household_expenses_project/view/chart_view/chart_rate_view/chart_rate_page.dart';
-import 'package:household_expenses_project/view/chart_view/chart_transition_page.dart';
+import 'package:household_expenses_project/view/chart_view/chart_transition_view/chart_transition_page.dart';
 
 //-------チャートページ---------------------------
 class ChartPage extends ConsumerWidget {

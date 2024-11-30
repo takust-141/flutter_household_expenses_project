@@ -137,5 +137,59 @@ class RegisterDBHelper {
     return registerList;
   }
 
+  static Future<List<Register>> getRegisterOfCategory(Category category) async {
+    List<Register> registerList = [];
+    List<Map> listMap = await _database.rawQuery('''
+    SELECT $registerTable.*, $selectColumns1, $selectColumns2
+    FROM $registerTable
+    INNER JOIN $categoryTable AS c1 ON $registerTable.$registerCategoryId = c1.$categoryId
+    LEFT OUTER JOIN $categoryTable AS c2 ON c1.$categoryParentId = c2.$categoryId
+
+    WHERE c1.$categoryId = ?
+    ORDER BY $registerTable.$registerDate ASC,  $registerTable.$registerId ASC
+    ''', [category.id]);
+
+    for (var map in listMap) {
+      registerList.add(Register.fromMap(map));
+    }
+    return registerList;
+  }
+
+  static Future<List<Register>> getRegisterOfSelectExpenses(
+      SelectExpenses selectExpenses) async {
+    List<Register> registerList = [];
+    List<Map> listMap = await _database.rawQuery('''
+    SELECT $registerTable.*, $selectColumns1, $selectColumns2
+    FROM $registerTable
+    INNER JOIN $categoryTable AS c1 ON $registerTable.$registerCategoryId = c1.$categoryId
+    LEFT OUTER JOIN $categoryTable AS c2 ON c1.$categoryParentId = c2.$categoryId
+
+    WHERE c1.$categoryExpenses = ?
+    ORDER BY $registerTable.$registerDate ASC,  $registerTable.$registerId ASC
+    ''', [selectExpenses.name]);
+
+    for (var map in listMap) {
+      registerList.add(Register.fromMap(map));
+    }
+    return registerList;
+  }
+
+  static Future<List<Register>> getAllRegister() async {
+    List<Register> registerList = [];
+    List<Map> listMap = await _database.rawQuery('''
+    SELECT $registerTable.*, $selectColumns1, $selectColumns2
+    FROM $registerTable
+    INNER JOIN $categoryTable AS c1 ON $registerTable.$registerCategoryId = c1.$categoryId
+    LEFT OUTER JOIN $categoryTable AS c2 ON c1.$categoryParentId = c2.$categoryId
+
+    ORDER BY $registerTable.$registerDate ASC,  $registerTable.$registerId ASC
+    ''');
+
+    for (var map in listMap) {
+      registerList.add(Register.fromMap(map));
+    }
+    return registerList;
+  }
+
   static Future close() async => _database.close();
 }

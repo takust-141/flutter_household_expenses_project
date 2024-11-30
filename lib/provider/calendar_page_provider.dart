@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expenses_project/component/generalized_logic_component.dart';
 import 'package:household_expenses_project/constant/dimension.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/model/register.dart';
@@ -367,34 +368,5 @@ class CalendarPageNotifier
   @override
   DateTime? currentSelectDate() {
     return state.valueOrNull?.selectDate;
-  }
-}
-
-//汎用年月比較
-class LogicComponent {
-  static bool matchDates(DateTime? date1, DateTime? date2) {
-    if (date1?.year == date2?.year &&
-        date1?.month == date2?.month &&
-        date1?.day == date2?.day) {
-      return true;
-    }
-    return false;
-  }
-
-  static bool matchMonth(DateTime date1, DateTime date2) {
-    if (date1.year == date2.year && date1.month == date2.month) {
-      return true;
-    }
-    return false;
-  }
-
-  //カンマ付与
-  static final formatter = NumberFormat("#,###");
-  static String addCommaToNum(int? num) {
-    if (num == null) {
-      return "";
-    }
-    final numWithComma = formatter.format(num);
-    return numWithComma;
   }
 }

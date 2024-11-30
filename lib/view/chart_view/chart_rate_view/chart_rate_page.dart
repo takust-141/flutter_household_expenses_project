@@ -28,68 +28,67 @@ class ChartRatePage extends ConsumerWidget {
             rateChartProvider
                 .select((p) => p.valueOrNull?.rateChartSectionDataList)) ??
         [];
-    return Column(children: [
-      Container(
-        padding: const EdgeInsets.fromLTRB(medium, large, medium, 0),
-        child: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ChartRateSelector(),
-            SizedBox(height: medium),
-            Divider(height: 1),
-            SizedBox(height: small),
-            ChartRateDateSelector(),
-            SizedBox(height: ssmall),
-          ],
+    return Column(
+      children: [
+        const SizedBox(height: large),
+        const Padding(
+          padding: mediumHorizontalEdgeInsets,
+          child: ChartRateSelector(),
         ),
-      ),
-      if (!isShowScrollSelector) ...{
-        const ChartRateFigure(),
-        (ref.watch(rateChartProvider).value == null ||
-                ref
-                    .watch(rateChartProvider)
-                    .value!
-                    .rateChartSectionDataList
-                    .isEmpty)
-            ? const SizedBox()
-            : const Padding(
-                padding: EdgeInsets.symmetric(horizontal: medium),
-                child: Divider(height: 1),
-              ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: medium),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: small),
-                  for (int i = 0; i < rateChartSectionDataList.length; i++) ...{
-                    RateChartListItem(
-                      text: rateChartSectionDataList[i].title,
-                      rate: rateChartSectionDataList[i].rate,
-                      color: rateChartSectionDataList[i].color,
-                      amount: rateChartSectionDataList[i].value,
-                      index: i,
-                    ),
-                  }
-                ],
+        const SizedBox(height: medium),
+        const Divider(height: 1),
+        const Padding(
+          padding: mediumHorizontalEdgeInsets,
+          child: ChartRateDateSelector(),
+        ),
+        if (!isShowScrollSelector) ...{
+          const ChartRateFigure(),
+          const SizedBox(height: medium),
+          (ref.watch(rateChartProvider).value == null ||
+                  ref
+                      .watch(rateChartProvider)
+                      .value!
+                      .rateChartSectionDataList
+                      .isEmpty)
+              ? const SizedBox()
+              : const Divider(height: 1),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: medium),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: small),
+                    for (int i = 0;
+                        i < rateChartSectionDataList.length;
+                        i++) ...{
+                      RateChartListItem(
+                        text: rateChartSectionDataList[i].title,
+                        rate: rateChartSectionDataList[i].rate,
+                        color: rateChartSectionDataList[i].color,
+                        amount: rateChartSectionDataList[i].value,
+                        index: i,
+                      ),
+                    }
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      } else ...{
-        const SizedBox(
-          height: 260,
-          child: ListWheelDateSelector(260),
-        ),
-        Expanded(
-          child: Container(
-            color: theme.colorScheme.shadow.withOpacity(0.4),
+        } else ...{
+          const SizedBox(
+            height: 260,
+            child: ListWheelDateSelector(260),
           ),
-        ),
-      },
-      SizedBox(height: mediaQuery.padding.bottom),
-    ]);
+          Expanded(
+            child: Container(
+              color: theme.colorScheme.shadow.withOpacity(0.4),
+            ),
+          ),
+        },
+        SizedBox(height: mediaQuery.padding.bottom),
+      ],
+    );
   }
 }
 
@@ -108,9 +107,9 @@ class ListWheelDateSelector extends ConsumerWidget {
             rateChartProvider.select((p) => p.valueOrNull?.displayDate)) ??
         DateTime.now();
 
-    final RateDateRange dateRange = ref.watch(
-            rateChartProvider.select((p) => p.valueOrNull?.rateDateRange)) ??
-        RateDateRange.month;
+    final RateChartDateRange dateRange = ref.watch(rateChartProvider
+            .select((p) => p.valueOrNull?.rateChartDateRange)) ??
+        RateChartDateRange.month;
 
     final currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
     final calendarStartDate = ref.watch(settingDataProvider
@@ -127,8 +126,9 @@ class ListWheelDateSelector extends ConsumerWidget {
         const SizedBox(width: large),
         //年
         SizedBox(
-          width:
-              (dateRange == RateDateRange.month) ? wheelWidth : wheelWidth * 2,
+          width: (dateRange == RateChartDateRange.month)
+              ? wheelWidth
+              : wheelWidth * 2,
           height: areaHeight,
           child: ListWheelScrollView(
             controller: yearController,
@@ -139,7 +139,7 @@ class ListWheelDateSelector extends ConsumerWidget {
                   index + calendarStartDate.year, displayDate.month, 1));
             },
             itemExtent: areaHeight / 8,
-            offAxisFraction: (dateRange == RateDateRange.month) ? -0.4 : 0,
+            offAxisFraction: (dateRange == RateChartDateRange.month) ? -0.4 : 0,
             overAndUnderCenterOpacity: 0.5,
             magnification: 1.1,
             children: [
@@ -147,7 +147,7 @@ class ListWheelDateSelector extends ConsumerWidget {
                   i <= currentMonth.year - calendarStartDate.year + 100;
                   i++)
                 Container(
-                  alignment: (dateRange == RateDateRange.month)
+                  alignment: (dateRange == RateChartDateRange.month)
                       ? Alignment.centerRight
                       : Alignment.center,
                   height: theme.textTheme.bodyMedium?.fontSize,
@@ -166,7 +166,7 @@ class ListWheelDateSelector extends ConsumerWidget {
                       },
                       child: Text(
                         "${calendarStartDate.year + i}年",
-                        textAlign: (dateRange == RateDateRange.month)
+                        textAlign: (dateRange == RateChartDateRange.month)
                             ? TextAlign.end
                             : TextAlign.center,
                       )),
@@ -174,7 +174,7 @@ class ListWheelDateSelector extends ConsumerWidget {
             ],
           ),
         ),
-        if (dateRange == RateDateRange.month)
+        if (dateRange == RateChartDateRange.month)
           //月
           SizedBox(
             width: wheelWidth,
@@ -275,7 +275,7 @@ class ChartRateDateSelector extends ConsumerWidget {
                     rateChartNotifier.tapDateButton();
                   },
                   child: Text(
-                      (data.rateDateRange == RateDateRange.month)
+                      (data.rateChartDateRange == RateChartDateRange.month)
                           ? formatterMonth.format(data.displayDate)
                           : formatterYear.format(data.displayDate),
                       style: theme.textTheme.bodyLarge?.copyWith(

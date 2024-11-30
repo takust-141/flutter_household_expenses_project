@@ -5,22 +5,22 @@ import 'package:household_expenses_project/component/custom_expand_list.dart';
 import 'package:household_expenses_project/constant/dimension.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/provider/category_list_provider.dart';
-import 'package:household_expenses_project/provider/chart_page_provider/rate_chart_provider.dart';
+import 'package:household_expenses_project/provider/chart_page_provider/transition_chart_provider.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 
 const double selectDisplayheight = 40;
 
 //-------割合チャートセレクター---------------------------
-class ChartRateSelector extends ConsumerWidget {
-  const ChartRateSelector({super.key});
+class ChartTransitionSelector extends ConsumerWidget {
+  const ChartTransitionSelector({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
-    final RateChartState rateChartState =
-        ref.watch(rateChartProvider).valueOrNull ??
-            RateChartState.defaultState();
+    final TransitionChartState transitionChartState =
+        ref.watch(transitionChartProvider).valueOrNull ??
+            TransitionChartState.defaultState();
 
     final categoryListMap = ref.watch(categoryListNotifierProvider);
     final List<Category> outgoCategoryList =
@@ -81,13 +81,19 @@ class ChartRateSelector extends ConsumerWidget {
                       controller: selectorDropDownListScrollController,
                       child: Column(
                         children: [
-                          RateDropDownListItem(RateSelectState.expenses, null,
+                          TransitionDropDownListItem(
+                              TransitionSelectState.expenses,
+                              null,
                               menuSelectController),
                           const Divider(height: 1, thickness: 0.5),
-                          RateDropDownListItem(RateSelectState.outgo, null,
+                          TransitionDropDownListItem(
+                              TransitionSelectState.outgo,
+                              null,
                               menuSelectController),
                           const Divider(height: 1, thickness: 0.5),
-                          RateDropDownListItem(RateSelectState.income, null,
+                          TransitionDropDownListItem(
+                              TransitionSelectState.income,
+                              null,
                               menuSelectController),
                           const Divider(height: 1, thickness: 0.5),
 
@@ -104,8 +110,10 @@ class ChartRateSelector extends ConsumerWidget {
                               for (Category outgoCategory
                                   in outgoCategoryList) ...{
                                 const Divider(height: 1, thickness: 0.5),
-                                RateDropDownListItem(RateSelectState.category,
-                                    outgoCategory, menuSelectController),
+                                TransitionDropDownListItem(
+                                    TransitionSelectState.category,
+                                    outgoCategory,
+                                    menuSelectController),
                               },
                             ],
                           ),
@@ -123,8 +131,10 @@ class ChartRateSelector extends ConsumerWidget {
                               for (Category incomeCategory
                                   in incomeCategoryList) ...{
                                 const Divider(height: 1, thickness: 0.5),
-                                RateDropDownListItem(RateSelectState.category,
-                                    incomeCategory, menuSelectController),
+                                TransitionDropDownListItem(
+                                    TransitionSelectState.category,
+                                    incomeCategory,
+                                    menuSelectController),
                               },
                             ],
                           ),
@@ -150,7 +160,7 @@ class ChartRateSelector extends ConsumerWidget {
                     color: theme.colorScheme.surfaceBright,
                   ),
                   child: AutoSizeText(
-                    rateChartState.selectListTitle(),
+                    transitionChartState.selectListTitle(),
                     maxLines: 1,
                     minFontSize: 10,
                     overflow: TextOverflow.ellipsis,
@@ -189,11 +199,11 @@ class ChartRateSelector extends ConsumerWidget {
                 height: selectDisplayheight * 2 + 1,
                 child: Column(
                   children: [
-                    RateRnageDropDownListItem(
-                        RateChartDateRange.month, menuRangeController),
+                    TransitionRnageDropDownListItem(
+                        TransitionChartDateRange.month, menuRangeController),
                     const Divider(height: 1, thickness: 0.5),
-                    RateRnageDropDownListItem(
-                        RateChartDateRange.year, menuRangeController),
+                    TransitionRnageDropDownListItem(
+                        TransitionChartDateRange.year, menuRangeController),
                   ],
                 ),
               ),
@@ -214,7 +224,7 @@ class ChartRateSelector extends ConsumerWidget {
                     color: theme.colorScheme.surfaceBright,
                   ),
                   child: AutoSizeText(
-                    rateChartState.rateChartDateRange.text,
+                    transitionChartState.transitionChartDateRange.text,
                     maxLines: 1,
                     minFontSize: 10,
                     overflow: TextOverflow.ellipsis,
@@ -232,18 +242,19 @@ class ChartRateSelector extends ConsumerWidget {
 }
 
 //対象割合チャートカテゴリー選択リストアイテム
-class RateDropDownListItem extends ConsumerWidget {
-  const RateDropDownListItem(
-      this.rateSelectState, this.category, this.menuController,
+class TransitionDropDownListItem extends ConsumerWidget {
+  const TransitionDropDownListItem(
+      this.transitionSelectState, this.category, this.menuController,
       {super.key});
-  final RateSelectState rateSelectState;
+  final TransitionSelectState transitionSelectState;
   final Category? category;
   final MenuController menuController;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rateChartProviderNotifier = ref.read(rateChartProvider.notifier);
-    final rateChartState = ref.watch(rateChartProvider);
+    final transitionChartProviderNotifier =
+        ref.read(transitionChartProvider.notifier);
+    final transitionChartState = ref.watch(transitionChartProvider);
 
     final theme = Theme.of(context);
     return SizedBox(
@@ -258,19 +269,19 @@ class RateDropDownListItem extends ConsumerWidget {
           padding: chartSelectEdgeInsets,
           overlayColor: theme.colorScheme.onSurface,
           backgroundColor:
-              (rateChartState.valueOrNull?.selectCategory == category &&
-                      rateChartState.valueOrNull?.rateSelectState ==
-                          rateSelectState)
+              (transitionChartState.valueOrNull?.selectCategory == category &&
+                      transitionChartState.valueOrNull?.transitionSelectState ==
+                          transitionSelectState)
                   ? theme.colorScheme.onSurface.withOpacity(0.1)
                   : theme.colorScheme.surfaceBright,
         ),
         onPressed: () {
-          rateChartProviderNotifier.setSelectRateChartState(
-              rateSelectState, category);
+          transitionChartProviderNotifier.setSelectTransitionChartState(
+              transitionSelectState, category);
           menuController.close();
         },
-        child: rateSelectState != RateSelectState.category
-            ? Text(rateSelectState.text)
+        child: transitionSelectState != TransitionSelectState.category
+            ? Text(transitionSelectState.text)
             : Padding(
                 padding: const EdgeInsets.only(left: medium),
                 child: AutoSizeText(
@@ -285,15 +296,17 @@ class RateDropDownListItem extends ConsumerWidget {
 }
 
 //割合チャートカテゴリー期間リストアイテム
-class RateRnageDropDownListItem extends ConsumerWidget {
-  const RateRnageDropDownListItem(this.chartDateRange, this.menuController,
+class TransitionRnageDropDownListItem extends ConsumerWidget {
+  const TransitionRnageDropDownListItem(
+      this.transitionChartDateRange, this.menuController,
       {super.key});
-  final RateChartDateRange chartDateRange;
+  final TransitionChartDateRange transitionChartDateRange;
   final MenuController menuController;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rateChartProviderNotifier = ref.read(rateChartProvider.notifier);
-    final rateChartState = ref.watch(rateChartProvider);
+    final transitionChartProviderNotifier =
+        ref.read(transitionChartProvider.notifier);
+    final transitionChartState = ref.watch(transitionChartProvider);
 
     final theme = Theme.of(context);
     return SizedBox(
@@ -306,16 +319,18 @@ class RateRnageDropDownListItem extends ConsumerWidget {
           padding: chartSelectEdgeInsets,
           overlayColor: theme.colorScheme.onSurface,
           backgroundColor:
-              (rateChartState.valueOrNull?.rateChartDateRange == chartDateRange)
+              (transitionChartState.valueOrNull?.transitionChartDateRange ==
+                      transitionChartDateRange)
                   ? theme.colorScheme.onSurface.withOpacity(0.1)
                   : theme.colorScheme.surfaceBright,
         ),
         onPressed: () {
-          rateChartProviderNotifier.setRangeRateChartState(chartDateRange);
+          transitionChartProviderNotifier
+              .setRangeTransitionChartState(transitionChartDateRange);
           menuController.close();
         },
         child: Text(
-          chartDateRange.text,
+          transitionChartDateRange.text,
           style: theme.textTheme.bodyMedium,
         ),
       ),
