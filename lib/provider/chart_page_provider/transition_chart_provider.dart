@@ -43,7 +43,7 @@ class TransitionChartRodData {
 //rodGroupデータ
 class TransitionChartGroupData {
   final Map<String, List<Register>> transitionRegistersMap;
-  final List<TransitionChartRodData> transitionChartRodDataList;
+  final List<TransitionChartRodData> transitionChartRodDataList; //同タイトルのrodList
   final Color? chartColor;
   final int maxAmount;
   TransitionChartGroupData({
@@ -287,7 +287,8 @@ class TransitionChartStateNotifier extends AsyncNotifier<TransitionChartState> {
         break;
     }
 
-    if (registerList.isEmpty) {
+    //全てEmptyの場合
+    if (registerGroupList.every((list) => list.isEmpty)) {
       state = AsyncData(state.valueOrNull?.copyWith(
             transitionChartGroupDataList: [],
             xTitleList: [],
@@ -304,12 +305,14 @@ class TransitionChartStateNotifier extends AsyncNotifier<TransitionChartState> {
       rangeMax = registerGroupList[0].last.date;
     } else {
       for (int i = 0; i < registerGroupList.length; i++) {
-        rangeMin = rangeMin.isBefore(registerGroupList[i].first.date)
-            ? rangeMin
-            : registerGroupList[i].first.date;
-        rangeMax = rangeMax.isAfter(registerGroupList[i].last.date)
-            ? rangeMax
-            : registerGroupList[i].last.date;
+        if (registerGroupList[i].isNotEmpty) {
+          rangeMin = rangeMin.isBefore(registerGroupList[i].first.date)
+              ? rangeMin
+              : registerGroupList[i].first.date;
+          rangeMax = rangeMax.isAfter(registerGroupList[i].last.date)
+              ? rangeMax
+              : registerGroupList[i].last.date;
+        }
       }
     }
 
@@ -325,7 +328,7 @@ class TransitionChartStateNotifier extends AsyncNotifier<TransitionChartState> {
         break;
       case TransitionChartDateRange.year:
         while (compDateTime(currentDate, rangeMax)) {
-          xTitleList.add('${currentDate.year}}');
+          xTitleList.add('${currentDate.year}');
           currentDate = DateTime(currentDate.year + 1);
         }
         break;
@@ -419,19 +422,18 @@ class TransitionChartStateNotifier extends AsyncNotifier<TransitionChartState> {
     int i = 0;
     while (compDateTime(currentDate, rangeMax)) {
       //キーの日付の時、TransitionChartデータ作成（個別）
-      if (i < keyList.length &&
-          (currentDate.year == int.tryParse(keyList[i].substring(0, 4)) ||
-              currentDate.month == int.tryParse(keyList[i].substring(4, 6)))) {
+      final String currentKey = keyGenerator(currentDate);
+      if (i < keyList.length && currentKey == keyList[i]) {
         //3.2.2.1 registerGroup→TransitionChartデータ作成（個別）
         final TransitionChartRodData transitionChartRodData =
-            createBarChartGroupData(keyList[i], registerGroupMap[keyList[i]]);
+            createBarChartGroupData(currentKey, registerGroupMap[currentKey]);
         transitionChartRodDataList.add(transitionChartRodData);
         maxAmount = max(maxAmount, transitionChartRodData.value);
         i++;
       } else {
         //value0のチャートデータ追加
-        transitionChartRodDataList.add(
-            TransitionChartRodData(key: keyGenerator(currentDate), value: 0));
+        transitionChartRodDataList
+            .add(TransitionChartRodData(key: currentKey, value: 0));
       }
       currentDate = addDateIndex(currentDate);
     }

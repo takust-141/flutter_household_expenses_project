@@ -54,6 +54,7 @@ class ChartTransitionFigure extends ConsumerWidget {
       }
 
       final List<BarChartGroupData> barChartGroupDataList = [];
+      //期間分のrod作成
       for (int i = 0;
           i <
               transitionChartState.transitionChartGroupDataList.first

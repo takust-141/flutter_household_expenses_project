@@ -354,8 +354,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
                 //-----オーバーレイタップ時のイベント-----
                 onPointerDown: (event) {
                   if (!widget.keepFocusOnTappingNode ||
-                      _currentAction!.focusNode.customRect
-                              .contains(event.position) !=
+                      _currentAction!.focusNode.rect.contains(event.position) !=
                           true) {
                     _clearFocus();
                   }
@@ -506,7 +505,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
       ScrollController scrollController, Duration duration, Cubic? curve) {
     final focusNode = ref.read(offsetFocus);
     final offset = ref.read(offsetProvider);
-    final voidSpan = (focusNode?.customRectHeight ?? 0) + widget.overscroll;
+    final voidSpan = (focusNode?.size.height ?? 0) + widget.overscroll;
     if (focusNode != null) {
       final focuRenderObject = focusNode.context?.findRenderObject();
       if (focuRenderObject is RenderBox) {
@@ -571,11 +570,11 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
     _bottomAvoidScrollController = ScrollController();
     _bottomAvoidScrollController.addListener(() {
       // スクロール位置が変更された際の処理
-      _currentAction?.focusNode.resizeRect();
+      //_currentAction?.focusNode.resizeRect();
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _currentAction?.focusNode.resizeRect();
+      //_currentAction?.focusNode.resizeRect();
     });
 
     _overlayState = Overlay.of(context, rootOverlay: true);
@@ -772,9 +771,6 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
 
 //CustomFocusNode：CustomTextField(タップ反応Rectサイズ変更)、カスタムキーボードアニメーションの待機
 class CustomFocusNode extends FocusNode {
-  RenderBox? renderBox;
-  bool isCustomRenderBox = false;
-
   CustomFocusNode({
     super.debugLabel,
     super.onKeyEvent,
@@ -790,44 +786,16 @@ class CustomFocusNode extends FocusNode {
     _waitAnimation = value;
   }
 
-  late Rect customRect;
-
-  double get customRectHeight {
-    return customRect.size.height;
-  }
-
-  void setRenderBox(RenderBox? renderBox) {
-    renderBox = renderBox;
-    isCustomRenderBox = true;
-  }
-
-  void resizeRect() {
-    if (isCustomRenderBox && renderBox != null) {
-      final position = renderBox!.localToGlobal(Offset.zero);
-      final size = renderBox!.size;
-      customRect =
-          Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
-    } else {
-      customRect = Rect.fromCenter(
-        center: super.rect.center,
-        width: super.rect.width,
-        height: super.rect.height,
-      );
-    }
-  }
-
   @override
   void requestFocus([FocusNode? node]) async {
     if (!hasFocus) {
       await _waitAnimation?.future;
     }
     super.requestFocus(node);
-    resizeRect();
   }
 
   @override
   void notifyListeners() {
     super.notifyListeners();
-    resizeRect();
   }
 }

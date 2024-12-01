@@ -444,12 +444,15 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
     required this.provider,
   });
 
+  //registerページからカテゴリー新規追加時
   void goAddCategoryView(
       GoRouter goRoute,
       bool sub,
       WidgetRef ref,
       NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
-          provider) {
+          provider,
+      BuildContext context) {
+    FocusScope.of(context).unfocus();
     if (sub) {
       ref.read(provider.notifier).setNextInitState(sub);
       goRoute.push('/setting/category_list/category_edit/sub_category_edit',
@@ -486,7 +489,8 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
             ),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => goAddCategoryView(goRoute, sub, ref, provider),
+              onTap: () =>
+                  goAddCategoryView(goRoute, sub, ref, provider, context),
               onTapDown: (_) => panelBoarder.value = true,
               onTapUp: (_) => panelBoarder.value = false,
               onTapCancel: () => panelBoarder.value = false,

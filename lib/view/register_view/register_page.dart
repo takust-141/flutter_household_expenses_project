@@ -64,7 +64,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
     categoryNotifier = ValueNotifier<Category?>(null);
     subCategoryNotifier = ValueNotifier<Category?>(null);
 
-    dateNotifier = ValueNotifier<DateTime>(DateTime.now());
+    dateNotifier = ValueNotifier<DateTime>(DateTime(
+        DateTime.now().year, DateTime.now().month, DateTime.now().day));
 
     registerKeyboardAction = RegisterKeyboardAction(
       moneyTextController: amountOfMoneyTextController,
@@ -84,13 +85,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
     //金額Focusのcomputeリスナー
     amountOfMoneyNode.addListener(registerKeyboardAction.focusChange);
 
+    //FocusNode attach
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final RenderBox? amountRenderBox =
-          amountOfMoneyFormKey.currentContext?.findRenderObject() as RenderBox?;
-      amountOfMoneyNode.setRenderBox(amountRenderBox);
-      final RenderBox? memoRenderBox =
-          memoFormKey.currentContext?.findRenderObject() as RenderBox?;
-      memoNode.setRenderBox(memoRenderBox);
+      memoNode.attach(memoFormKey.currentContext);
+      amountOfMoneyNode.attach(amountOfMoneyFormKey.currentContext);
     });
   }
 
@@ -113,7 +111,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
   @override
   void didPopNext() {
     primaryFocus?.unfocus();
-    debugPrint("pop");
     ref
         .read(selectCategoryStateProvider.notifier)
         .resetSelectCategoryStateFromRegister();
@@ -266,7 +263,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
               height: registerItemHeight,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceBright,
+                color: theme.colorScheme.surface,
                 borderRadius: formInputBoarderRadius,
               ),
               child: formWidget,
@@ -327,8 +324,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
                     mainAxisSize: MainAxisSize.max,
                     children: [
                       Expanded(
+                        key: amountOfMoneyFormKey,
                         child: TextFormField(
-                          key: amountOfMoneyFormKey,
                           keyboardType: TextInputType.number,
                           focusNode: amountOfMoneyNode,
                           controller: amountOfMoneyTextController,

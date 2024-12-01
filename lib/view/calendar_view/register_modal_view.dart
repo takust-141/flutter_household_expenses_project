@@ -290,13 +290,8 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
     dateNotifier.addListener(formInputCheck);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      //要検討
-      final RenderBox? amountRenderBox =
-          textFormKey.currentContext?.findRenderObject() as RenderBox?;
-      amountOfMoneyNode.setRenderBox(amountRenderBox);
-      final RenderBox? memoRenderBox =
-          memoFormKey.currentContext?.findRenderObject() as RenderBox?;
-      memoNode.setRenderBox(memoRenderBox);
+      amountOfMoneyNode.attach(textFormKey.currentContext);
+      memoNode.attach(memoFormKey.currentContext);
     });
   }
 
@@ -441,7 +436,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
               height: registerItemHeight,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceBright,
+                color: theme.colorScheme.surface,
                 borderRadius: formInputBoarderRadius,
               ),
               child: formWidget,
@@ -596,8 +591,8 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
                     mainAxisSize: MainAxisSize.max,
                     children: [
                       Expanded(
+                        key: textFormKey,
                         child: TextFormField(
-                          key: textFormKey,
                           onSaved: (_) async {
                             await onTapUpdateRegister(context);
                           },

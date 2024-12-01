@@ -46,6 +46,7 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
   final CustomFocusNode categoryColorNode = CustomFocusNode();
 
   final _categoryKey = GlobalKey();
+  late final CategoryKeyboardAction categoryKeyboardAction;
 
   late final String categoryTitle;
   late Category? selectedCategory;
@@ -74,11 +75,18 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
       categoryNameController.text = selectedCategory?.name ?? "";
     }
 
+    categoryKeyboardAction = CategoryKeyboardAction(
+      categoryNameController: categoryNameController,
+      cateoryIconNotifer: cateoryIconNotifer,
+      cateoryColorNotifer: cateoryColorNotifer,
+      categoryNameNode: categoryNameNode,
+      categoryIconNode: categoryIconNode,
+      categoryColorNode: categoryColorNode,
+    );
+
     categoryNameNode.addListener(_categoryNameFocusChange);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final RenderBox? renderBox =
-          _categoryKey.currentContext?.findRenderObject() as RenderBox?;
-      categoryNameNode.setRenderBox(renderBox);
+      categoryNameNode.attach(_categoryKey.currentContext);
     });
   }
 
@@ -120,16 +128,6 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
 
     final int numOfSubCategory =
         ref.read(widget.provider.select((p) => p.subCategoryList))?.length ?? 0;
-
-    final CategoryKeyboardAction categoryKeyboardAction =
-        CategoryKeyboardAction(
-      categoryNameController: categoryNameController,
-      cateoryIconNotifer: cateoryIconNotifer,
-      cateoryColorNotifer: cateoryColorNotifer,
-      categoryNameNode: categoryNameNode,
-      categoryIconNode: categoryIconNode,
-      categoryColorNode: categoryColorNode,
-    );
 
     return Container(
       color: theme.colorScheme.surfaceContainer,
@@ -213,7 +211,9 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                               ? "サブ\nカテゴリー名"
                               : "$categoryTitle名",
                           key: _categoryKey,
-                          onTap: () => categoryNameNode.requestFocus(),
+                          onTap: () {
+                            categoryNameNode.requestFocus();
+                          },
                           inputWidgetBuilder: (_) => TextFormField(
                             autofocus: false,
                             onChanged: (value) => ref

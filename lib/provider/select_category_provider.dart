@@ -97,9 +97,15 @@ class SelectCategoryStateNotifier extends Notifier<SelectCategoryState> {
 
   //現在のregisterListを元に更新
   Future<void> setInit() async {
-    Category? initCategory = ref
-        .read(categoryListNotifierProvider)
-        .valueOrNull?[SelectExpenses.outgo]?[0];
+    Category? initCategory = (ref
+                .read(categoryListNotifierProvider)
+                .valueOrNull?[SelectExpenses.outgo]
+                ?.isNotEmpty !=
+            true)
+        ? null
+        : ref
+            .read(categoryListNotifierProvider)
+            .valueOrNull?[SelectExpenses.outgo]?[0];
     state = SelectCategoryState(
       category: initCategory,
       subCategory: null,
@@ -188,9 +194,9 @@ class SelectCategoryStateNotifier extends Notifier<SelectCategoryState> {
   }
 
   //
-  //registerPageの呼び出し時、nextInitの設定
-  Future<void> setNextInitState(bool isResetSub) async {
-    if (isResetSub) {
+  //registerPageからカテゴリー新規登録時、nextInitの設定
+  Future<void> setNextInitState(bool isSub) async {
+    if (isSub) {
       state = SelectCategoryState(
         category: state.category,
         subCategory: null,
@@ -203,7 +209,7 @@ class SelectCategoryStateNotifier extends Notifier<SelectCategoryState> {
       state = SelectCategoryState(
         category: null,
         subCategory: null,
-        subCategoryList: [],
+        subCategoryList: const [],
         nextInitCategory: state.category,
         nextInitSubCategory: state.subCategory,
         selectExpenses: state.selectExpenses,
@@ -212,13 +218,13 @@ class SelectCategoryStateNotifier extends Notifier<SelectCategoryState> {
   }
 
   //registerPageから新規登録した時
-  Future<void> setNextInitStateAddCategory(bool isResetSub) async {
+  Future<void> setNextInitStateAddCategory(bool isSub) async {
     final categoryListMap = await ref.read(categoryListNotifierProvider.future);
     final categoryList = categoryListMap[state.selectExpenses];
-    if (isResetSub) {
+    if (isSub) {
       state = SelectCategoryState(
         category: state.category,
-        subCategory: (state.subCategoryList?.isEmpty ?? false)
+        subCategory: (state.subCategoryList?.isNotEmpty ?? false)
             ? state.subCategoryList?.last
             : null,
         subCategoryList: state.subCategoryList,

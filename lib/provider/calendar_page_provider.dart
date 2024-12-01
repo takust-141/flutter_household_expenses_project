@@ -9,7 +9,6 @@ import 'package:household_expenses_project/provider/register_edit_state.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/provider/setting_data_provider.dart';
 import 'package:household_expenses_project/view/calendar_view/register_modal_view.dart';
-import 'package:intl/intl.dart';
 
 //Provider
 final calendarPageProvider =

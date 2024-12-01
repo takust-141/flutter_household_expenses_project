@@ -26,8 +26,9 @@ class RegisterDBProvider {
   }
 
   static Future<List<Register>> getRegisterStateOfMonth(DateTime month) async {
-    DateTime startOfMonth = DateTime(month.year, month.month, 1);
-    DateTime endOfMonth = DateTime(month.year, month.month + 1, 0);
+    DateTime startOfMonth = DateTime(month.year, month.month, 1, 0, 0, 0, 0);
+    DateTime endOfMonth =
+        DateTime(month.year, month.month + 1, 0, 23, 59, 59, 999);
     return await RegisterDBHelper.getRegisterOfRange(startOfMonth, endOfMonth);
   }
 

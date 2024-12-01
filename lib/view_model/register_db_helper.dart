@@ -145,9 +145,9 @@ class RegisterDBHelper {
     INNER JOIN $categoryTable AS c1 ON $registerTable.$registerCategoryId = c1.$categoryId
     LEFT OUTER JOIN $categoryTable AS c2 ON c1.$categoryParentId = c2.$categoryId
 
-    WHERE c1.$categoryId = ?
+    WHERE c1.$categoryId = ? OR c2.$categoryId = ?
     ORDER BY $registerTable.$registerDate ASC,  $registerTable.$registerId ASC
-    ''', [category.id]);
+    ''', [category.id, category.id]);
 
     for (var map in listMap) {
       registerList.add(Register.fromMap(map));

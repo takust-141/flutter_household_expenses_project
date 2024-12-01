@@ -277,14 +277,15 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
 
     switch (currentState.rateChartDateRange) {
       case RateChartDateRange.month:
-        startDate = DateTime(
-            currentState.selectDate.year, currentState.selectDate.month, 1);
-        endDate = DateTime(
-            currentState.selectDate.year, currentState.selectDate.month + 1, 0);
+        startDate = DateTime(currentState.selectDate.year,
+            currentState.selectDate.month, 1, 0, 0, 0, 0, 0);
+        endDate = DateTime(currentState.selectDate.year,
+            currentState.selectDate.month + 1, 0, 23, 59, 59, 999);
         break;
       case RateChartDateRange.year:
-        startDate = DateTime(currentState.selectDate.year, 1, 1);
-        endDate = DateTime(currentState.selectDate.year + 1, 1, 0);
+        startDate = DateTime(currentState.selectDate.year, 1, 1, 0, 0, 0, 0, 0);
+        endDate =
+            DateTime(currentState.selectDate.year + 1, 1, 0, 23, 59, 59, 999);
     }
 
     late final List<Register> registerList;
