@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expenses_project/component/register_snackbar.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/model/register.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
@@ -288,16 +289,21 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
           date: dateNotifier.value,
         );
         RegisterDBProvider.insertRegister(register, ref);
+        updateRegisterSnackBarCallBack(
+          text: '登録しました',
+          context: context,
+        );
 
         //フォームリセット
         amountOfMoneyTextController.clear();
         memoTextController.clear();
       } else {
         //エラー表示
-        const snackBar = SnackBar(
-          content: Text('入力が正しくありません'),
+        updateRegisterSnackBarCallBack(
+          text: '入力が正しくありません',
+          context: context,
+          isError: true,
         );
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
     }
 

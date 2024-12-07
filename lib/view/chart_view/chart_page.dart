@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/constant/dimension.dart';
 import 'package:household_expenses_project/provider/chart_page_provider/chart_page_provider.dart';
@@ -36,64 +37,64 @@ class ChartAppBar extends StatelessWidget {
 }
 
 //-----SegmentedButton-----
-class ChartSegmentedButton extends ConsumerStatefulWidget {
+class ChartSegmentedButton extends HookConsumerWidget {
   const ChartSegmentedButton(this.notifierProvider, {super.key});
   final AsyncNotifierProvider<ChartPageNotifier, ChartPageState>
       notifierProvider;
 
-  @override
-  ConsumerState<ChartSegmentedButton> createState() =>
-      _ChartSegmentedButtonState();
-}
-
-class _ChartSegmentedButtonState extends ConsumerState<ChartSegmentedButton>
-    with SingleTickerProviderStateMixin {
   final double segmentedButtonHeight = 30;
   final double segmentedButtonWidth = 100;
-
-  late final AnimationController _animationController;
   final Duration animationDuration = const Duration(milliseconds: 180);
 
   @override
-  void initState() {
-    _animationController = AnimationController(
-      vsync: this,
-      duration: animationDuration,
-    );
-
-    if (ref.read(widget.notifierProvider).valueOrNull?.chartSegmentState ==
-        ChartSegmentState.transitionChart) {
-      _animationController.value = 1.0; // 完了状態
-    }
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+
+    //riverpod
+    final ChartSegmentState chartSegmentState = ref.watch(
+            notifierProvider.select((p) => p.valueOrNull?.chartSegmentState)) ??
+        ChartSegmentState.rateChart;
+    final selectExpensesProvider = ref.read(notifierProvider.notifier);
+    final selectExpenses =
+        ref.watch(notifierProvider).valueOrNull?.chartSegmentState;
+
+    //hook
+    final segmentAnimationController = useAnimationController(
+      duration: animationDuration,
+      initialValue:
+          (selectExpenses == ChartSegmentState.transitionChart) ? 1 : 0,
+    );
+    useEffect(() {
+      if (selectExpenses == ChartSegmentState.transitionChart) {
+        segmentAnimationController.forward();
+      } else {
+        segmentAnimationController.reverse();
+      }
+      return null;
+    }, [selectExpenses]);
 
     //アニメーション定義
     const Cubic animationCurve = Curves.easeOut;
-    final Animation<Color?> leftAnimation = ColorTween(
-      begin: theme.colorScheme.onPrimary,
-      end: theme.colorScheme.outline,
-    ).chain(CurveTween(curve: animationCurve)).animate(_animationController);
-    final Animation<Color?> rightAnimation = ColorTween(
-      begin: theme.colorScheme.outline,
-      end: theme.colorScheme.onPrimary,
-    ).chain(CurveTween(curve: animationCurve)).animate(_animationController);
+    final segmentLeftAnimation = useMemoized(() {
+      return ColorTween(
+        begin: theme.colorScheme.onPrimary,
+        end: theme.colorScheme.outline,
+      )
+          .chain(CurveTween(curve: animationCurve))
+          .animate(segmentAnimationController);
+    }, [segmentAnimationController]);
+    final segmentRightAnimation = useMemoized(() {
+      return ColorTween(
+        begin: theme.colorScheme.outline,
+        end: theme.colorScheme.onPrimary,
+      )
+          .chain(CurveTween(curve: animationCurve))
+          .animate(segmentAnimationController);
+    }, [segmentAnimationController]);
 
-    final ChartSegmentState chartSegmentState = ref.watch(widget
-            .notifierProvider
-            .select((p) => p.valueOrNull?.chartSegmentState)) ??
-        ChartSegmentState.rateChart;
-    final selectExpensesProvider = ref.read(widget.notifierProvider.notifier);
+    //Builder内でuseAnimationを利用できないため、外で定義
+    final leftColor = useAnimation(segmentLeftAnimation);
+    final rightColor = useAnimation(segmentRightAnimation);
 
     return Container(
       decoration: BoxDecoration(
@@ -126,10 +127,9 @@ class _ChartSegmentedButtonState extends ConsumerState<ChartSegmentedButton>
                   if (chartSegmentState != ChartSegmentState.rateChart) {
                     selectExpensesProvider.changeChartSegmentToRate();
                   }
-                  _animationController.reverse();
                 },
                 child: AnimatedBuilder(
-                  animation: leftAnimation,
+                  animation: segmentLeftAnimation,
                   builder: (context, child) {
                     return Container(
                       alignment: Alignment.center,
@@ -140,14 +140,14 @@ class _ChartSegmentedButtonState extends ConsumerState<ChartSegmentedButton>
                           const Spacer(flex: 3),
                           Icon(
                             Icons.pie_chart,
-                            color: leftAnimation.value,
+                            color: leftColor,
                             size: 15,
                           ),
                           const SizedBox(width: ssmall),
                           Text(
                             "割合",
                             style: theme.textTheme.titleMedium
-                                ?.copyWith(color: leftAnimation.value),
+                                ?.copyWith(color: leftColor),
                           ),
                           const Spacer(flex: 4),
                         ],
@@ -162,10 +162,9 @@ class _ChartSegmentedButtonState extends ConsumerState<ChartSegmentedButton>
                   if (chartSegmentState != ChartSegmentState.transitionChart) {
                     selectExpensesProvider.changeChartSegmentToTransition();
                   }
-                  _animationController.forward();
                 },
                 child: AnimatedBuilder(
-                  animation: rightAnimation,
+                  animation: segmentRightAnimation,
                   builder: (context, child) {
                     return Container(
                       alignment: Alignment.center,
@@ -176,14 +175,14 @@ class _ChartSegmentedButtonState extends ConsumerState<ChartSegmentedButton>
                           const Spacer(flex: 3),
                           Icon(
                             Icons.bar_chart,
-                            color: rightAnimation.value,
+                            color: rightColor,
                             size: 17,
                           ),
                           const SizedBox(width: ssmall),
                           Text(
                             "推移",
                             style: theme.textTheme.titleMedium
-                                ?.copyWith(color: rightAnimation.value),
+                                ?.copyWith(color: rightColor),
                           ),
                           const Spacer(flex: 4),
                         ],

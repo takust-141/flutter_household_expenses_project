@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expenses_project/provider/chart_page_provider/rate_chart_provider.dart';
 import 'package:household_expenses_project/provider/preferences_service.dart';
 import 'package:household_expenses_project/router/router.dart';
 import 'package:household_expenses_project/constant/constant.dart';
+import 'package:household_expenses_project/view/chart_view/chart_rate_view/chart_rate_page.dart';
 import 'package:household_expenses_project/view_model/db_helper.dart';
 
 void main() async {

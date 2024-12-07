@@ -15,35 +15,28 @@ class ChartTransitionPage extends ConsumerWidget {
     final mediaQuery = MediaQuery.of(context);
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: large),
-            const Padding(
-              padding: mediumHorizontalEdgeInsets,
-              child: ChartTransitionSelector(),
-            ),
-            const SizedBox(height: medium),
-            const Divider(height: 1),
-            const SizedBox(height: medium),
-            if (ref.watch(transitionChartProvider).isRefreshing) ...{
-              const Padding(
-                padding: largeEdgeInsets,
-                child: SizedBox(
-                  height: 35,
-                  width: 35,
-                  child: CircularProgressIndicator(strokeWidth: 3),
-                ),
-              ),
-            } else ...{
-              const ChartTransitionFigure(),
-            }
-
-            //ChartRateDateSelector(),
-            //SizedBox(height: ssmall),
-          ],
+        const SizedBox(height: large),
+        const Padding(
+          padding: mediumHorizontalEdgeInsets,
+          child: ChartTransitionSelector(),
         ),
+        const SizedBox(height: medium),
+        const Divider(height: 1),
+        const SizedBox(height: medium),
+        if (ref.watch(transitionChartProvider).isRefreshing) ...{
+          const Padding(
+            padding: largeEdgeInsets,
+            child: SizedBox(
+              height: 35,
+              width: 35,
+              child: CircularProgressIndicator(strokeWidth: 3),
+            ),
+          ),
+        } else ...{
+          const ChartTransitionFigure(),
+        }
       ],
     );
   }

@@ -71,9 +71,9 @@ class RegisterDBHelper {
     INNER JOIN $categoryTable AS c1 ON $registerTable.$registerCategoryId = c1.$categoryId
     LEFT OUTER JOIN $categoryTable AS c2 ON c1.$categoryParentId = c2.$categoryId
 
-    WHERE ( $registerTable.$registerMemo LIKE ? OR $registerTable.$registerAmount LIKE ? )
+    WHERE ( $registerTable.$registerMemo LIKE ? OR c1.$categoryName LIKE ? OR c2.$categoryName LIKE ?   OR $registerTable.$registerAmount LIKE ?  )
     ORDER BY $registerTable.$registerDate ASC,  $registerTable.$registerId ASC
-    ''', [searchText, text]);
+    ''', [searchText, searchText, searchText, text]);
 
     for (var map in listMap) {
       registerList.add(Register.fromMap(map));

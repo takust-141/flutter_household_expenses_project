@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expenses_project/component/register_snackbar.dart';
 import 'package:household_expenses_project/component/segmented_button.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/model/register.dart';
@@ -464,18 +465,27 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
         );
 
         if (newRegister.id == null) {
-          RegisterDBProvider.insertRegister(newRegister, ref);
+          await RegisterDBProvider.insertRegister(newRegister, ref);
+          updateRegisterSnackBarCallBack(
+            text: '登録しました',
+            context: context,
+          );
         } else {
-          RegisterDBProvider.updateRegister(newRegister, ref);
+          await RegisterDBProvider.updateRegister(newRegister, ref);
+          updateRegisterSnackBarCallBack(
+            text: '更新しました',
+            context: context,
+          );
         }
 
         Navigator.of(context).pop();
       } else {
         //エラー表示
-        const snackBar = SnackBar(
-          content: Text('入力が正しくありません'),
+        updateRegisterSnackBarCallBack(
+          text: '入力が正しくありません',
+          context: context,
+          isError: true,
         );
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
       }
     }
 

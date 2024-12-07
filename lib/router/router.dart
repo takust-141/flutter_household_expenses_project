@@ -41,6 +41,7 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          preload: true,
           routes: <RouteBase>[
             GoRoute(
               path: '/calendar',
@@ -50,11 +51,12 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          preload: true,
           routes: <RouteBase>[
             GoRoute(
               path: '/chart',
               name: rootNameChart,
-              builder: (context, state) => ChartPage(),
+              builder: (context, state) => const ChartPage(),
             ),
           ],
         ),
@@ -63,7 +65,7 @@ final router = GoRouter(
             GoRoute(
               path: '/search',
               name: rootNameSearch,
-              builder: (context, state) => SearchPage(),
+              builder: (context, state) => const SearchPage(),
             ),
           ],
         ),

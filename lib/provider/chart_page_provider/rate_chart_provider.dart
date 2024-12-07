@@ -3,6 +3,8 @@ import 'package:collection/collection.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/model/register.dart';
+import 'package:household_expenses_project/provider/chart_page_provider/chart_page_provider.dart';
+import 'package:household_expenses_project/provider/chart_page_provider/transition_chart_provider.dart';
 import 'package:household_expenses_project/provider/register_db_provider.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/provider/setting_data_provider.dart';
@@ -95,8 +97,10 @@ class RateChartState {
       : rateChartDateRange = RateChartDateRange.month,
         rateSelectState = RateSelectState.expenses,
         selectCategory = null,
-        selectDate = DateTime.now(),
-        displayDate = DateTime.now(),
+        selectDate = DateTime(
+            DateTime.now().year, DateTime.now().month, DateTime.now().day),
+        displayDate = DateTime(
+            DateTime.now().year, DateTime.now().month, DateTime.now().day),
         isShowScrollView = false,
         rateRegisterLists = [],
         rateChartSectionDataList = [],
@@ -147,15 +151,24 @@ class RateChartState {
 
 //Notifier
 class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
-  late final RateChartState _defaultState;
+  final RateChartState _defaultState = RateChartState.defaultState();
   @override
   Future<RateChartState> build() async {
     ref.onDispose(() {
       state.valueOrNull?.listWheelYearController.dispose();
       state.valueOrNull?.listWheelMonthController.dispose();
     });
-    _defaultState = RateChartState.defaultState();
-    return _defaultState;
+
+    var (sortedRegisterGroupList, sortedRateChartSectionDataList) =
+        await reacquisitionRegisterList();
+    return _defaultState.copyWith(
+        rateRegisterLists: sortedRegisterGroupList,
+        rateChartSectionDataList: sortedRateChartSectionDataList);
+  }
+
+  //RegisterDBが変更された際に実行
+  Future<void> refreshRegisterList() async {
+    await reacquisitionRegisterListCallBack();
   }
 
   //rateChartStateセット（セレクタ変更）
@@ -267,9 +280,74 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
     await setDateTime(newDisplayDate);
   }
 
+  //chart transitionへの推移
+  void goChartTransitionPage(int index) {
+    if (state.valueOrNull == null) {
+      return;
+    }
+
+    final currentState = state.value!;
+    late final TransitionSelectState transitionSelectState;
+    late final Category? selectCategory;
+    late final TransitionChartDateRange transitionChartDateRange;
+    final DateTime selectDate = currentState.selectDate;
+
+    switch (currentState.rateSelectState) {
+      case RateSelectState.expenses:
+        if (index == 0) {
+          transitionSelectState = TransitionSelectState.outgo;
+          selectCategory = null;
+        } else {
+          transitionSelectState = TransitionSelectState.income;
+          selectCategory = null;
+        }
+        break;
+      case RateSelectState.outgo:
+        transitionSelectState = TransitionSelectState.category;
+        selectCategory = currentState.rateChartSectionDataList[index].category;
+        break;
+      case RateSelectState.income:
+        transitionSelectState = TransitionSelectState.category;
+        selectCategory = currentState.rateChartSectionDataList[index].category;
+        break;
+
+      case RateSelectState.category:
+        transitionSelectState = TransitionSelectState.subCategory;
+        selectCategory = currentState.rateChartSectionDataList[index].category;
+        break;
+    }
+
+    switch (currentState.rateChartDateRange) {
+      case RateChartDateRange.year:
+        transitionChartDateRange = TransitionChartDateRange.year;
+        break;
+      case RateChartDateRange.month:
+        transitionChartDateRange = TransitionChartDateRange.month;
+        break;
+    }
+
+    ref.read(transitionChartProvider.notifier).pageTransitionFromRate(
+          transitionSelectState,
+          selectCategory,
+          transitionChartDateRange,
+          selectDate,
+        );
+    ref.read(chartPageProvider.notifier).changeChartSegmentToTransition();
+  }
+
   //
   //registerList、rateChartSectionDataList 更新コールバック
   Future<void> reacquisitionRegisterListCallBack() async {
+    var (sortedRegisterGroupList, sortedRateChartSectionDataList) =
+        await reacquisitionRegisterList();
+    state = AsyncData(state.valueOrNull?.copyWith(
+            rateRegisterLists: sortedRegisterGroupList,
+            rateChartSectionDataList: sortedRateChartSectionDataList) ??
+        _defaultState);
+  }
+
+  Future<(List<List<Register>>, List<RateChartSectionData>)>
+      reacquisitionRegisterList() async {
     late final DateTime startDate;
     late final DateTime endDate;
     state = const AsyncLoading<RateChartState>().copyWithPrevious(state);
@@ -351,10 +429,7 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
       sortedRateChartSectionDataList.add(rateChartSectionDataList[index]);
     }
 
-    state = AsyncData(state.valueOrNull?.copyWith(
-            rateRegisterLists: sortedRegisterGroupList,
-            rateChartSectionDataList: sortedRateChartSectionDataList) ??
-        _defaultState);
+    return (sortedRegisterGroupList, sortedRateChartSectionDataList);
   }
 
   //registerGroupList→チャート用データリスト作成

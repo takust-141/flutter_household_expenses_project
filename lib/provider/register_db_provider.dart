@@ -1,6 +1,8 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/model/category.dart';
 import 'package:household_expenses_project/provider/calendar_page_provider.dart';
+import 'package:household_expenses_project/provider/chart_page_provider/rate_chart_provider.dart';
+import 'package:household_expenses_project/provider/chart_page_provider/transition_chart_provider.dart';
 import 'package:household_expenses_project/provider/search_page_provider.dart';
 import 'package:household_expenses_project/provider/select_category_provider.dart';
 import 'package:household_expenses_project/view_model/register_db_helper.dart';
@@ -73,6 +75,8 @@ class RegisterDBProvider {
   //リフレッシュ処理（DB更新時のコールバック）
   static void refresh(WidgetRef ref) {
     ref.read(calendarPageProvider.notifier).refreshRegisterList();
+    ref.read(rateChartProvider.notifier).refreshRegisterList();
+    ref.read(transitionChartProvider.notifier).refreshRegisterList();
     ref.read(searchPageProvider.notifier).reSearchRegister();
   }
 }

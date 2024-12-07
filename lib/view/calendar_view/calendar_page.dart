@@ -147,13 +147,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     CalendarMonthSumItem(),
                   ],
                 ),
-                IgnorePointer(
-                  ignoring: !isShowScrollView,
-                  child: AnimatedContainer(
-                    color: isShowScrollView
-                        ? theme.colorScheme.shadow.withOpacity(0.4)
-                        : Colors.transparent,
-                    duration: const Duration(milliseconds: 200),
+                GestureDetector(
+                  onTap: () => calendarProviderNotifier.tapMonthButton(),
+                  child: IgnorePointer(
+                    ignoring: !isShowScrollView,
+                    child: AnimatedContainer(
+                      color: isShowScrollView
+                          ? theme.colorScheme.shadow.withOpacity(0.4)
+                          : Colors.transparent,
+                      duration: const Duration(milliseconds: 200),
+                    ),
                   ),
                 ),
               ],
@@ -473,7 +476,7 @@ class DatePickerPanel extends HookConsumerWidget {
                         textAlign: TextAlign.right,
                         maxLines: 1,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.red[900],
+                          color: Colors.red[600],
                           fontSize: 10,
                           height: 1,
                         ),

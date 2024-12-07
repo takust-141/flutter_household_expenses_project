@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expenses_project/provider/chart_page_provider/transition_chart_provider.dart';
 
 //チャートページ用プロバイダー
 final chartPageProvider =
@@ -15,6 +16,9 @@ class ChartPageState {
     required this.chartSegmentState,
   });
 
+  const ChartPageState.defaultState()
+      : chartSegmentState = ChartSegmentState.rateChart;
+
   ChartPageState copyWith({
     ChartSegmentState? chartSegmentState,
   }) {
@@ -26,24 +30,20 @@ class ChartPageState {
 
 //Notifier
 class ChartPageNotifier extends AsyncNotifier<ChartPageState> {
-  late final ChartPageState _defaultState;
   @override
   Future<ChartPageState> build() async {
-    _defaultState = const ChartPageState(
-      chartSegmentState: ChartSegmentState.rateChart,
-    );
-    return _defaultState;
+    return const ChartPageState.defaultState();
   }
 
   void changeChartSegmentToRate() {
     state = AsyncData(state.valueOrNull
             ?.copyWith(chartSegmentState: ChartSegmentState.rateChart) ??
-        _defaultState);
+        const ChartPageState.defaultState());
   }
 
   void changeChartSegmentToTransition() {
     state = AsyncData(state.valueOrNull
             ?.copyWith(chartSegmentState: ChartSegmentState.transitionChart) ??
-        _defaultState);
+        const ChartPageState.defaultState());
   }
 }

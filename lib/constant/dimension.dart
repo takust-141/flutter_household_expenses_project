@@ -14,6 +14,7 @@ const double lllarge = 32;
 const sssmallEdgeInsets = EdgeInsets.all(sssmall);
 const ssmallEdgeInsets = EdgeInsets.all(ssmall);
 const smallEdgeInsets = EdgeInsets.all(small);
+const msmallEdgeInsets = EdgeInsets.all(msmall);
 const mediumEdgeInsets = EdgeInsets.all(medium);
 const largeEdgeInsets = EdgeInsets.all(large);
 

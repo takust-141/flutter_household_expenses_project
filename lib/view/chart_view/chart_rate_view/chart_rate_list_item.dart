@@ -4,7 +4,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expenses_project/component/generalized_logic_component.dart';
 import 'package:household_expenses_project/constant/dimension.dart';
-import 'package:household_expenses_project/provider/calendar_page_provider.dart';
 import 'package:household_expenses_project/provider/chart_page_provider/rate_chart_provider.dart';
 
 //リストアイテム
@@ -13,13 +12,13 @@ class RateChartListItem extends HookConsumerWidget {
   final Color color;
   final int amount;
   final double rate;
-  final int? index;
+  final int index;
   const RateChartListItem(
       {required this.text,
       required this.color,
       required this.amount,
       required this.rate,
-      this.index,
+      required this.index,
       super.key});
 
   @override
@@ -44,12 +43,8 @@ class RateChartListItem extends HookConsumerWidget {
         children: [
           Expanded(
             child: GestureDetector(
-              onTap: (index != null)
-                  ? () => {
-                        rateChartNotifier
-                            .setSelectRateChartStateFromGlaph(index!)
-                      }
-                  : null,
+              onTap: () =>
+                  {rateChartNotifier.setSelectRateChartStateFromGlaph(index)},
               onTapDown: (_) => {
                 listItemColor.value = theme.colorScheme.surfaceContainerHighest
               },
@@ -123,7 +118,7 @@ class RateChartListItem extends HookConsumerWidget {
             width: theme.iconTheme.size ?? 24 + small,
             height: listItemHeight - small,
             child: GestureDetector(
-              onTap: null, //推移移動
+              onTap: () => rateChartNotifier.goChartTransitionPage(index),
               onTapDown: (_) => {
                 listItemIconBackColor.value =
                     theme.colorScheme.surfaceContainerHighest

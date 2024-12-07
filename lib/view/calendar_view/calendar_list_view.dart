@@ -199,8 +199,8 @@ class RegisterListItem extends HookConsumerWidget {
                   style: TextStyle(
                       color:
                           register.category?.expenses == SelectExpenses.income
-                              ? Colors.blue[900]
-                              : Colors.red[900]),
+                              ? Colors.blue[600]
+                              : Colors.red[600]),
                 ),
               ),
               const SizedBox(width: small),
@@ -393,7 +393,7 @@ class CalendarMonthSumItem extends ConsumerWidget {
                         "${LogicComponent.addCommaToNum(totalOutgo)}円",
                         textAlign: TextAlign.right,
                         style: theme.textTheme.bodyLarge
-                            ?.copyWith(height: 1.2, color: Colors.red[900]),
+                            ?.copyWith(height: 1.2, color: Colors.red[600]),
                         maxFontSize: 20,
                         minFontSize: 5,
                         maxLines: 2,

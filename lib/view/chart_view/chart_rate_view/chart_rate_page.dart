@@ -21,6 +21,7 @@ class ChartRatePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
+    final rateChartNotifier = ref.read(rateChartProvider.notifier);
     final bool isShowScrollSelector = ref.watch(
             rateChartProvider.select((p) => p.valueOrNull?.isShowScrollView)) ??
         false;
@@ -81,8 +82,11 @@ class ChartRatePage extends ConsumerWidget {
             child: ListWheelDateSelector(260),
           ),
           Expanded(
-            child: Container(
-              color: theme.colorScheme.shadow.withOpacity(0.4),
+            child: GestureDetector(
+              onTap: () => rateChartNotifier.tapDateButton(),
+              child: Container(
+                color: theme.colorScheme.shadow.withOpacity(0.4),
+              ),
             ),
           ),
         },
