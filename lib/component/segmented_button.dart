@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/constant/dimension.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/constant/dimension.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/provider/select_expense_state.dart';
 
 //-----SegmentedButton-----
-class SelectExpensesButton extends ConsumerWidget {
-  const SelectExpensesButton(this.notifierProvider, {super.key});
-  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
+class SelectExpenseButton extends ConsumerWidget {
+  const SelectExpenseButton(this.notifierProvider, {super.key});
+  final NotifierProvider<SelectExpenseStateNotifier, SelectExpenseState>
       notifierProvider;
 
   final double segmentedButtonHeight = 30;
@@ -16,9 +17,9 @@ class SelectExpensesButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
-    final selectExpensesRef =
-        ref.watch(notifierProvider.select((p) => p.selectExpenses));
-    final selectExpensesProvider = ref.read(notifierProvider.notifier);
+    final selectExpenseRef =
+        ref.watch(notifierProvider.select((p) => p.selectExpense));
+    final selectExpenseProvider = ref.read(notifierProvider.notifier);
     const Duration animationDuration = Duration(milliseconds: 180);
     const Cubic animationCurve = Curves.easeOut;
 
@@ -30,7 +31,7 @@ class SelectExpensesButton extends ConsumerWidget {
       child: Stack(
         children: [
           AnimatedPositioned(
-            left: (selectExpensesRef == SelectExpenses.outgo)
+            left: (selectExpenseRef == SelectExpense.outgo)
                 ? 0
                 : segmentedButtonWidth,
             curve: animationCurve,
@@ -50,9 +51,9 @@ class SelectExpensesButton extends ConsumerWidget {
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => {
-                  (selectExpensesRef == SelectExpenses.outgo)
+                  (selectExpenseRef == SelectExpense.outgo)
                       ? null
-                      : selectExpensesProvider.changeOutgo()
+                      : selectExpenseProvider.changeOutgo()
                 },
                 child: Container(
                   alignment: Alignment.center,
@@ -60,7 +61,7 @@ class SelectExpensesButton extends ConsumerWidget {
                   width: segmentedButtonWidth,
                   child: AnimatedDefaultTextStyle(
                     style: theme.textTheme.titleMedium?.copyWith(
-                            color: (selectExpensesRef == SelectExpenses.outgo)
+                            color: (selectExpenseRef == SelectExpense.outgo)
                                 ? theme.colorScheme.onPrimary
                                 : theme.colorScheme.outline) ??
                         const TextStyle(),
@@ -73,9 +74,9 @@ class SelectExpensesButton extends ConsumerWidget {
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => {
-                  (selectExpensesRef == SelectExpenses.income)
+                  (selectExpenseRef == SelectExpense.income)
                       ? null
-                      : selectExpensesProvider.changeIncome()
+                      : selectExpenseProvider.changeIncome()
                 },
                 child: Container(
                   alignment: Alignment.center,
@@ -83,7 +84,7 @@ class SelectExpensesButton extends ConsumerWidget {
                   width: segmentedButtonWidth,
                   child: AnimatedDefaultTextStyle(
                     style: theme.textTheme.titleMedium?.copyWith(
-                            color: (selectExpensesRef == SelectExpenses.income)
+                            color: (selectExpenseRef == SelectExpense.income)
                                 ? theme.colorScheme.onPrimary
                                 : theme.colorScheme.outline) ??
                         const TextStyle(),

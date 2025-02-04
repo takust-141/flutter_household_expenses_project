@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/model/category.dart';
-import 'package:household_expenses_project/model/register.dart';
-import 'package:household_expenses_project/provider/register_edit_state.dart';
-import 'package:household_expenses_project/provider/register_db_provider.dart';
+import 'package:household_expense_project/model/category.dart';
+import 'package:household_expense_project/model/register.dart';
+import 'package:household_expense_project/provider/register_edit_state.dart';
+import 'package:household_expense_project/provider/register_db_provider.dart';
 
 //Provider
 final searchPageProvider =

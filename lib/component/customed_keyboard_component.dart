@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:household_expenses_project/constant/constant.dart';
+import 'package:household_expense_project/constant/constant.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 //-----KeyboardGestureDetector-----
 class KeyboardGestureDetector extends InkWell {
   KeyboardGestureDetector(
       {super.key,
-      //required node,
+      bool isCircle = true,
       required Function onTapIcon,
       required Widget customIcon})
       : super(
-          customBorder: const CircleBorder(),
+          customBorder: isCircle
+              ? const CircleBorder()
+              : const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10))),
           onTap: () => onTapIcon(),
           child: Padding(
             padding: keyboardCustomIconPadding,

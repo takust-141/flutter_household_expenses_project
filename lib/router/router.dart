@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/constant/dimension.dart';
-import 'package:household_expenses_project/provider/app_bar_provider.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
-import 'package:household_expenses_project/view/view.dart';
+import 'package:household_expense_project/constant/dimension.dart';
+import 'package:household_expense_project/provider/app_bar_provider.dart';
+import 'package:household_expense_project/router/view.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -13,6 +12,7 @@ final GlobalKey<NavigatorState> _shellNavigatorKey =
 
 GlobalKey<FormState>? formkey;
 GlobalKey<FormState>? subFormkey;
+GlobalKey<FormState>? recurringFormkey;
 
 final RouteObserver<PageRoute> registerRouteObserver =
     RouteObserver<PageRoute>();
@@ -86,16 +86,12 @@ final router = GoRouter(
                       path: 'category_edit',
                       name: rootNameCategoryEdit,
                       builder: (context, state) {
-                        final NotifierProvider<SelectCategoryStateNotifier,
-                                SelectCategoryState> provider =
-                            state.extra as NotifierProvider<
-                                SelectCategoryStateNotifier,
-                                SelectCategoryState>;
+                        final int providerIndex = state.extra as int;
                         formkey = GlobalKey<FormState>();
                         return CategoryEditPage(
                           formKey: formkey,
                           isSubPage: false,
-                          provider: provider,
+                          providerIndex: providerIndex,
                         );
                       },
                       routes: <RouteBase>[
@@ -103,16 +99,12 @@ final router = GoRouter(
                           path: 'sub_category_edit',
                           name: rootNameSubCategoryEdit,
                           builder: (context, state) {
-                            final NotifierProvider<SelectCategoryStateNotifier,
-                                    SelectCategoryState> provider =
-                                state.extra as NotifierProvider<
-                                    SelectCategoryStateNotifier,
-                                    SelectCategoryState>;
+                            final int providerIndex = state.extra as int;
                             subFormkey = GlobalKey<FormState>();
                             return CategoryEditPage(
                               formKey: subFormkey,
                               isSubPage: true,
-                              provider: provider,
+                              providerIndex: providerIndex,
                             );
                           },
                         ),
@@ -124,6 +116,44 @@ final router = GoRouter(
                   path: 'calendar_setting',
                   name: rootNameCalendarSetting,
                   builder: (context, state) => const CalendarSettingPage(),
+                ),
+                GoRoute(
+                  path: 'recurring_list',
+                  name: rootNameRecurringList,
+                  builder: (context, state) => const RecurringSettingListPage(),
+                  routes: <RouteBase>[
+                    GoRoute(
+                      path: 'recurring_edit',
+                      name: rootNameRecurringEdit,
+                      builder: (context, state) {
+                        recurringFormkey = GlobalKey<FormState>();
+                        return RecurringEditPage(formkey: recurringFormkey);
+                      },
+                      routes: <RouteBase>[
+                        GoRoute(
+                          path: 'recurring_setting',
+                          name: rootNameRecurringSetting,
+                          builder: (context, state) =>
+                              const RecurringSettingPage(),
+                          routes: <RouteBase>[
+                            GoRoute(
+                              path: 'recurring_setting_detail',
+                              name: rootNameRecurringSettingDetail,
+                              builder: (context, state) =>
+                                  RecurringSettingDetailPage(
+                                      state.extra as int),
+                            ),
+                          ],
+                        ),
+                        GoRoute(
+                          path: 'recurring_setting_register_list',
+                          name: rootNameRecurringSettingRegisterList,
+                          builder: (context, state) =>
+                              const RecurringSettingRegisterListPage(),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -247,12 +277,13 @@ class CustomAppBar extends ConsumerWidget implements PreferredSizeWidget {
       ),
       SizedBox(
         width: appBarState.appBarSideWidth,
-        child: appBarStateNotifier.getAppBarTailingWidget(formkey, subFormkey),
+        child: appBarStateNotifier.getAppBarTailingWidget(
+            formkey, subFormkey, recurringFormkey),
       ),
     ];
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(appBarProvider.notifier).setAppBar(goRouterState.topRoute?.name);
+      ref.read(appBarProvider.notifier).setAppBar(goRouterState);
     });
 
     return Material(

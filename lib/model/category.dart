@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:household_expenses_project/constant/keyboard_components.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/constant/keyboard_components.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
 
 const String categoryTable = 'category';
 const String categoryId = '_id';
@@ -9,7 +9,7 @@ const String categoryIcon = 'icon';
 const String categoryColor = 'color';
 const String categoryParentId = 'parent_id';
 const String categoryOrder = '_order';
-const String categoryExpenses = 'expenses';
+const String categoryExpense = 'expense';
 
 const List<String> categoryKeyList = [
   categoryId,
@@ -18,7 +18,7 @@ const List<String> categoryKeyList = [
   categoryColor,
   categoryParentId,
   categoryOrder,
-  categoryExpenses
+  categoryExpense
 ];
 
 final Map<String, Color> categoryColors = {
@@ -38,7 +38,7 @@ class Category {
   Color color;
   int? parentId;
   int order;
-  SelectExpenses expenses;
+  SelectExpense expense;
 
   Category({
     required this.name,
@@ -47,7 +47,7 @@ class Category {
     this.id,
     this.parentId,
     required this.order,
-    required this.expenses,
+    required this.expense,
   });
 
   Category.fromMap(Map map, {List<String>? mapKeyList})
@@ -57,7 +57,7 @@ class Category {
         color = getCategoryColor(map[mapKeyList?[3] ?? categoryKeyList[3]]),
         parentId = map[mapKeyList?[4] ?? categoryKeyList[4]],
         order = map[mapKeyList?[5] ?? categoryKeyList[5]],
-        expenses = SelectExpenses.values
+        expense = SelectExpense.values
             .byName(map[mapKeyList?[6] ?? categoryKeyList[6]]);
 
   Map<String, Object?> toMap() {
@@ -67,7 +67,7 @@ class Category {
       categoryColor: color.toString(),
       categoryParentId: parentId,
       categoryOrder: order,
-      categoryExpenses: expenses.name,
+      categoryExpense: expense.name,
     };
   }
 
@@ -80,7 +80,7 @@ class Category {
   }
 
   Category copyWith(
-      {String? name, IconData? icon, Color? color, SelectExpenses? expenses}) {
+      {String? name, IconData? icon, Color? color, SelectExpense? expense}) {
     return Category(
       id: id,
       name: name ?? this.name,
@@ -88,7 +88,7 @@ class Category {
       color: color ?? this.color,
       parentId: parentId,
       order: order,
-      expenses: expenses ?? this.expenses,
+      expense: expense ?? this.expense,
     );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:household_expenses_project/constant/constant.dart';
+import 'package:household_expense_project/constant/constant.dart';
 
-void updateRegisterSnackBarCallBack({
+void updateSnackBarCallBack({
   required String text,
   required BuildContext context,
   bool isError = false,
@@ -26,5 +26,7 @@ void updateRegisterSnackBarCallBack({
   );
 
   HapticFeedback.lightImpact();
-  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(snackBar);
 }

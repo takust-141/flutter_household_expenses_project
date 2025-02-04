@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/constant/constant.dart';
-import 'package:household_expenses_project/provider/preferences_service.dart';
-import 'package:household_expenses_project/provider/setting_data_provider.dart';
+import 'package:household_expense_project/constant/constant.dart';
+import 'package:household_expense_project/provider/preferences_service.dart';
+import 'package:household_expense_project/provider/setting_data_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 const Map<int, String> weeks = {
@@ -24,7 +24,6 @@ class CalendarSettingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    var goRoute = GoRouter.of(context);
 
     return Container(
       color: theme.colorScheme.surfaceContainer,

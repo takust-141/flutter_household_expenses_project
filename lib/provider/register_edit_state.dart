@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/model/category.dart';
+import 'package:household_expense_project/model/category.dart';
 
 /*
 「RegisterEdit」
@@ -16,7 +16,7 @@ return RegisterListItem(
 currentSelectDateは新規追加用なので、不要な場合はnullを返せば良い
 
 selectCategoryStateProviderは内部でregisterEditCategoryStateNotifierProviderが利用されるが、
-複数のmodalが競合しなければ問題ない
+複数のmodalが競合しないため問題ない
 */
 
 abstract class RegisterEditStateNotifier<T> extends AsyncNotifier<T> {

@@ -1,4 +1,4 @@
-# household_expenses_project
+# household_expense_project
 
 Household expense project.
 

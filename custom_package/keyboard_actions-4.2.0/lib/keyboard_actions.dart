@@ -171,6 +171,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
   /// bottom of the view port.
   ///
   /// Used to correctly calculate the offset to "avoid" with BottomAreaAvoider.
+  /*
   double get _distanceBelowWidget {
     if (_keyParent.currentContext != null) {
       final widgetRenderBox =
@@ -183,7 +184,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
       return distanceBelowWidget;
     }
     return 0;
-  }
+  }*/
 
   /// Set the config for the keyboard action bar.
   void setConfig(KeyboardActionsConfig newConfig) {
@@ -469,19 +470,27 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
         ? _kBarSize
         : 0; // offset for the actions bar
 
-    final keyboardHeight = EdgeInsets.fromViewPadding(
+    final uiKeyboardHeight = EdgeInsets.fromViewPadding(
       View.of(context).viewInsets,
       View.of(context).devicePixelRatio,
     ).bottom;
 
-    newOffset += keyboardHeight; // + offset for the system keyboard
+    //mediaQuery.padding.bottom ：ノッチ部分
+    final uiBottomPadding = EdgeInsets.fromViewPadding(
+      View.of(context).padding,
+      View.of(context).devicePixelRatio,
+    ).bottom;
+
+    newOffset += uiKeyboardHeight -
+        uiBottomPadding +
+        8; // + offset for the system keyboard
 
     if (_currentFooter != null) {
       newOffset +=
           _currentFooter!.preferredSize.height; // + offset for the footer
     }
 
-    newOffset -= _localMargin + _distanceBelowWidget;
+    //newOffset -= _localMargin + _distanceBelowWidget;
 
     if (newOffset < 0) newOffset = 0;
 
@@ -525,7 +534,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
   }
 
   double _localMargin = 0.0;
-
+/*
   void _onLayout() {
     if (widget.isDialog) {
       final render =
@@ -534,7 +543,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
       final localHeight = render?.size.height ?? 0;
       _localMargin = (fullHeight - localHeight) / 2;
     }
-  }
+  }*/
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -582,7 +591,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
     if (widget.enable) {
       setConfig(widget.config);
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _onLayout();
+        //_onLayout();
         _resetOffset();
       });
     }
@@ -680,16 +689,14 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
             if (config!.nextFocus && displayArrows) ...[
               IconButton(
                 icon: const Icon(Icons.keyboard_arrow_up),
-                tooltip: 'Previous',
-                iconSize: IconTheme.of(context).size!,
+                iconSize: IconTheme.of(context).size,
                 color: IconTheme.of(context).color,
                 disabledColor: Theme.of(context).disabledColor,
                 onPressed: _previousIndex != null ? _onTapUp : null,
               ),
               IconButton(
                 icon: const Icon(Icons.keyboard_arrow_down),
-                tooltip: 'Next',
-                iconSize: IconTheme.of(context).size!,
+                iconSize: IconTheme.of(context).size,
                 color: IconTheme.of(context).color,
                 disabledColor: Theme.of(context).disabledColor,
                 onPressed: _nextIndex != null ? _onTapDown : null,
@@ -703,6 +710,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
               Padding(
                 padding: const EdgeInsets.all(5.0),
                 child: InkWell(
+                  customBorder: const CircleBorder(),
                   onTap: () {
                     if (_currentAction?.onTapAction != null) {
                       _currentAction!.onTapAction!();

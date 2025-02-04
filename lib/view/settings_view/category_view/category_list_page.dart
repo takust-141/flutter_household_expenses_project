@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/model/category.dart';
-import 'package:household_expenses_project/provider/app_bar_provider.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
-import 'package:household_expenses_project/provider/category_list_provider.dart';
+import 'package:household_expense_project/model/category.dart';
+import 'package:household_expense_project/provider/app_bar_provider.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/provider/category_list_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:household_expenses_project/constant/constant.dart';
+import 'package:household_expense_project/constant/constant.dart';
 
 //-------カテゴリリストページ---------------------------
 class CategoryListPage extends ConsumerWidget {
@@ -16,53 +16,53 @@ class CategoryListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final mediaQuery = MediaQuery.of(context);
 
     final settingCategoryState =
         ref.watch(settingCategoryStateNotifierProvider);
     final categoryList = ref
         .watch(categoryListNotifierProvider)
-        .valueOrNull?[settingCategoryState.selectExpenses];
+        .valueOrNull?[settingCategoryState.selectExpense];
     final int numOfCategory = categoryList?.length ?? 0;
 
-    return Container(
-      color: theme.colorScheme.surfaceContainer,
-      padding: EdgeInsets.only(bottom: mediaQuery.padding.bottom),
-      child: ListView(
-        padding: viewEdgeInsets,
-        children: [
-          //カテゴリリスト
-          Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(containreBorderRadius),
-            ),
-            child: Column(
-              children: [
-                for (int i = 0; i < numOfCategory; i++) ...{
-                  CategoryListItem(
-                    category: categoryList![i],
-                  ),
-                  if (i != numOfCategory - 1)
-                    Divider(
-                      height: 0,
-                      thickness: 0.2,
-                      color: theme.colorScheme.outline,
+    return SafeArea(
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: theme.colorScheme.surfaceContainer),
+        child: ListView(
+          padding: viewEdgeInsets,
+          children: [
+            //カテゴリリスト
+            Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(containreBorderRadius),
+              ),
+              child: Column(
+                children: [
+                  for (int i = 0; i < numOfCategory; i++) ...{
+                    CategoryListItem(
+                      category: categoryList![i],
                     ),
-                }
-              ],
+                    if (i != numOfCategory - 1)
+                      Divider(
+                        height: 0,
+                        thickness: 0.2,
+                        color: theme.colorScheme.outline,
+                      ),
+                  }
+                ],
+              ),
             ),
-          ),
-          //新規追加
-          const SizedBox(height: small),
-          Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(containreBorderRadius),
+            //新規追加
+            const SizedBox(height: small),
+            Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(containreBorderRadius),
+              ),
+              child: const CategoryListItem(isNewAdd: true, category: null),
             ),
-            child: const CategoryListItem(isNewAdd: true, category: null),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -96,8 +96,8 @@ class CategoryListItem extends HookConsumerWidget {
             .read(appBarProvider.notifier)
             .updateActiveCategoryDoneButton(category?.name);
 
-        goRoute.go('/setting/category_list/category_edit',
-            extra: settingCategoryStateNotifierProvider);
+        //settingCategoryStateNotifierProviderをセット
+        goRoute.go('/setting/category_list/category_edit', extra: 0);
       },
       onTapDown: (_) =>
           {listItemColor.value = theme.colorScheme.surfaceContainerHighest},

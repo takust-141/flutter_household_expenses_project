@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/provider/preferences_service.dart';
+import 'package:household_expense_project/provider/preferences_service.dart';
 
 //Provider
 final settingDataProvider =

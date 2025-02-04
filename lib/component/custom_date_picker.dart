@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/constant/constant.dart';
-import 'package:household_expenses_project/provider/setting_data_provider.dart';
+import 'package:household_expense_project/constant/constant.dart';
+import 'package:household_expense_project/provider/setting_data_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 
@@ -48,9 +48,10 @@ class _DatePickerKeyboardState extends ConsumerState<DatePickerKeyboard> {
   late FixedExtentScrollController _listWheelMonthController;
 
   int calcDiffMonthIndex(DateTime? targetMonth) {
+    targetMonth ??= currentMonth;
     return 1200 +
-        (((targetMonth?.year ?? 0) - currentMonth.year) * 12) +
-        (targetMonth?.month ?? 0) -
+        (((targetMonth.year) - currentMonth.year) * 12) +
+        (targetMonth.month) -
         currentMonth.month;
   }
 

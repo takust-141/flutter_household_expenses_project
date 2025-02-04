@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/constant/dimension.dart';
-import 'package:household_expenses_project/provider/chart_page_provider/rate_chart_provider.dart';
-import 'package:household_expenses_project/provider/setting_data_provider.dart';
-import 'package:household_expenses_project/view/chart_view/chart_rate_view/chart_rate_figure.dart';
-import 'package:household_expenses_project/view/chart_view/chart_rate_view/chart_rate_list_item.dart';
-import 'package:household_expenses_project/view/chart_view/chart_rate_view/chart_rate_selector.dart';
+import 'package:household_expense_project/constant/dimension.dart';
+import 'package:household_expense_project/provider/chart_page_provider/rate_chart_provider.dart';
+import 'package:household_expense_project/provider/setting_data_provider.dart';
+import 'package:household_expense_project/view/chart_view/chart_rate_view/chart_rate_figure.dart';
+import 'package:household_expense_project/view/chart_view/chart_rate_view/chart_rate_list_item.dart';
+import 'package:household_expense_project/view/chart_view/chart_rate_view/chart_rate_selector.dart';
 import 'package:intl/intl.dart';
 
 const double selectDisplayheight = 40;
@@ -20,7 +20,7 @@ class ChartRatePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final mediaQuery = MediaQuery.of(context);
+
     final rateChartNotifier = ref.read(rateChartProvider.notifier);
     final bool isShowScrollSelector = ref.watch(
             rateChartProvider.select((p) => p.valueOrNull?.isShowScrollView)) ??
@@ -45,7 +45,7 @@ class ChartRatePage extends ConsumerWidget {
         if (!isShowScrollSelector) ...{
           const ChartRateFigure(),
           const SizedBox(height: medium),
-          (ref.watch(rateChartProvider).value == null ||
+          (ref.watch(rateChartProvider).valueOrNull == null ||
                   ref
                       .watch(rateChartProvider)
                       .value!
@@ -90,7 +90,6 @@ class ChartRatePage extends ConsumerWidget {
             ),
           ),
         },
-        SizedBox(height: mediaQuery.padding.bottom),
       ],
     );
   }
@@ -104,8 +103,6 @@ class ListWheelDateSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final mediaQuery = MediaQuery.of(context);
-    final double wheelWidth = mediaQuery.size.width / 2 - large;
     final pageNotifier = ref.read(rateChartProvider.notifier);
     final DateTime displayDate = ref.watch(
             rateChartProvider.select((p) => p.valueOrNull?.displayDate)) ??
@@ -125,101 +122,102 @@ class ListWheelDateSelector extends ConsumerWidget {
             .select((p) => p.valueOrNull?.listWheelMonthController)) ??
         FixedExtentScrollController();
 
-    return Row(
-      children: [
-        const SizedBox(width: large),
-        //年
-        SizedBox(
-          width: (dateRange == RateChartDateRange.month)
-              ? wheelWidth
-              : wheelWidth * 2,
-          height: areaHeight,
-          child: ListWheelScrollView(
-            controller: yearController,
-            physics: const FixedExtentScrollPhysics(),
-            onSelectedItemChanged: (index) {
-              HapticFeedback.selectionClick();
-              pageNotifier.setDisplayDateTime(DateTime(
-                  index + calendarStartDate.year, displayDate.month, 1));
-            },
-            itemExtent: areaHeight / 8,
-            offAxisFraction: (dateRange == RateChartDateRange.month) ? -0.4 : 0,
-            overAndUnderCenterOpacity: 0.5,
-            magnification: 1.1,
-            children: [
-              for (int i = 0;
-                  i <= currentMonth.year - calendarStartDate.year + 100;
-                  i++)
-                Container(
-                  alignment: (dateRange == RateChartDateRange.month)
-                      ? Alignment.centerRight
-                      : Alignment.center,
-                  height: theme.textTheme.bodyMedium?.fontSize,
-                  width: wheelWidth,
-                  child: TextButton(
-                      style: ButtonStyle(
-                        overlayColor: WidgetStateProperty.all(
-                            theme.colorScheme.shadow.withOpacity(0.1)),
-                        splashFactory: NoSplash.splashFactory,
-                        foregroundColor: WidgetStateProperty.all(
-                            theme.colorScheme.onSurface),
-                      ),
-                      onPressed: () {
-                        yearController.animateToItem(i,
-                            duration: swipeDuration, curve: swipeCurve);
-                      },
-                      child: Text(
-                        "${calendarStartDate.year + i}年",
-                        textAlign: (dateRange == RateChartDateRange.month)
-                            ? TextAlign.end
-                            : TextAlign.center,
-                      )),
-                ),
-            ],
-          ),
-        ),
-        if (dateRange == RateChartDateRange.month)
-          //月
-          SizedBox(
-            width: wheelWidth,
-            height: areaHeight,
-            child: ListWheelScrollView(
-              controller: monthController,
-              physics: const FixedExtentScrollPhysics(),
-              onSelectedItemChanged: (index) {
-                HapticFeedback.selectionClick();
-                pageNotifier.setDisplayDateTime(
-                    DateTime(displayDate.year, index + 1, 1));
-              },
-              offAxisFraction: 0.4,
-              itemExtent: areaHeight / 8,
-              overAndUnderCenterOpacity: 0.5,
-              magnification: 1.1,
-              useMagnifier: true,
-              children: [
-                for (int i = 0; i < 12; i++)
-                  Container(
-                    alignment: Alignment.centerLeft,
-                    height: 13,
-                    width: wheelWidth,
-                    child: TextButton(
-                        style: ButtonStyle(
-                          overlayColor: WidgetStateProperty.all(
-                              theme.colorScheme.shadow.withOpacity(0.1)),
-                          foregroundColor: WidgetStateProperty.all(
-                              theme.colorScheme.onSurface),
-                        ),
-                        onPressed: () {
-                          monthController.animateToItem(i,
-                              duration: swipeDuration, curve: swipeCurve);
-                        },
-                        child: Text("${i + 1}月", textAlign: TextAlign.start)),
-                  ),
-              ],
+    return Padding(
+      padding: largeEdgeInsets,
+      child: Row(
+        children: [
+          //年
+          Expanded(
+            child: SizedBox(
+              height: areaHeight,
+              child: ListWheelScrollView(
+                controller: yearController,
+                physics: const FixedExtentScrollPhysics(),
+                onSelectedItemChanged: (index) {
+                  HapticFeedback.selectionClick();
+                  pageNotifier.setDisplayDateTime(DateTime(
+                      index + calendarStartDate.year, displayDate.month, 1));
+                },
+                itemExtent: areaHeight / 8,
+                offAxisFraction:
+                    (dateRange == RateChartDateRange.month) ? -0.4 : 0,
+                overAndUnderCenterOpacity: 0.5,
+                magnification: 1.1,
+                children: [
+                  for (int i = 0;
+                      i <= currentMonth.year - calendarStartDate.year + 100;
+                      i++)
+                    Container(
+                      alignment: (dateRange == RateChartDateRange.month)
+                          ? Alignment.centerRight
+                          : Alignment.center,
+                      height: theme.textTheme.bodyMedium?.fontSize,
+                      child: TextButton(
+                          style: ButtonStyle(
+                            overlayColor: WidgetStateProperty.all(
+                                theme.colorScheme.shadow.withOpacity(0.1)),
+                            splashFactory: NoSplash.splashFactory,
+                            foregroundColor: WidgetStateProperty.all(
+                                theme.colorScheme.onSurface),
+                          ),
+                          onPressed: () {
+                            yearController.animateToItem(i,
+                                duration: swipeDuration, curve: swipeCurve);
+                          },
+                          child: Text(
+                            "${calendarStartDate.year + i}年",
+                            textAlign: (dateRange == RateChartDateRange.month)
+                                ? TextAlign.end
+                                : TextAlign.center,
+                          )),
+                    ),
+                ],
+              ),
             ),
           ),
-        const SizedBox(width: large),
-      ],
+          if (dateRange == RateChartDateRange.month)
+            //月
+            Expanded(
+              child: SizedBox(
+                height: areaHeight,
+                child: ListWheelScrollView(
+                  controller: monthController,
+                  physics: const FixedExtentScrollPhysics(),
+                  onSelectedItemChanged: (index) {
+                    HapticFeedback.selectionClick();
+                    pageNotifier.setDisplayDateTime(
+                        DateTime(displayDate.year, index + 1, 1));
+                  },
+                  offAxisFraction: 0.4,
+                  itemExtent: areaHeight / 8,
+                  overAndUnderCenterOpacity: 0.5,
+                  magnification: 1.1,
+                  useMagnifier: true,
+                  children: [
+                    for (int i = 0; i < 12; i++)
+                      Container(
+                        alignment: Alignment.centerLeft,
+                        height: 13,
+                        child: TextButton(
+                            style: ButtonStyle(
+                              overlayColor: WidgetStateProperty.all(
+                                  theme.colorScheme.shadow.withOpacity(0.1)),
+                              foregroundColor: WidgetStateProperty.all(
+                                  theme.colorScheme.onSurface),
+                            ),
+                            onPressed: () {
+                              monthController.animateToItem(i,
+                                  duration: swipeDuration, curve: swipeCurve);
+                            },
+                            child:
+                                Text("${i + 1}月", textAlign: TextAlign.start)),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

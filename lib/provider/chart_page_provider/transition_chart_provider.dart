@@ -1,22 +1,24 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/constant/dimension.dart';
-import 'package:household_expenses_project/model/category.dart';
-import 'package:household_expenses_project/model/register.dart';
-import 'package:household_expenses_project/provider/register_db_provider.dart';
-import 'package:household_expenses_project/provider/register_edit_state.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/component/generalized_logic_component.dart';
+import 'package:household_expense_project/constant/dimension.dart';
+import 'package:household_expense_project/model/category.dart';
+import 'package:household_expense_project/model/register.dart';
+import 'package:household_expense_project/provider/category_list_provider.dart';
+import 'package:household_expense_project/provider/chart_page_provider/chart_page_provider.dart';
+import 'package:household_expense_project/provider/register_db_provider.dart';
+import 'package:household_expense_project/provider/register_edit_state.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
 
 //barChart用パラメータ
 const double barChartItemWidth = 25;
 const double barGroupSpace = medium;
 const double barGroupWidth = barChartItemWidth + barGroupSpace;
 const double barSpace = 2;
-const double barChartFigurePadding = medium;
+const double barChartFigurePadding = small;
 
 enum TransitionSelectState {
-  expenses("収入と支出"),
+  expense("収入と支出"),
   outgo("支出"),
   income("収入"),
   category("カテゴリー"),
@@ -39,24 +41,14 @@ final transitionChartProvider =
     AsyncNotifierProvider<TransitionChartStateNotifier, TransitionChartState>(
         TransitionChartStateNotifier.new);
 
-//rodデータ
-class TransitionChartRodData {
-  final String key; //YYYYMM（MM：期間が年の時は00）
-  final int value;
-  const TransitionChartRodData({
-    required this.key,
-    required this.value,
-  });
-}
-
 //rodGroupデータ
 class TransitionChartGroupData {
-  final Map<String, List<Register>> transitionRegistersMap;
-  final List<TransitionChartRodData> transitionChartRodDataList; //同項目のrodList
+  final List<List<Register>> transitionRegistersList;
+  final List<double> transitionChartRodDataList; //同項目のrodList
   final Color? chartColor;
   final int maxAmount;
   TransitionChartGroupData({
-    required this.transitionRegistersMap,
+    required this.transitionRegistersList,
     required this.transitionChartRodDataList,
     required this.chartColor,
     required this.maxAmount,
@@ -71,10 +63,13 @@ class TransitionChartState implements RegisterEditState {
   final Category? selectCategory;
   final List<TransitionChartGroupData> transitionChartGroupDataList;
   final List<String> xTitleList;
-  final int? selectBarGroupIndex; //x軸のインデックス
-  final int? selectRodDataIndex; //一メモリ内のrod数インデックス
-  final String? selectRodKey;
-  final ScrollController chartTransitionScrollController;
+  final List<DateTime> xDateList;
+  final int selectBarGroupIndex; //x軸のインデックス
+  final int selectRodDataIndex; //一メモリ内のrod数インデックス
+
+  final DateTime baseDate;
+  final int loadingState; //0：初期状態、1：画面遷移開始、２：画面遷移完了
+
   @override
   final bool isActiveDoneButton;
 
@@ -84,24 +79,26 @@ class TransitionChartState implements RegisterEditState {
     required this.selectCategory,
     required this.transitionChartGroupDataList,
     required this.xTitleList,
+    required this.xDateList,
     required this.selectBarGroupIndex,
     required this.selectRodDataIndex,
-    required this.selectRodKey,
     required this.isActiveDoneButton,
-    required this.chartTransitionScrollController,
+    required this.baseDate,
+    required this.loadingState,
   });
 
   TransitionChartState.defaultState()
       : transitionChartDateRange = TransitionChartDateRange.month,
-        transitionSelectState = TransitionSelectState.expenses,
+        transitionSelectState = TransitionSelectState.expense,
         selectCategory = null,
         transitionChartGroupDataList = [],
         xTitleList = [],
-        selectBarGroupIndex = null,
-        selectRodDataIndex = null,
-        selectRodKey = null,
+        xDateList = [],
+        selectBarGroupIndex = 0,
+        selectRodDataIndex = 0,
         isActiveDoneButton = false,
-        chartTransitionScrollController = ScrollController();
+        baseDate = DateTime(DateTime.now().year, DateTime.now().month, 1),
+        loadingState = 0;
 
   TransitionChartState copyWith({
     TransitionChartDateRange? transitionChartDateRange,
@@ -109,11 +106,12 @@ class TransitionChartState implements RegisterEditState {
     Category? selectCategory,
     List<TransitionChartGroupData>? transitionChartGroupDataList,
     List<String>? xTitleList,
+    List<DateTime>? xDateList,
     int? selectBarGroupIndex,
     int? selectRodDataIndex,
-    String? selectRodKey,
     bool? isActiveDoneButton,
-    ScrollController? chartTransitionScrollController,
+    DateTime? baseDate,
+    int? loadingState,
   }) {
     return TransitionChartState(
       transitionChartDateRange:
@@ -124,12 +122,12 @@ class TransitionChartState implements RegisterEditState {
       transitionChartGroupDataList:
           transitionChartGroupDataList ?? this.transitionChartGroupDataList,
       xTitleList: xTitleList ?? this.xTitleList,
+      xDateList: xDateList ?? this.xDateList,
       selectBarGroupIndex: selectBarGroupIndex ?? this.selectBarGroupIndex,
       selectRodDataIndex: selectRodDataIndex ?? this.selectRodDataIndex,
-      selectRodKey: selectRodKey ?? this.selectRodKey,
       isActiveDoneButton: isActiveDoneButton ?? this.isActiveDoneButton,
-      chartTransitionScrollController: chartTransitionScrollController ??
-          this.chartTransitionScrollController,
+      baseDate: baseDate ?? this.baseDate,
+      loadingState: loadingState ?? this.loadingState,
     );
   }
 
@@ -139,7 +137,9 @@ class TransitionChartState implements RegisterEditState {
     required Category? selectCategory,
     List<TransitionChartGroupData>? transitionChartGroupDataList,
     List<String>? xTitleList,
-    ScrollController? chartTransitionScrollController,
+    List<DateTime>? xDateList,
+    DateTime? baseDate,
+    int? loadingState,
   }) {
     return TransitionChartState(
       transitionChartDateRange:
@@ -150,52 +150,13 @@ class TransitionChartState implements RegisterEditState {
       transitionChartGroupDataList:
           transitionChartGroupDataList ?? this.transitionChartGroupDataList,
       xTitleList: xTitleList ?? this.xTitleList,
+      xDateList: xDateList ?? this.xDateList,
       selectBarGroupIndex: selectBarGroupIndex,
       selectRodDataIndex: selectRodDataIndex,
-      selectRodKey: selectRodKey,
       isActiveDoneButton: isActiveDoneButton,
-      chartTransitionScrollController: chartTransitionScrollController ??
-          this.chartTransitionScrollController,
+      baseDate: baseDate ?? this.baseDate,
+      loadingState: loadingState ?? this.loadingState,
     );
-  }
-
-  TransitionChartState copyWithSelectIndex({
-    TransitionChartDateRange? transitionChartDateRange,
-    TransitionSelectState? transitionSelectState,
-    Category? selectCategory,
-    List<TransitionChartGroupData>? transitionChartGroupDataList,
-    List<String>? xTitleList,
-    required int? selectBarGroupIndex,
-    required int? selectRodDataIndex,
-    required String? selectRodKey,
-    ScrollController? chartTransitionScrollController,
-  }) {
-    return TransitionChartState(
-      transitionChartDateRange:
-          transitionChartDateRange ?? this.transitionChartDateRange,
-      transitionSelectState:
-          transitionSelectState ?? this.transitionSelectState,
-      selectCategory: selectCategory ?? this.selectCategory,
-      transitionChartGroupDataList:
-          transitionChartGroupDataList ?? this.transitionChartGroupDataList,
-      xTitleList: xTitleList ?? this.xTitleList,
-      selectBarGroupIndex: selectBarGroupIndex,
-      selectRodDataIndex: selectRodDataIndex,
-      selectRodKey: selectRodKey,
-      isActiveDoneButton: isActiveDoneButton,
-      chartTransitionScrollController: chartTransitionScrollController ??
-          this.chartTransitionScrollController,
-    );
-  }
-
-  String selectListTitle() {
-    if (transitionSelectState == TransitionSelectState.category) {
-      return (selectCategory != null)
-          ? ("${selectCategory!.expenses.text} / ${selectCategory!.name}")
-          : "";
-    } else {
-      return transitionSelectState.text;
-    }
   }
 }
 
@@ -206,30 +167,51 @@ class TransitionChartStateNotifier
   @override
   Future<TransitionChartState> build() async {
     _defaultState = TransitionChartState.defaultState();
-    //初期値でグラフ表示
-    initBarChart();
+    reacquisitionRegisterListCallBack(isResetSelect: true);
     return _defaultState;
-  }
-
-  Future<void> initBarChart() async {
-    await reacquisitionRegisterListCallBack();
-    selectBarRodFromDate(
-        selectDate: DateTime(DateTime.now().year, DateTime.now().month),
-        rodIndex: 0);
   }
 
   //RegisterDBが変更された際に実行
   Future<void> refreshRegisterList() async {
-    int? rodIndex = state.valueOrNull?.selectRodDataIndex;
-    String? key = state.valueOrNull?.selectRodKey;
-    await reacquisitionRegisterListCallBack();
-    if (rodIndex != null && key != null) {
-      selectBarRodFromDate(rodIndex: rodIndex, key: key);
+    await reacquisitionRegisterListCallBack(isResetSelect: false);
+  }
+
+  //セレクタのタイトル取得
+  String selectListTitle() {
+    if (state.valueOrNull == null) return '';
+    TransitionChartState currentState = state.value!;
+    switch (currentState.transitionSelectState) {
+      case TransitionSelectState.subCategory:
+        if (currentState.selectCategory != null) {}
+        if (currentState.selectCategory?.parentId != null) {
+          final Category? parentCategory = ref
+              .read(categoryListNotifierProvider.notifier)
+              .getMainCategoryFromId(currentState.selectCategory!.parentId!,
+                  currentState.selectCategory!.expense);
+          String selectorTitle = (parentCategory != null)
+              ? "${currentState.selectCategory!.expense.text} / ${parentCategory.name} / ${currentState.selectCategory!.name}"
+              : "";
+          return selectorTitle;
+        } else {
+          //サブカテゴリーなしの場合
+          return "${currentState.selectCategory!.expense.text} / ${currentState.selectCategory!.name} / サブカテゴリーなし";
+        }
+      case TransitionSelectState.category:
+        return (currentState.selectCategory != null)
+            ? ("${currentState.selectCategory!.expense.text} / ${currentState.selectCategory!.name}")
+            : "";
+      default:
+        return currentState.transitionSelectState.text;
     }
   }
 
   //
   //-----セレクタ系-----
+  //transitionChartStateセット（セレクタ初期化）
+  Future<void> initSelectTransitionChartState() async {
+    await setSelectTransitionChartState(TransitionSelectState.expense, null);
+  }
+
   //transitionChartStateセット（セレクタ変更）
   Future<void> setSelectTransitionChartState(
       TransitionSelectState transitionSelectState, Category? category) async {
@@ -238,7 +220,7 @@ class TransitionChartStateNotifier
           selectCategory: category,
         ) ??
         _defaultState);
-    await reacquisitionRegisterListCallBack();
+    await reacquisitionRegisterListCallBack(isResetSelect: true);
   }
 
   //transitionChartStateセット（期間変更）
@@ -247,23 +229,10 @@ class TransitionChartStateNotifier
     state = AsyncData(state.valueOrNull
             ?.copyWith(transitionChartDateRange: transitionChartDateRange) ??
         _defaultState);
-    await reacquisitionRegisterListCallBack();
+    await reacquisitionRegisterListCallBack(isResetSelect: true);
   }
 
-  //transitionChartStateセット（セレクタと期間）
-  Future<void> setTransitionChartState(
-    TransitionSelectState transitionSelectState,
-    Category? category,
-    TransitionChartDateRange transitionChartDateRange,
-  ) async {
-    state = AsyncData(state.valueOrNull?.copyWithCategory(
-            transitionSelectState: transitionSelectState,
-            selectCategory: category,
-            transitionChartDateRange: transitionChartDateRange) ??
-        _defaultState);
-    await reacquisitionRegisterListCallBack();
-  }
-
+  //
   //rate chartからの遷移
   Future<void> pageTransitionFromRate(
     TransitionSelectState transitionSelectState,
@@ -271,116 +240,51 @@ class TransitionChartStateNotifier
     TransitionChartDateRange transitionChartDateRange,
     DateTime selectDate,
   ) async {
-    await setTransitionChartState(
-        transitionSelectState, category, transitionChartDateRange);
-    //TransitionSelectState.expencesはあり得ないため、rodIndexに0を設定
-    selectBarRodFromDate(selectDate: selectDate, rodIndex: 0);
+    state = AsyncData(state.valueOrNull?.copyWithCategory(
+          transitionSelectState: transitionSelectState,
+          selectCategory: category,
+          transitionChartDateRange: transitionChartDateRange,
+          baseDate: selectDate,
+          loadingState: 1,
+        ) ??
+        _defaultState);
+    ref.read(chartPageProvider.notifier).changeChartSegmentToTransition();
+    await reacquisitionRegisterListCallBack(isResetSelect: true);
   }
 
-  //棒グラフ選択（日付から）*keyが設定されている場合、キーで選択
-  void selectBarRodFromDate({
-    required int rodIndex,
-    String? key,
-    DateTime? selectDate,
-  }) {
-    //キー変換
-    late final String selectKey;
-    if (key != null) {
-      selectKey = key;
-    } else if (selectDate != null) {
-      switch (state.valueOrNull?.transitionChartDateRange) {
-        case TransitionChartDateRange.month:
-          selectKey =
-              '${selectDate.year}${selectDate.month.toString().padLeft(2, '0')}';
-          break;
-        case TransitionChartDateRange.year:
-          selectKey = '${selectDate.year}00';
-          break;
-        case null:
-          return;
-      }
-    } else {
-      //どちらも設定されていない場合は選択しない
-      return;
-    }
-
-    //キーマッチング（ない場合は選択しない）
-    int? selectBarGroupIndex;
-    int? scrollIndex;
-    int listLength = state.valueOrNull?.transitionChartGroupDataList[0]
-            .transitionChartRodDataList.length ??
-        0;
-    for (int i = 0; i < listLength; i++) {
-      if (state.valueOrNull?.transitionChartGroupDataList[0]
-              .transitionChartRodDataList[i].key ==
-          selectKey) {
-        selectBarGroupIndex = i;
-      }
-      //最も近い値をscrollIndexに設定
-      if (state.valueOrNull != null &&
-          (int.tryParse(selectKey) ?? 0) <
-              (int.tryParse(state.value!.transitionChartGroupDataList[0]
-                      .transitionChartRodDataList[i].key) ??
-                  0)) {
-        scrollIndex = (i == 0) ? 0 : i - 1;
-        break;
-      }
-    }
-
-    if (selectBarGroupIndex != null) {
-      selectBarRodFromIndex(selectBarGroupIndex, rodIndex);
-    }
-    setInitScrollOffset(scrollIndex ?? listLength);
-  }
-
-  //棒グラフ選択（Indexから）*ListにIndexが存在することが前提
+  //棒グラフ選択（selectIndex設定）
   void selectBarRodFromIndex(int selectBarGroupIndex, int selectRodDataIndex) {
-    final String? selectRodKey = state
-        .valueOrNull
-        ?.transitionChartGroupDataList[selectRodDataIndex]
-        .transitionChartRodDataList[selectBarGroupIndex]
-        .key;
-
-    state = AsyncData(state.valueOrNull?.copyWithSelectIndex(
+    state = AsyncData(state.valueOrNull?.copyWith(
           selectBarGroupIndex: selectBarGroupIndex,
           selectRodDataIndex: selectRodDataIndex,
-          selectRodKey: selectRodKey,
         ) ??
         _defaultState);
   }
 
-  //スクロールoffset計算
-  void setInitScrollOffset(int index) {
-    var currentState = state.valueOrNull;
-    if (currentState == null) {
-      return;
-    } else {
-      double offset = barChartFigurePadding -
-          ssmall +
-          ((currentState.transitionSelectState ==
-                      TransitionSelectState.expenses)
-                  ? (barGroupWidth + barChartItemWidth + barSpace)
-                  : barGroupWidth) *
-              index;
-
-      state = AsyncData(currentState.copyWith(
-          chartTransitionScrollController:
-              ScrollController(initialScrollOffset: offset)));
-    }
+  //figure表示期間変更
+  void setNextRangeFigure(int isNextRange) async {
+    await reacquisitionRegisterListCallBack(
+        isResetSelect: true, isNextRange: isNextRange);
   }
 
-  //
-  //選択barchartListを返す
-  List<Register> getSelectedList() {
-    if (state.valueOrNull?.selectRodDataIndex == null ||
-        state.valueOrNull?.selectRodKey == null) {
-      return [];
+  //スクロールoffset計算
+  double getChartTransitionScrollOffset() {
+    var currentState = state.valueOrNull;
+    if (currentState == null) {
+      return 0;
     } else {
-      return state
-              .value!
-              .transitionChartGroupDataList[state.value!.selectRodDataIndex!]
-              .transitionRegistersMap[state.value!.selectRodKey] ??
-          [];
+      double offset = small +
+          barChartFigurePadding +
+          barChartItemWidth + //ここから
+          ssmall +
+          sssmall + //ここまでボタン分
+          ssmall +
+          ((currentState.transitionSelectState == TransitionSelectState.expense)
+                  ? (barGroupWidth + barChartItemWidth + barSpace)
+                  : barGroupWidth) *
+              (currentState.selectBarGroupIndex - 2);
+
+      return offset;
     }
   }
 
@@ -402,42 +306,105 @@ class TransitionChartStateNotifier
         false);
   }
 
+  void setLoadingState(int loadingState) {
+    state = AsyncData(state.valueOrNull?.copyWith(loadingState: loadingState) ??
+        _defaultState);
+  }
+
   //
   //-----バーチャート用データ-----
-  //1 registerList、transitionChartSectionDataList 更新コールバック
-  Future<void> reacquisitionRegisterListCallBack() async {
+  //TransitionChartState 更新コールバック
+  Future<void> reacquisitionRegisterListCallBack({
+    required bool isResetSelect,
+    int isNextRange = 0,
+  }) async {
     state = const AsyncLoading<TransitionChartState>().copyWithPrevious(state);
+    state = AsyncData(await getTransitionChartState(
+      isResetSelect: isResetSelect,
+      isNextRange: isNextRange,
+    ));
+  }
+
+  //1 TransitionChartState更新
+  Future<TransitionChartState> getTransitionChartState({
+    required bool isResetSelect,
+    required int isNextRange, //baseDate 0:変化なし、1:next、-1:pre
+  }) async {
     final currentState = state.valueOrNull ?? _defaultState;
+    DateTime baseDate = currentState.baseDate;
+    late final int selectBarGroupIndex;
+    final int selectRodDataIndex =
+        isResetSelect ? 0 : currentState.selectRodDataIndex;
 
     List<List<Register>> registerGroupList = [];
     late final List<Color?> colorList;
     List<Register> registerList = [];
-    //1 registerList取得、グラフの色取得
+
+    //1 日付の範囲、xTitle作成
+    late final int rangeOffset;
+    late final DateTime startDate;
+    late final DateTime endDate;
+    List<DateTime> xDateList = [];
+    List<String> xTitleList = [];
+    switch (currentState.transitionChartDateRange) {
+      case TransitionChartDateRange.month:
+        rangeOffset = 2;
+        selectBarGroupIndex =
+            isResetSelect ? 24 : currentState.selectBarGroupIndex;
+
+        baseDate = DateTime(
+            baseDate.year + (rangeOffset * isNextRange), baseDate.month, 1);
+        startDate = DateTime(baseDate.year - rangeOffset, baseDate.month, 1);
+        endDate = DateTime(baseDate.year + rangeOffset, baseDate.month + 1, 0);
+        DateTime calcDate = startDate;
+        while (LogicComponent.compMonth(calcDate, endDate) != 2) {
+          xDateList.add(calcDate);
+          xTitleList.add('${calcDate.year}\n${calcDate.month}月');
+          calcDate = DateTime(calcDate.year, calcDate.month + 1, 1);
+        }
+      case TransitionChartDateRange.year:
+        rangeOffset = 10;
+        selectBarGroupIndex =
+            isResetSelect ? 10 : currentState.selectBarGroupIndex;
+        baseDate = DateTime(
+            baseDate.year + (rangeOffset * isNextRange), baseDate.month, 1);
+        startDate = DateTime(baseDate.year - rangeOffset, 1, 1);
+        endDate = DateTime(baseDate.year + rangeOffset + 1, 1, 0);
+        DateTime calcDate = startDate;
+        while (LogicComponent.compMonth(calcDate, endDate) != 2) {
+          xDateList.add(calcDate);
+          xTitleList.add('${calcDate.year}');
+          calcDate = DateTime(calcDate.year + 1, calcDate.month, 1);
+        }
+    }
+
+    //2 registerList取得、グラフの色取得
     switch (currentState.transitionSelectState) {
-      case TransitionSelectState.expenses:
+      case TransitionSelectState.expense:
         registerList =
-            await RegisterDBProvider.getRegisterStateOfSelectExpenses(
-                SelectExpenses.outgo);
+            await RegisterDBProvider.getRegisterStateOfRangeAndSelectExpense(
+                startDate, endDate, SelectExpense.outgo);
+
         registerGroupList.add(registerList);
         registerList =
-            await RegisterDBProvider.getRegisterStateOfSelectExpenses(
-                SelectExpenses.income);
+            await RegisterDBProvider.getRegisterStateOfRangeAndSelectExpense(
+                startDate, endDate, SelectExpense.income);
         registerGroupList.add(registerList);
         colorList = [Colors.red, Colors.blue];
         break;
 
       case TransitionSelectState.outgo:
         registerList =
-            await RegisterDBProvider.getRegisterStateOfSelectExpenses(
-                SelectExpenses.outgo);
+            await RegisterDBProvider.getRegisterStateOfRangeAndSelectExpense(
+                startDate, endDate, SelectExpense.outgo);
         registerGroupList.add(registerList);
         colorList = [Colors.red];
         break;
 
       case TransitionSelectState.income:
         registerList =
-            await RegisterDBProvider.getRegisterStateOfSelectExpenses(
-                SelectExpenses.income);
+            await RegisterDBProvider.getRegisterStateOfRangeAndSelectExpense(
+                startDate, endDate, SelectExpense.income);
         registerGroupList.add(registerList);
         colorList = [Colors.blue];
         break;
@@ -447,72 +414,27 @@ class TransitionChartStateNotifier
           //ありえない想定
           registerList = [];
         } else {
-          registerList = await RegisterDBProvider.getRegisterStateOfCategory(
-              currentState.selectCategory!);
+          registerList =
+              await RegisterDBProvider.getRegisterStateOfRangeAndCategory(
+                  startDate, endDate, currentState.selectCategory!);
           registerGroupList.add(registerList);
           colorList = [
-            registerList.isNotEmpty ? registerList[0].category!.color : null
+            registerList.isNotEmpty ? currentState.selectCategory!.color : null
           ];
         }
         break;
       case TransitionSelectState.subCategory:
         if (currentState.selectCategory == null) {
-          //ありえない想定
+          //ありえない想定 *サブカテゴリーなしの場合は親カテゴリーが入る
           registerList = [];
         } else {
-          registerList = await RegisterDBProvider.getRegisterStateOfCategory(
-              currentState.selectCategory!);
+          registerList =
+              await RegisterDBProvider.getRegisterStateOfRangeAndSubCategory(
+                  startDate, endDate, currentState.selectCategory!);
           registerGroupList.add(registerList);
           colorList = [
-            registerList.isNotEmpty ? registerList[0].subCategory!.color : null
+            registerList.isNotEmpty ? currentState.selectCategory!.color : null
           ];
-        }
-        break;
-    }
-
-    //全てEmptyの場合
-    if (registerGroupList.every((list) => list.isEmpty)) {
-      state = AsyncData(state.valueOrNull?.copyWith(
-            transitionChartGroupDataList: [],
-            xTitleList: [],
-          ) ??
-          _defaultState);
-      return;
-    }
-
-    //range設定
-    DateTime rangeMax = DateTime(0);
-    DateTime rangeMin = DateTime(9999);
-    if (registerGroupList.length < 2) {
-      rangeMin = registerGroupList[0].first.date;
-      rangeMax = registerGroupList[0].last.date;
-    } else {
-      for (int i = 0; i < registerGroupList.length; i++) {
-        if (registerGroupList[i].isNotEmpty) {
-          rangeMin = rangeMin.isBefore(registerGroupList[i].first.date)
-              ? rangeMin
-              : registerGroupList[i].first.date;
-          rangeMax = rangeMax.isAfter(registerGroupList[i].last.date)
-              ? rangeMax
-              : registerGroupList[i].last.date;
-        }
-      }
-    }
-
-    //2 xTitle作成
-    List<String> xTitleList = [];
-    DateTime currentDate = rangeMin;
-    switch (currentState.transitionChartDateRange) {
-      case TransitionChartDateRange.month:
-        while (compDateTime(currentDate, rangeMax)) {
-          xTitleList.add('${currentDate.year}\n${currentDate.month}月');
-          currentDate = DateTime(currentDate.year, currentDate.month + 1);
-        }
-        break;
-      case TransitionChartDateRange.year:
-        while (compDateTime(currentDate, rangeMax)) {
-          xTitleList.add('${currentDate.year}');
-          currentDate = DateTime(currentDate.year + 1);
         }
         break;
     }
@@ -521,20 +443,25 @@ class TransitionChartStateNotifier
     List<TransitionChartGroupData> transitionChartGroupDataList = [];
     for (int i = 0; i < registerGroupList.length; i++) {
       final TransitionChartGroupData transitionChartGroupData =
-          createTransitionChartGroupData(currentState.transitionChartDateRange,
-              registerGroupList[i], colorList[i], rangeMin, rangeMax);
+          createTransitionChartGroupData(
+        currentState.transitionChartDateRange,
+        registerGroupList[i],
+        colorList[i],
+        xDateList,
+      );
       transitionChartGroupDataList.add(transitionChartGroupData);
     }
 
     //4 データ更新
-    state = AsyncData(state.valueOrNull?.copyWithSelectIndex(
+    return state.valueOrNull?.copyWith(
           transitionChartGroupDataList: transitionChartGroupDataList,
           xTitleList: xTitleList,
-          selectBarGroupIndex: null,
-          selectRodDataIndex: null,
-          selectRodKey: null,
+          xDateList: xDateList,
+          selectBarGroupIndex: selectBarGroupIndex,
+          selectRodDataIndex: selectRodDataIndex,
+          baseDate: baseDate,
         ) ??
-        _defaultState);
+        _defaultState;
   }
 
   //3 registerList→TransitionChartGroupData取得
@@ -542,107 +469,60 @@ class TransitionChartStateNotifier
     TransitionChartDateRange dataRange,
     List<Register> registerList,
     Color? color,
-    DateTime rangeMin,
-    DateTime rangeMax,
+    List<DateTime> xDateList,
   ) {
-    //3.1 registerList→registerGroupMap作成（選択期間ごとにグループ化）
-    final Map<String, List<Register>> registerGroupMap = {};
-    //グループ化時のキーの設定
-    late final String Function(DateTime) keyGenerator;
+    //3.1 registerList→registerGroupList作成（選択期間ごとにグループ化）
+    List<List<Register>> registerGroupList = [];
+
+    late final int Function(DateTime, DateTime) compareDate;
     switch (dataRange) {
       case TransitionChartDateRange.month:
-        keyGenerator =
-            (date) => '${date.year}${date.month.toString().padLeft(2, '0')}';
-        break;
+        compareDate = (date1, date2) => LogicComponent.compMonth(date1, date2);
       case TransitionChartDateRange.year:
-        keyGenerator = (date) => '${date.year}00';
-        break;
+        compareDate = (date1, date2) => LogicComponent.compYear(date1, date2);
     }
 
-    for (Register register in registerList) {
-      String key = keyGenerator(register.date);
-      if (registerGroupMap.containsKey(key)) {
-        registerGroupMap[key]!.add(register);
-      } else {
-        registerGroupMap[key] = [register];
+    int j = 0;
+    for (int i = 0; i < xDateList.length; i++) {
+      List<Register> registerGroup = [];
+      while (j < registerList.length) {
+        final int comp = compareDate(xDateList[i], registerList[j].date);
+        // 一致
+        if (comp == 0) {
+          registerGroup.add(registerList[j]);
+
+          j++;
+        }
+        // xDateList[i]<registerList[j]、次のxDateListへ
+        else if (comp == 1) {
+          break;
+        }
+        // xDateList[i]>registerList[j]、ありえない想定
+        else {
+          j++;
+        }
+      }
+      registerGroupList.add(registerGroup);
+    }
+
+    //3.2 registerGroupMap→TransitionChartデータリスト作成、amountの最大値を更新
+    List<double> transitionChartRodDataList = [];
+    int maxAmount = 0;
+    for (int i = 0; i < registerGroupList.length; i++) {
+      final double sumAmount = registerGroupList[i]
+          .fold(0, (total, register) => total + register.amount);
+      transitionChartRodDataList.add(sumAmount);
+      if (maxAmount < sumAmount) {
+        maxAmount = sumAmount.toInt();
       }
     }
 
-    //3.2 registerGroupMap→TransitionChartデータリスト作成
-    final (
-      List<TransitionChartRodData> transitionChartRodDataList,
-      int maxAmount
-    ) = createBarChartState(
-        registerGroupMap, dataRange, rangeMin, rangeMax, keyGenerator);
-
     return TransitionChartGroupData(
-      transitionRegistersMap: registerGroupMap,
+      transitionRegistersList: registerGroupList,
       transitionChartRodDataList: transitionChartRodDataList,
       chartColor: color,
       maxAmount: maxAmount,
     );
-  }
-
-  //3.2 registerGroupMap→TransitionChartデータリスト作成
-  (List<TransitionChartRodData>, int) createBarChartState(
-    Map<String, List<Register>> registerGroupMap,
-    TransitionChartDateRange dateRange,
-    DateTime rangeMin,
-    DateTime rangeMax,
-    Function keyGenerator,
-  ) {
-    //3.2.1 年月間隔設定
-    final DateTime Function(DateTime) addDateIndex;
-    switch (dateRange) {
-      case TransitionChartDateRange.month:
-        addDateIndex = (DateTime date) => DateTime(date.year, date.month + 1);
-      case TransitionChartDateRange.year:
-        addDateIndex = (DateTime date) => DateTime(date.year + 1);
-    }
-
-    //3.2.2 registerGroupMap→TransitionChartデータリスト作成（全体）
-    List<TransitionChartRodData> transitionChartRodDataList = [];
-    int maxAmount = 0;
-    DateTime currentDate = rangeMin;
-    List<String> keyList = registerGroupMap.keys.toList();
-    int i = 0;
-    while (compDateTime(currentDate, rangeMax)) {
-      //キーの日付の時、TransitionChartデータ作成（個別）
-      final String currentKey = keyGenerator(currentDate);
-      if (i < keyList.length && currentKey == keyList[i]) {
-        //3.2.2.1 registerGroup→TransitionChartデータ作成（個別）
-        final TransitionChartRodData transitionChartRodData =
-            createBarChartGroupData(currentKey, registerGroupMap[currentKey]);
-        transitionChartRodDataList.add(transitionChartRodData);
-        maxAmount = max(maxAmount, transitionChartRodData.value);
-        i++;
-      } else {
-        //value0のチャートデータ追加
-        transitionChartRodDataList
-            .add(TransitionChartRodData(key: currentKey, value: 0));
-      }
-      currentDate = addDateIndex(currentDate);
-    }
-    return (transitionChartRodDataList, maxAmount);
-  }
-
-  //3.2.2.1 registerGroup→TransitionChartデータ作成（個別）
-  TransitionChartRodData createBarChartGroupData(
-      String key, List<Register>? registerGroup) {
-    final int value = registerGroup
-            ?.fold(0, (total, register) => total + register.amount)
-            .abs() ??
-        0;
-    final TransitionChartRodData transitionChartRodData =
-        TransitionChartRodData(key: key, value: value);
-
-    return (transitionChartRodData);
-  }
-
-  //99 日付計算（pre<=current → true）
-  bool compDateTime(DateTime pre, DateTime current) {
-    return (pre.year < current.year) ||
-        (pre.year == current.year && pre.month <= current.month);
   }
 
   //register edit用

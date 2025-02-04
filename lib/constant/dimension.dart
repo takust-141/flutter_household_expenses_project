@@ -42,8 +42,7 @@ const double bottomNavIconSize = 25;
 
 //CalendarSliver用
 const calendarSliverEdgeInsets =
-    EdgeInsets.symmetric(vertical: smedium, horizontal: msmall);
-
+    EdgeInsets.fromLTRB(ssmall, smedium, 0, msmall);
 const sumContainerEdgeInsets =
     EdgeInsets.symmetric(vertical: ssmall, horizontal: small);
 
@@ -109,3 +108,10 @@ BorderRadius chartListItemRadius = BorderRadius.circular(msmall);
 
 const EdgeInsets chartSelectEdgeInsets =
     EdgeInsets.symmetric(vertical: small, horizontal: medium);
+
+//scrollbar
+const double scrollbarpadding = 2;
+const double scrollbarWidth = 4;
+const double scrollbarSpace = scrollbarpadding * 2 + scrollbarWidth;
+const customRegisterListPadding =
+    EdgeInsets.symmetric(vertical: msmall, horizontal: 0);

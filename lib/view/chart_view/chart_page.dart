@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/constant/dimension.dart';
-import 'package:household_expenses_project/provider/chart_page_provider/chart_page_provider.dart';
-import 'package:household_expenses_project/view/chart_view/chart_rate_view/chart_rate_page.dart';
-import 'package:household_expenses_project/view/chart_view/chart_transition_view/chart_transition_page.dart';
+import 'package:household_expense_project/constant/dimension.dart';
+import 'package:household_expense_project/provider/chart_page_provider/chart_page_provider.dart';
+import 'package:household_expense_project/provider/chart_page_provider/transition_chart_provider.dart';
+import 'package:household_expense_project/view/chart_view/chart_rate_view/chart_rate_page.dart';
+import 'package:household_expense_project/view/chart_view/chart_transition_view/chart_transition_page.dart';
 
 //-------チャートページ---------------------------
 class ChartPage extends ConsumerWidget {
@@ -12,10 +13,23 @@ class ChartPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return (ref.watch(chartPageProvider).valueOrNull?.chartSegmentState ==
-            ChartSegmentState.rateChart)
-        ? const ChartRatePage()
-        : const ChartTransitionPage();
+    return LayoutBuilder(builder: (context, constraint) {
+      return SafeArea(
+        child: SizedBox(
+          height: constraint.maxHeight,
+          width: constraint.maxWidth,
+          child: PageView(
+            controller: ref.watch(
+                chartPageProvider.select((p) => p.valueOrNull?.pageController)),
+            scrollDirection: Axis.horizontal,
+            children: const [
+              ChartRatePage(),
+              ChartTransitionPage(),
+            ],
+          ),
+        ),
+      );
+    });
   }
 }
 
@@ -54,43 +68,51 @@ class ChartSegmentedButton extends HookConsumerWidget {
     final ChartSegmentState chartSegmentState = ref.watch(
             notifierProvider.select((p) => p.valueOrNull?.chartSegmentState)) ??
         ChartSegmentState.rateChart;
-    final selectExpensesProvider = ref.read(notifierProvider.notifier);
-    final selectExpenses =
-        ref.watch(notifierProvider).valueOrNull?.chartSegmentState;
+    final selectExpenseProvider = ref.read(notifierProvider.notifier);
 
     //hook
     final segmentAnimationController = useAnimationController(
       duration: animationDuration,
       initialValue:
-          (selectExpenses == ChartSegmentState.transitionChart) ? 1 : 0,
+          (chartSegmentState == ChartSegmentState.transitionChart) ? 1 : 0,
     );
     useEffect(() {
-      if (selectExpenses == ChartSegmentState.transitionChart) {
-        segmentAnimationController.forward();
-      } else {
-        segmentAnimationController.reverse();
+      PageController? pageController = ref.watch(
+          chartPageProvider.select((p) => p.valueOrNull?.pageController));
+      void pageListener() async {
+        if (pageController?.page == 0) {
+          await segmentAnimationController.reverse();
+          ref.read(transitionChartProvider.notifier).setLoadingState(2);
+        } else if (pageController?.page == 1) {
+          await segmentAnimationController.forward();
+          ref.read(transitionChartProvider.notifier).setLoadingState(2);
+        }
       }
-      return null;
-    }, [selectExpenses]);
+
+      pageController?.addListener(pageListener);
+
+      // クリーンアップ: ウィジェットが破棄されるときにリスナーを削除
+      return () => pageController?.removeListener(pageListener);
+    }, [
+      ref.watch(chartPageProvider.select((p) => p.valueOrNull?.pageController)),
+      segmentAnimationController
+    ]);
 
     //アニメーション定義
     const Cubic animationCurve = Curves.easeOut;
-    final segmentLeftAnimation = useMemoized(() {
-      return ColorTween(
-        begin: theme.colorScheme.onPrimary,
-        end: theme.colorScheme.outline,
-      )
-          .chain(CurveTween(curve: animationCurve))
-          .animate(segmentAnimationController);
-    }, [segmentAnimationController]);
-    final segmentRightAnimation = useMemoized(() {
-      return ColorTween(
-        begin: theme.colorScheme.outline,
-        end: theme.colorScheme.onPrimary,
-      )
-          .chain(CurveTween(curve: animationCurve))
-          .animate(segmentAnimationController);
-    }, [segmentAnimationController]);
+    final segmentLeftAnimation = ColorTween(
+      begin: theme.colorScheme.onPrimary,
+      end: theme.colorScheme.outline,
+    )
+        .chain(CurveTween(curve: animationCurve))
+        .animate(segmentAnimationController);
+
+    final segmentRightAnimation = ColorTween(
+      begin: theme.colorScheme.outline,
+      end: theme.colorScheme.onPrimary,
+    )
+        .chain(CurveTween(curve: animationCurve))
+        .animate(segmentAnimationController);
 
     //Builder内でuseAnimationを利用できないため、外で定義
     final leftColor = useAnimation(segmentLeftAnimation);
@@ -125,7 +147,7 @@ class ChartSegmentedButton extends HookConsumerWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
                   if (chartSegmentState != ChartSegmentState.rateChart) {
-                    selectExpensesProvider.changeChartSegmentToRate();
+                    selectExpenseProvider.changeChartSegmentToRate();
                   }
                 },
                 child: AnimatedBuilder(
@@ -160,7 +182,7 @@ class ChartSegmentedButton extends HookConsumerWidget {
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
                   if (chartSegmentState != ChartSegmentState.transitionChart) {
-                    selectExpensesProvider.changeChartSegmentToTransition();
+                    selectExpenseProvider.changeChartSegmentToTransition();
                   }
                 },
                 child: AnimatedBuilder(

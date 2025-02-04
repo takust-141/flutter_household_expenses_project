@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/component/generalized_logic_component.dart';
-import 'package:household_expenses_project/constant/dimension.dart';
-import 'package:household_expenses_project/model/category.dart';
-import 'package:household_expenses_project/model/register.dart';
-import 'package:household_expenses_project/provider/register_db_provider.dart';
-import 'package:household_expenses_project/provider/register_edit_state.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
-import 'package:household_expenses_project/provider/setting_data_provider.dart';
-import 'package:household_expenses_project/view/calendar_view/register_modal_view.dart';
+import 'package:household_expense_project/component/generalized_logic_component.dart';
+import 'package:household_expense_project/constant/dimension.dart';
+import 'package:household_expense_project/model/category.dart';
+import 'package:household_expense_project/model/register.dart';
+import 'package:household_expense_project/provider/register_db_provider.dart';
+import 'package:household_expense_project/provider/register_edit_state.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/provider/setting_data_provider.dart';
+import 'package:household_expense_project/component/custom_register_list_view/register_modal_view.dart';
 
 //Provider
 final calendarPageProvider =
@@ -87,9 +87,11 @@ class CalendarPageState implements RegisterEditState {
         isShowScrollView = false,
         isShowAccordion = true,
         pageViewController = PageController(
-            initialPage: ((DateTime.now().year - startCalendarDate.year) * 12) +
-                DateTime.now().month -
-                1),
+          initialPage: ((DateTime.now().year - startCalendarDate.year) * 12) +
+              DateTime.now().month -
+              1,
+          keepPage: false,
+        ),
         listWheelYearController = FixedExtentScrollController(),
         listWheelMonthController =
             FixedExtentScrollController(initialItem: DateTime.now().month - 1),
@@ -248,7 +250,8 @@ class CalendarPageNotifier
             registerList: registerList,
             registerDaySumMap: calcDaySumRegister(registerList),
             pageViewController: PageController(
-                initialPage: calcDiffMonthIndex(currentState.displayMonth)),
+                initialPage: calcDiffMonthIndex(currentState.displayMonth),
+                keepPage: false),
           );
         } else {
           //ページ→ホイールリスト
@@ -320,28 +323,32 @@ class CalendarPageNotifier
 
     for (Register register in registerList) {
       if (LogicComponent.matchDates(sumDate, register.date)) {
-        if (register.category?.expenses == SelectExpenses.outgo) {
+        if (register.category?.expense == SelectExpense.outgo) {
           sumOutgo += register.amount;
-        } else if (register.category?.expenses == SelectExpenses.income) {
+        } else if (register.category?.expense == SelectExpense.income) {
           sumIncome += register.amount;
         }
       } else {
-        map["${sumDate?.month}${sumDate?.day}"] = (
+        map["${sumDate?.month.toString().padLeft(2, '0')}${sumDate?.day.toString().padLeft(2, '0')}"] =
+            (
           (sumIncome != 0) ? sumIncome : null,
           (sumOutgo != 0) ? sumOutgo : null
         );
         sumDate = register.date;
 
-        if (register.category?.expenses == SelectExpenses.outgo) {
+        if (register.category?.expense == SelectExpense.outgo) {
           sumOutgo = register.amount;
-        } else if (register.category?.expenses == SelectExpenses.income) {
+          sumIncome = 0;
+        } else if (register.category?.expense == SelectExpense.income) {
+          sumOutgo = 0;
           sumIncome = register.amount;
         }
       }
     }
     //最後の一件追加
     if (sumDate != null) {
-      map["${sumDate.month}${sumDate.day}"] = (
+      map["${sumDate.month.toString().padLeft(2, '0')}${sumDate.day.toString().padLeft(2, '0')}"] =
+          (
         (sumIncome != 0) ? sumIncome : null,
         (sumOutgo != 0) ? sumOutgo : null
       );
@@ -355,9 +362,9 @@ class CalendarPageNotifier
     int totalIncome = 0;
     int totalOutgo = 0;
     for (Register register in registerList) {
-      if (register.category?.expenses == SelectExpenses.income) {
+      if (register.category?.expense == SelectExpense.income) {
         totalIncome += register.amount;
-      } else if (register.category?.expenses == SelectExpenses.outgo) {
+      } else if (register.category?.expense == SelectExpense.outgo) {
         totalOutgo += register.amount;
       }
     }

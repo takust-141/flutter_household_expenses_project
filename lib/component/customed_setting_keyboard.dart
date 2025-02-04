@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:household_expenses_project/constant/constant.dart';
-import 'package:household_expenses_project/constant/keyboard_components.dart';
-import 'package:household_expenses_project/component/customed_keyboard_component.dart';
+import 'package:household_expense_project/constant/constant.dart';
+import 'package:household_expense_project/constant/keyboard_components.dart';
+import 'package:household_expense_project/component/customed_keyboard_component.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 
 class CategoryKeyboardAction {

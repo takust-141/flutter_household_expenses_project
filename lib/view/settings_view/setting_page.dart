@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/component/setting_component.dart';
-import 'package:household_expenses_project/constant/constant.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/component/setting_component.dart';
+import 'package:household_expense_project/constant/constant.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
 
 //-------設定ページ---------------------------
 class SettingPage extends ConsumerWidget {
@@ -43,6 +43,15 @@ class SettingPage extends ConsumerWidget {
                 SettingListItem(
                   setText: "カレンダー設定",
                   onTapRoute: () => goRoute.push('/setting/calendar_setting'),
+                ),
+                Divider(
+                  height: 0,
+                  thickness: 0.2,
+                  color: theme.colorScheme.outline,
+                ),
+                SettingListItem(
+                  setText: "定期収支設定",
+                  onTapRoute: () => goRoute.push('/setting/recurring_list'),
                 ),
               ],
             ),

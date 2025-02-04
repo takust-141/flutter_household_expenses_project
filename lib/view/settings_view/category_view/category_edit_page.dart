@@ -3,27 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/component/category_component.dart';
-import 'package:household_expenses_project/component/customed_setting_keyboard.dart';
-import 'package:household_expenses_project/constant/keyboard_components.dart';
-import 'package:household_expenses_project/model/category.dart';
-import 'package:household_expenses_project/provider/app_bar_provider.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
-import 'package:household_expenses_project/provider/category_list_provider.dart';
+import 'package:household_expense_project/component/category_component.dart';
+import 'package:household_expense_project/component/customed_setting_keyboard.dart';
+import 'package:household_expense_project/component/setting_component.dart';
+import 'package:household_expense_project/constant/keyboard_components.dart';
+import 'package:household_expense_project/model/category.dart';
+import 'package:household_expense_project/provider/app_bar_provider.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/provider/category_list_provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:household_expenses_project/constant/constant.dart';
+import 'package:household_expense_project/constant/constant.dart';
 
 //-------カテゴリ編集ページ---------------------------
 class CategoryEditPage extends ConsumerStatefulWidget {
   final GlobalKey<FormState>? formKey;
   final bool isSubPage;
-  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
-      provider;
+  final int providerIndex;
   const CategoryEditPage({
     this.formKey,
     this.isSubPage = false,
-    required this.provider,
+    required this.providerIndex,
     super.key,
   });
 
@@ -51,14 +51,19 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
   late final String categoryTitle;
   late Category? selectedCategory;
 
+  //provider
+  late final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
+      selectCategoryprovider;
+
   @override
   void initState() {
     super.initState();
-
+    selectCategoryprovider = selectCategoryProviderList[widget.providerIndex];
     if (widget.isSubPage) {
-      selectedCategory = ref.read(widget.provider.select((p) => p.subCategory));
+      selectedCategory =
+          ref.read(selectCategoryprovider.select((p) => p.subCategory));
       final parentCategory =
-          ref.read(widget.provider.select((p) => p.category));
+          ref.read(selectCategoryprovider.select((p) => p.category));
       categoryTitle = "サブカテゴリー";
       cateoryIconNotifer = ValueNotifier<IconData>(
           selectedCategory?.icon ?? parentCategory?.icon ?? defaultIcon);
@@ -66,7 +71,8 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
           selectedCategory?.color ?? parentCategory?.color ?? defaultColor);
       categoryNameController.text = selectedCategory?.name ?? "";
     } else {
-      selectedCategory = ref.read(widget.provider.select((p) => p.category));
+      selectedCategory =
+          ref.read(selectCategoryprovider.select((p) => p.category));
       categoryTitle = "カテゴリー";
       cateoryIconNotifer =
           ValueNotifier<IconData>(selectedCategory?.icon ?? defaultIcon);
@@ -118,16 +124,19 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
 
     final categoryListProvider =
         ref.read(categoryListNotifierProvider.notifier);
-    final selectCategoryStateNotifier = ref.read(widget.provider.notifier);
+    final selectCategoryStateNotifier =
+        ref.read(selectCategoryprovider.notifier);
 
     final subCategoryListProvider =
-        ref.watch(widget.provider.select((p) => p.subCategoryList));
+        ref.watch(selectCategoryprovider.select((p) => p.subCategoryList));
 
-    final currentExpenses =
-        ref.watch(widget.provider.select((p) => p.selectExpenses));
+    final currentExpense =
+        ref.watch(selectCategoryprovider.select((p) => p.selectExpense));
 
-    final int numOfSubCategory =
-        ref.read(widget.provider.select((p) => p.subCategoryList))?.length ?? 0;
+    final int numOfSubCategory = ref
+            .read(selectCategoryprovider.select((p) => p.subCategoryList))
+            ?.length ??
+        0;
 
     return Container(
       color: theme.colorScheme.surfaceContainer,
@@ -230,7 +239,8 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                             name: value!.trim(),
                                             icon: cateoryIconNotifer.value,
                                             color: cateoryColorNotifer.value,
-                                            expenses: currentExpenses,
+                                            expense: currentExpense,
+                                            context: context,
                                           )
                                           .catchError((err) =>
                                               {debugPrint(err.toString())})
@@ -239,13 +249,14 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                             name: value!.trim(),
                                             icon: cateoryIconNotifer.value,
                                             color: cateoryColorNotifer.value,
-                                            expenses: currentExpenses,
+                                            expense: currentExpense,
+                                            context: context,
                                           )
                                           .catchError((err) =>
                                               {debugPrint(err.toString())});
 
                                   //registerPageから新規登録したカテゴリーをselect
-                                  if (widget.provider ==
+                                  if (selectCategoryprovider ==
                                       registerCategoryStateNotifierProvider) {
                                     await selectCategoryStateNotifier
                                         .setNextInitStateAddCategory(
@@ -255,21 +266,23 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                   debugPrint("edit");
                                   widget.isSubPage
                                       ? await selectCategoryStateNotifier
-                                          .updateCategoryOfDB(selectedCategory!
-                                              .copyWith(
-                                                  name: value!.trim(),
-                                                  icon: cateoryIconNotifer
-                                                      .value,
-                                                  color: cateoryColorNotifer
-                                                      .value))
-                                      : await categoryListProvider
-                                          .updateCategory(selectedCategory!
-                                              .copyWith(
+                                          .updateCategoryOfDB(
+                                              selectedCategory!.copyWith(
                                                   name: value!.trim(),
                                                   icon:
                                                       cateoryIconNotifer.value,
                                                   color: cateoryColorNotifer
-                                                      .value));
+                                                      .value),
+                                              context)
+                                      : await categoryListProvider
+                                          .updateCategory(
+                                              selectedCategory!.copyWith(
+                                                  name: value!.trim(),
+                                                  icon:
+                                                      cateoryIconNotifer.value,
+                                                  color: cateoryColorNotifer
+                                                      .value),
+                                              context);
                                 }
                                 navigator.pop();
                               }
@@ -352,7 +365,7 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                         i++) ...{
                                       SubCategoryListItem(
                                         category: subCategoryListProvider![i],
-                                        provider: widget.provider,
+                                        provider: selectCategoryprovider,
                                       ),
                                       Divider(
                                         height: 0,
@@ -363,7 +376,7 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                     SubCategoryListItem(
                                       isNewAdd: true,
                                       category: null,
-                                      provider: widget.provider,
+                                      provider: selectCategoryprovider,
                                     )
                                   ],
                                 ),
@@ -379,21 +392,26 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                   child: OutlinedButton(
                                     onPressed: () => openDialog(
                                       context: context,
-                                      title: moveCategoryTitle,
+                                      title: (widget.isSubPage
+                                              ? "サブカテゴリー"
+                                              : "カテゴリー") +
+                                          moveCategoryTitle,
                                       text:
                                           '"${selectedCategory!.name}"$moveDialogText',
+                                      buttonText: moveCategoryTitle,
                                       onTap: () async {
                                         if (widget.isSubPage) {
                                           await selectCategoryStateNotifier
                                               .deleteCategoryFromId(
-                                                  selectedCategory!.id!);
+                                                  selectedCategory!.id!,
+                                                  context);
                                         } else {
                                           await categoryListProvider
                                               .deleteCategoryFromId(
-                                                  selectedCategory!.id!);
+                                                  selectedCategory!.id!,
+                                                  context);
                                         }
                                       },
-                                      isSubCategory: widget.isSubPage,
                                     ),
                                     style: OutlinedButton.styleFrom(
                                       padding: smallEdgeInsets,
@@ -420,21 +438,26 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                   child: OutlinedButton(
                                     onPressed: () => openDialog(
                                       context: context,
-                                      title: delCategoryTitle,
+                                      title: (widget.isSubPage
+                                              ? "サブカテゴリー"
+                                              : "カテゴリー") +
+                                          delCategoryTitle,
                                       text:
                                           '"${selectedCategory!.name}"$delDialogText',
                                       onTap: () async {
                                         if (widget.isSubPage) {
                                           await selectCategoryStateNotifier
                                               .deleteCategoryFromId(
-                                                  selectedCategory!.id!);
+                                                  selectedCategory!.id!,
+                                                  context);
                                         } else {
                                           await categoryListProvider
                                               .deleteCategoryFromId(
-                                                  selectedCategory!.id!);
+                                                  selectedCategory!.id!,
+                                                  context);
                                         }
                                       },
-                                      isSubCategory: widget.isSubPage,
+                                      buttonText: delCategoryTitle,
                                     ),
                                     style: OutlinedButton.styleFrom(
                                       padding: smallEdgeInsets,
@@ -497,8 +520,9 @@ class SubCategoryListItem extends HookConsumerWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () {
         ref.read(provider.notifier).updateSelectSubCategory(category);
+        //settingCategoryStateNotifierProviderをセット
         goRoute.push('/setting/category_list/category_edit/sub_category_edit',
-            extra: settingCategoryStateNotifierProvider);
+            extra: 0);
       },
       onTapDown: (_) =>
           {listItemColor.value = theme.colorScheme.surfaceContainerHighest},

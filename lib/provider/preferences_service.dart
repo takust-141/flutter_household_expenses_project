@@ -1,4 +1,4 @@
-import 'package:household_expenses_project/provider/setting_data_provider.dart';
+import 'package:household_expense_project/provider/setting_data_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PreferencesService {

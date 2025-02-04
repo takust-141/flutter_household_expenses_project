@@ -1,32 +1,48 @@
+import 'dart:async';
+
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/component/register_snackbar.dart';
-import 'package:household_expenses_project/component/segmented_button.dart';
-import 'package:household_expenses_project/model/category.dart';
-import 'package:household_expenses_project/model/register.dart';
-import 'package:household_expenses_project/provider/register_db_provider.dart';
-import 'package:household_expenses_project/provider/register_edit_state.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/component/register_snackbar.dart';
+import 'package:household_expense_project/component/segmented_button.dart';
+import 'package:household_expense_project/component/setting_component.dart';
+import 'package:household_expense_project/model/category.dart';
+import 'package:household_expense_project/model/register.dart';
+import 'package:household_expense_project/provider/register_db_provider.dart';
+import 'package:household_expense_project/provider/register_edit_state.dart';
+import 'package:household_expense_project/provider/register_recurring_list_provider.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/provider/setting_recurring_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
-import 'package:household_expenses_project/constant/constant.dart';
-import 'package:household_expenses_project/component/customed_register_keyboard.dart';
+import 'package:household_expense_project/constant/constant.dart';
+import 'package:household_expense_project/component/customed_register_keyboard.dart';
 
 //更新用provider
-final formKeyNotifier = NotifierProvider<FormKeyNotifier, GlobalKey<FormState>>(
-    FormKeyNotifier.new);
+final formKeyProvider =
+    NotifierProvider<FormKeyNotifier, FormKeyState>(FormKeyNotifier.new);
 
-class FormKeyNotifier extends Notifier<GlobalKey<FormState>> {
+@immutable
+class FormKeyState {
+  final GlobalKey<FormState> formkey;
+  final bool isNewRegister;
+  const FormKeyState(this.formkey, this.isNewRegister);
+}
+
+class FormKeyNotifier extends Notifier<FormKeyState> {
   @override
-  GlobalKey<FormState> build() {
-    return GlobalKey<FormState>();
+  FormKeyState build() {
+    return FormKeyState(GlobalKey<FormState>(), true);
+  }
+
+  void setIsNewRegister(bool isNewRegister) {
+    state = FormKeyState(state.formkey, isNewRegister);
   }
 
   Future<void> save() async {
-    state.currentState?.save();
+    state.formkey.currentState?.save();
   }
 }
 
@@ -37,6 +53,7 @@ void showRegisterModal(
     AsyncNotifierProvider<RegisterEditStateNotifier, RegisterEditState>
         registerEditStateProvider) {
   ref.read(registerEditStateProvider.notifier).initDoneButton();
+  ref.read(formKeyProvider.notifier).setIsNewRegister(register == null);
   final theme = Theme.of(context);
   showModalBottomSheet<void>(
     clipBehavior: Clip.antiAlias,
@@ -62,6 +79,8 @@ class RegisterEditView extends ConsumerWidget {
 
   final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
       selectCategoryStateProvider = registerEditCategoryStateNotifierProvider;
+  //画面遷移時のprovider共有用パラメータ
+  final int selectCategoryProviderIndex = 2;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -80,7 +99,7 @@ class RegisterEditView extends ConsumerWidget {
               children: [
                 const Expanded(flex: 1, child: AppBarCancelWidget()),
                 //segmendedButton
-                SelectExpensesButton(selectCategoryStateProvider),
+                SelectExpenseButton(selectCategoryStateProvider),
                 Expanded(
                     flex: 1,
                     child: AppBarDoneWidget(registerEditStateProvider)),
@@ -95,7 +114,7 @@ class RegisterEditView extends ConsumerWidget {
             color: theme.colorScheme.surfaceContainer,
             child: RegisterEditBodyView(
               register: register,
-              selectCategoryStateProvider: selectCategoryStateProvider,
+              selectCategoryStateProviderIndex: selectCategoryProviderIndex,
               registerEditStateProvider: registerEditStateProvider,
             ),
           ),
@@ -138,7 +157,7 @@ class AppBarCancelWidget extends HookWidget {
   }
 }
 
-//完了ボタン
+//削除ボタン
 class AppBarDoneWidget extends HookConsumerWidget {
   const AppBarDoneWidget(this.registerEditStateProvider, {super.key});
   final AsyncNotifierProvider<RegisterEditStateNotifier, RegisterEditState>
@@ -149,18 +168,27 @@ class AppBarDoneWidget extends HookConsumerWidget {
     final theme = Theme.of(context);
     final doneTextColor = useState<Color>(theme.colorScheme.onSurface);
 
-    return (ref
-                .watch(registerEditStateProvider)
-                .valueOrNull
-                ?.isActiveDoneButton ??
-            false)
-        ? GestureDetector(
+    //新規でない場合、削除ボタンを有効化
+    return (ref.watch(formKeyProvider).isNewRegister)
+        ? Padding(
+            padding: const EdgeInsets.only(right: appbarSidePadding),
+            child: Text(
+              "削除",
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: theme.colorScheme.outline,
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          )
+        : GestureDetector(
             child: AnimatedContainer(
               duration: listItemAnimationDuration,
               child: Padding(
                 padding: const EdgeInsets.only(right: appbarSidePadding),
                 child: Text(
-                  "完了",
+                  "削除",
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     color: doneTextColor.value,
@@ -171,24 +199,13 @@ class AppBarDoneWidget extends HookConsumerWidget {
               ),
             ),
             onTap: () {
-              ref.read(formKeyNotifier.notifier).save();
+              //削除処理
+              ref.read(formKeyProvider.notifier).save();
             },
             onTapDown: (_) => {doneTextColor.value = theme.colorScheme.outline},
             onTapUp: (_) => {doneTextColor.value = theme.colorScheme.onSurface},
             onTapCancel: () =>
                 {doneTextColor.value = theme.colorScheme.onSurface},
-          )
-        : Padding(
-            padding: const EdgeInsets.only(right: appbarSidePadding),
-            child: Text(
-              "完了",
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: theme.colorScheme.outline,
-                fontSize: 16,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
           );
   }
 }
@@ -200,13 +217,12 @@ class RegisterEditBodyView extends StatefulHookConsumerWidget {
     super.key,
     required this.register,
     required this.registerEditStateProvider,
-    required this.selectCategoryStateProvider,
+    required this.selectCategoryStateProviderIndex,
   });
   final Register? register;
   final AsyncNotifierProvider<RegisterEditStateNotifier, RegisterEditState>
       registerEditStateProvider;
-  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
-      selectCategoryStateProvider;
+  final int selectCategoryStateProviderIndex;
 
   @override
   ConsumerState<RegisterEditBodyView> createState() =>
@@ -244,7 +260,8 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
   @override
   void initState() {
     super.initState();
-    selectCategoryStateProvider = widget.selectCategoryStateProvider;
+    selectCategoryStateProvider =
+        selectCategoryProviderList[widget.selectCategoryStateProviderIndex];
     Category? initCategory = ref.read(selectCategoryStateProvider).category;
     Category? initSubCategory =
         ref.read(selectCategoryStateProvider).subCategory;
@@ -271,7 +288,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
       memoNode: memoNode,
       dateNode: dateNode,
       dateNotifier: dateNotifier,
-      provider: selectCategoryStateProvider,
+      selectCategoryProviderIndex: widget.selectCategoryStateProviderIndex,
       enableNewAdd: false,
     );
 
@@ -294,6 +311,18 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
       amountOfMoneyNode.attach(textFormKey.currentContext);
       memoNode.attach(memoFormKey.currentContext);
     });
+
+    /*
+    final double registerSpacerHeight = mediaquery.size.height -
+        appBarHeight -
+        mediaQuery.viewPadding.bottom -
+        MediaQueryData.fromView(View.of(context)).padding.top -
+        ((large * 3) +
+            (medium * 4) +
+            amountOfMoneyFormHeight +
+            (registerItemHeight * 4) +
+            registerButtonHeight);
+            */
   }
 
   @override
@@ -315,21 +344,14 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final mediaQuery = MediaQuery.of(context);
     final Color defaultColor = theme.colorScheme.onSurfaceVariant;
     final registerTextColor = theme.colorScheme.inverseSurface;
-
-    //画面サイズ取得
-    double appBarHeight = AppBar().preferredSize.height;
-    final double registerSpacerHeight = mediaQuery.size.height -
-        appBarHeight -
-        mediaQuery.viewPadding.bottom -
-        MediaQueryData.fromView(View.of(context)).padding.top -
-        ((large * 3) +
-            (medium * 4) +
-            amountOfMoneyFormHeight +
-            (registerItemHeight * 4) +
-            registerButtonHeight);
+    //登録ボタン用
+    final isActiveRegisterButton = ref
+            .watch(widget.registerEditStateProvider)
+            .valueOrNull
+            ?.isActiveDoneButton ??
+        false;
 
     //選択したカテゴリーの監視
     ref.listen<Category?>(
@@ -462,26 +484,83 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
           subCategory: subCategoryNotifier.value,
           memo: memoTextController.text,
           date: dateNotifier.value,
+          recurringId: widget.register?.recurringId,
+          registrationDate: widget.register?.registrationDate ?? DateTime.now(),
+          updateDate: (widget.register?.id == null) ? null : DateTime.now(),
         );
 
         if (newRegister.id == null) {
-          await RegisterDBProvider.insertRegister(newRegister, ref);
-          updateRegisterSnackBarCallBack(
-            text: '登録しました',
-            context: context,
-          );
+          //新規登録
+          await RegisterDBProvider.insertRegister(newRegister, ref, context);
+          Navigator.of(context).pop();
         } else {
-          await RegisterDBProvider.updateRegister(newRegister, ref);
-          updateRegisterSnackBarCallBack(
-            text: '更新しました',
-            context: context,
-          );
-        }
+          if (newRegister.recurringId == null) {
+            //register更新
+            await RegisterDBProvider.updateRegister(newRegister, ref, context);
+            Navigator.of(context).pop();
+          } else {
+            //繰り返し収支の更新の場合
 
-        Navigator.of(context).pop();
+            //ダイアログ表示（日付を変更している場合はボタン非活性）
+            openDialogopenDialogContainWidget(
+              context: context,
+              title: "定期明細の更新",
+              onTapList: [
+                //この収支のみを更新
+                () async {
+                  await RegisterDBProvider.updateRegister(
+                      newRegister, ref, context);
+                  ref
+                      .read(settingRecurringyStateNotifierProvider.notifier)
+                      .setInitNotifier();
+                },
+                //日付以降を変更
+                (widget.register?.date == newRegister.date)
+                    ? () async {
+                        //更新用 Idのバックアップ（recurringList更新用）
+                        ref
+                            .read(
+                                settingRecurringyStateNotifierProvider.notifier)
+                            .setSelectRegisterRecurringBackUp();
+                        await ref
+                            .read(
+                                registerRecurringListNotifierProvider.notifier)
+                            .updateRegisterRecurringFromRegisterAfterBaseDate(
+                              newRegister,
+                              newRegister.date,
+                              context,
+                            );
+                      }
+                    : null,
+                //全てを変更
+                (widget.register?.date == newRegister.date)
+                    ? () async {
+                        //更新用 Idのバックアップ（recurringList更新用）
+                        ref
+                            .read(
+                                settingRecurringyStateNotifierProvider.notifier)
+                            .setSelectRegisterRecurringBackUp();
+                        await ref
+                            .read(
+                                registerRecurringListNotifierProvider.notifier)
+                            .updateRegisterRecurringFromRegister(
+                              newRegister,
+                              context,
+                            );
+                      }
+                    : null,
+              ],
+              buttonTextList: [
+                "この明細のみを更新する",
+                "この日付以降の定期明細を更新する",
+                "この定期収支の明細を全て更新する"
+              ],
+            );
+          }
+        }
       } else {
         //エラー表示
-        updateRegisterSnackBarCallBack(
+        updateSnackBarCallBack(
           text: '入力が正しくありません',
           context: context,
           isError: true,
@@ -574,227 +653,249 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
 
     //削除処理
     void onTapDeleteRegister() {
-      openConfDialog(
-          () => {RegisterDBProvider.deleteRegister(widget.register!, ref)});
+      openConfDialog(() {
+        RegisterDBProvider.deleteRegisterFromId(widget.register!, ref, context);
+        ref
+            .read(settingRecurringyStateNotifierProvider.notifier)
+            .setInitNotifier();
+      });
     }
 
-    return KeyboardActions(
-      keepFocusOnTappingNode: true,
-      autoScroll: true,
-      overscroll: 40,
-      tapOutsideBehavior: TapOutsideBehavior.translucentDismiss,
-      config: registerKeyboardAction.buildConfig(context),
-      child: Padding(
-        padding: EdgeInsets.only(bottom: mediaQuery.padding.bottom),
-        child: Padding(
-          padding: viewEdgeInsets,
-          child: Form(
-            key: ref.watch(formKeyNotifier),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                //-----金額-----
-                SizedBox(
-                  height: amountOfMoneyFormHeight,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Expanded(
-                        key: textFormKey,
-                        child: TextFormField(
-                          onSaved: (_) async {
-                            await onTapUpdateRegister(context);
-                          },
-                          keyboardType: TextInputType.number,
-                          focusNode: amountOfMoneyNode,
-                          controller: amountOfMoneyTextController,
-                          decoration: InputDecoration(
-                            contentPadding: mediumEdgeInsets,
-                            isCollapsed: true,
-                            isDense: true,
-                            border: OutlineInputBorder(
-                                borderRadius: formInputBoarderRadius),
-                            labelText: '金額',
-                            suffixIcon: Container(
-                              margin: const EdgeInsets.fromLTRB(
-                                  0, sssmall, ssmall, sssmall),
-                              child: IconButton(
-                                onPressed: () =>
-                                    amountOfMoneyTextController.clear(),
-                                icon: const Icon(Icons.cancel),
-                                iconSize: suffixIconSize,
+    return SafeArea(
+      maintainBottomViewPadding: true,
+      child: LayoutBuilder(builder: (context, constraints) {
+        double registerSpacerHeight = constraints.maxHeight -
+            ((large * 3) +
+                (medium * 4) +
+                amountOfMoneyFormHeight +
+                (registerItemHeight * 4) +
+                registerButtonHeight);
+        registerSpacerHeight =
+            (registerSpacerHeight.isNegative) ? 0 : registerSpacerHeight;
+
+        return KeyboardActions(
+          autoScroll: true,
+          overscroll: 10,
+          tapOutsideBehavior: TapOutsideBehavior.translucentDismiss,
+          config: registerKeyboardAction.buildConfig(context),
+          child: Padding(
+            padding: viewEdgeInsets,
+            child: Form(
+              key: ref.watch(formKeyProvider.select((p) => p.formkey)),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  //-----金額-----
+                  SizedBox(
+                    height: amountOfMoneyFormHeight,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Expanded(
+                          key: textFormKey,
+                          child: TextFormField(
+                            onSaved: (_) async {
+                              //削除処理
+                              onTapDeleteRegister();
+                            },
+                            keyboardType: TextInputType.number,
+                            focusNode: amountOfMoneyNode,
+                            controller: amountOfMoneyTextController,
+                            decoration: InputDecoration(
+                              contentPadding: mediumEdgeInsets,
+                              isCollapsed: true,
+                              isDense: true,
+                              border: OutlineInputBorder(
+                                  borderRadius: formInputBoarderRadius),
+                              labelText: '金額',
+                              suffixIcon: Container(
+                                margin: const EdgeInsets.fromLTRB(
+                                    0, sssmall, ssmall, sssmall),
+                                child: IconButton(
+                                  onPressed: () =>
+                                      amountOfMoneyTextController.clear(),
+                                  icon: const Icon(Icons.cancel),
+                                  iconSize: suffixIconSize,
+                                ),
                               ),
                             ),
+                            inputFormatters: [
+                              LengthLimitingTextInputFormatter(20),
+                              FilteringTextInputFormatter.allow(
+                                RegExp(
+                                    "[0-9.${MathSymbol.sum.value}${MathSymbol.diff.value}${MathSymbol.multiplication.value}${MathSymbol.division.value}]"),
+                              ),
+                            ],
+                            style: const TextStyle(
+                                fontSize: 20, letterSpacing: 1.5),
                           ),
-                          inputFormatters: [
-                            LengthLimitingTextInputFormatter(20),
-                            FilteringTextInputFormatter.allow(
-                              RegExp(
-                                  "[0-9.${MathSymbol.sum.value}${MathSymbol.diff.value}${MathSymbol.multiplication.value}${MathSymbol.division.value}]"),
-                            ),
-                          ],
-                          style:
-                              const TextStyle(fontSize: 20, letterSpacing: 1.5),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: medium),
-                        child: Text(currencyUnit,
-                            style: TextStyle(
-                                fontSize: 25, color: registerTextColor)),
-                      ),
-                    ],
+                        Padding(
+                          padding: const EdgeInsets.only(left: medium),
+                          child: Text(currencyUnit,
+                              style: TextStyle(
+                                  fontSize: 25, color: registerTextColor)),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(height: large),
-                //-----カテゴリー-----
-                KeyboardCustomInput<Category?>(
-                  focusNode: categoryNode,
-                  height: registerItemHeight,
-                  notifier: categoryNotifier,
-                  builder: categoryFormBulder("カテゴリー"),
-                ),
-                const SizedBox(height: medium),
-                //-----サブカテゴリー-----
-                KeyboardCustomInput<Category?>(
-                  focusNode: subCategoryNode,
-                  height: registerItemHeight,
-                  notifier: subCategoryNotifier,
-                  builder: categoryFormBulder("サブカテゴリー"),
-                ),
-                const SizedBox(height: medium),
-                //-----メモ-----
-                registerFormItem(
-                  registerFormItemKey: memoFormKey,
-                  formFocusNode: memoNode,
-                  title: "メモ",
-                  formWidget: TextField(
-                    keyboardType: TextInputType.text,
-                    maxLines: 1,
-                    controller: memoTextController,
-                    focusNode: memoNode,
-                    decoration: InputDecoration(
-                      contentPadding: EdgeInsets.symmetric(
-                          horizontal: medium,
-                          vertical: (registerItemHeight -
-                                      (Theme.of(context)
-                                              .textTheme
-                                              .bodyLarge
-                                              ?.fontSize ??
-                                          0)) /
-                                  2 -
-                              formInputBoarderWidth * 2),
-                      isDense: true,
-                      border: OutlineInputBorder(
-                        borderRadius: formInputBoarderRadius,
-                        borderSide: const BorderSide(
-                          color: Colors.transparent,
-                          width: formInputBoarderWidth,
+                  const SizedBox(height: large),
+                  //-----カテゴリー-----
+                  KeyboardCustomInput<Category?>(
+                    focusNode: categoryNode,
+                    height: registerItemHeight,
+                    notifier: categoryNotifier,
+                    builder: categoryFormBulder("カテゴリー"),
+                  ),
+                  const SizedBox(height: medium),
+                  //-----サブカテゴリー-----
+                  KeyboardCustomInput<Category?>(
+                    focusNode: subCategoryNode,
+                    height: registerItemHeight,
+                    notifier: subCategoryNotifier,
+                    builder: categoryFormBulder("サブカテゴリー"),
+                  ),
+                  const SizedBox(height: medium),
+                  //-----メモ-----
+                  registerFormItem(
+                    registerFormItemKey: memoFormKey,
+                    formFocusNode: memoNode,
+                    title: "メモ",
+                    formWidget: TextField(
+                      keyboardType: TextInputType.text,
+                      maxLines: 1,
+                      controller: memoTextController,
+                      focusNode: memoNode,
+                      decoration: InputDecoration(
+                        contentPadding: EdgeInsets.symmetric(
+                            horizontal: medium,
+                            vertical: (registerItemHeight -
+                                        (Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.fontSize ??
+                                            0)) /
+                                    2 -
+                                formInputBoarderWidth * 2),
+                        isDense: true,
+                        border: OutlineInputBorder(
+                          borderRadius: formInputBoarderRadius,
+                          borderSide: const BorderSide(
+                            color: Colors.transparent,
+                            width: formInputBoarderWidth,
+                          ),
                         ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: formInputBoarderRadius,
-                        borderSide: BorderSide(
-                          color: theme.colorScheme.primary,
-                          width: formInputBoarderWidth,
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: formInputBoarderRadius,
+                          borderSide: BorderSide(
+                            color: theme.colorScheme.primary,
+                            width: formInputBoarderWidth,
+                          ),
                         ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: formInputBoarderRadius,
-                        borderSide: const BorderSide(
-                          color: Colors.transparent,
-                          width: formInputBoarderWidth,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: formInputBoarderRadius,
+                          borderSide: const BorderSide(
+                            color: Colors.transparent,
+                            width: formInputBoarderWidth,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: medium),
-                //日付
-                KeyboardCustomInput<DateTime>(
-                  focusNode: dateNode,
-                  height: registerItemHeight,
-                  notifier: dateNotifier,
-                  builder: (context, val, hasFocus) {
-                    return Row(
-                      children: [
-                        SizedBox(
-                          width: registerItemTitleWidth,
-                          child: Text(
-                            "日付",
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(color: registerTextColor),
-                          ),
-                        ),
-                        const SizedBox(width: small),
-                        Expanded(
-                          child: Container(
-                            height: registerItemHeight,
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surface,
-                              borderRadius: formInputBoarderRadius,
-                              border: hasFocus ?? false
-                                  ? Border.all(
-                                      color: theme.colorScheme.primary,
-                                      width: formInputBoarderWidth)
-                                  : Border.all(
-                                      color: Colors.transparent,
-                                      width: formInputBoarderWidth),
+                  const SizedBox(height: medium),
+                  //日付
+                  KeyboardCustomInput<DateTime>(
+                    focusNode: dateNode,
+                    height: registerItemHeight,
+                    notifier: dateNotifier,
+                    builder: (context, val, hasFocus) {
+                      return Row(
+                        children: [
+                          SizedBox(
+                            width: registerItemTitleWidth,
+                            child: Text(
+                              "日付",
+                              style: theme.textTheme.titleMedium
+                                  ?.copyWith(color: registerTextColor),
                             ),
+                          ),
+                          const SizedBox(width: small),
+                          Expanded(
                             child: Container(
-                              alignment: Alignment.centerLeft,
-                              padding: mediumHorizontalEdgeInsets,
-                              child: Text(
-                                formatter.format(val),
-                                style: theme.textTheme.bodyLarge,
+                              height: registerItemHeight,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surface,
+                                borderRadius: formInputBoarderRadius,
+                                border: hasFocus ?? false
+                                    ? Border.all(
+                                        color: theme.colorScheme.primary,
+                                        width: formInputBoarderWidth)
+                                    : Border.all(
+                                        color: Colors.transparent,
+                                        width: formInputBoarderWidth),
+                              ),
+                              child: Container(
+                                alignment: Alignment.centerLeft,
+                                padding: mediumHorizontalEdgeInsets,
+                                child: Text(
+                                  formatter.format(val),
+                                  style: theme.textTheme.bodyLarge,
+                                ),
                               ),
                             ),
                           ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: medium),
+
+                  SizedBox(height: registerSpacerHeight),
+
+                  Padding(
+                    padding: mediumHorizontalEdgeInsets,
+                    child: TextButton(
+                      onPressed: isActiveRegisterButton
+                          ? () => onTapUpdateRegister(context)
+                          : null,
+                      style: TextButton.styleFrom(
+                        fixedSize:
+                            const Size(double.maxFinite, registerButtonHeight),
+                        padding: smallEdgeInsets,
+                        overlayColor: theme.colorScheme.onPrimary,
+                        disabledBackgroundColor: Color.lerp(
+                            theme.colorScheme.primary,
+                            theme.colorScheme.surface,
+                            0.7),
+                        disabledForegroundColor: Color.lerp(
+                            theme.colorScheme.onPrimary,
+                            theme.colorScheme.surface,
+                            0.7),
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: registerButtomRadius,
                         ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: medium),
-                SizedBox(
-                    height: registerSpacerHeight.isNegative
-                        ? 0
-                        : registerSpacerHeight),
-                (widget.register != null)
-                    ? Padding(
-                        padding: mediumHorizontalEdgeInsets,
-                        child: OutlinedButton(
-                          onPressed: () => onTapDeleteRegister(),
-                          style: OutlinedButton.styleFrom(
-                            fixedSize: const Size(
-                                double.maxFinite, registerButtonHeight),
-                            padding: smallEdgeInsets,
-                            foregroundColor: theme.colorScheme.primary,
-                            side: BorderSide(
-                                color: theme.colorScheme.primary, width: 1.5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: registerButtomRadius,
-                            ),
-                          ),
-                          child: AutoSizeText(
-                            "削  除",
-                            style: theme.textTheme.titleMedium?.copyWith(
-                                color: theme.colorScheme.primary,
-                                fontSize:
-                                    (theme.textTheme.titleMedium?.fontSize ??
-                                            0) +
-                                        2),
-                            maxLines: 1,
-                          ),
-                        ),
-                      )
-                    : const SizedBox(),
-              ],
+                        textStyle: theme.textTheme.titleMedium?.copyWith(
+                            fontSize:
+                                (theme.textTheme.titleMedium?.fontSize ?? 0) +
+                                    2),
+                      ),
+                      child: AutoSizeText(
+                        (widget.register?.recurringId == null)
+                            ? "登　　録"
+                            : "更　　新",
+                        maxLines: 1,
+                      ),
+                    ),
+                  )
+                ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 }

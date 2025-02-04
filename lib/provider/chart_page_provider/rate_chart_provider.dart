@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/model/category.dart';
-import 'package:household_expenses_project/model/register.dart';
-import 'package:household_expenses_project/provider/chart_page_provider/chart_page_provider.dart';
-import 'package:household_expenses_project/provider/chart_page_provider/transition_chart_provider.dart';
-import 'package:household_expenses_project/provider/register_db_provider.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
-import 'package:household_expenses_project/provider/setting_data_provider.dart';
+import 'package:household_expense_project/model/category.dart';
+import 'package:household_expense_project/model/register.dart';
+import 'package:household_expense_project/provider/chart_page_provider/chart_page_provider.dart';
+import 'package:household_expense_project/provider/chart_page_provider/transition_chart_provider.dart';
+import 'package:household_expense_project/provider/register_db_provider.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/provider/setting_data_provider.dart';
 
 enum RateSelectState {
-  expenses("収入と支出"),
+  expense("収入と支出"),
   outgo("支出"),
   income("収入"),
   category("カテゴリー");
@@ -95,12 +95,10 @@ class RateChartState {
 
   RateChartState.defaultState()
       : rateChartDateRange = RateChartDateRange.month,
-        rateSelectState = RateSelectState.expenses,
+        rateSelectState = RateSelectState.expense,
         selectCategory = null,
-        selectDate = DateTime(
-            DateTime.now().year, DateTime.now().month, DateTime.now().day),
-        displayDate = DateTime(
-            DateTime.now().year, DateTime.now().month, DateTime.now().day),
+        selectDate = DateTime(DateTime.now().year, DateTime.now().month, 1),
+        displayDate = DateTime(DateTime.now().year, DateTime.now().month, 1),
         isShowScrollView = false,
         rateRegisterLists = [],
         rateChartSectionDataList = [],
@@ -141,7 +139,7 @@ class RateChartState {
   String selectListTitle() {
     if (rateSelectState == RateSelectState.category) {
       return (selectCategory != null)
-          ? ("${selectCategory!.expenses.text} / ${selectCategory!.name}")
+          ? ("${selectCategory!.expense.text} / ${selectCategory!.name}")
           : "";
     } else {
       return rateSelectState.text;
@@ -171,6 +169,11 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
     await reacquisitionRegisterListCallBack();
   }
 
+  //rateChartStateセット（セレクタ初期化）
+  Future<void> initSelectRateChartState() async {
+    await setSelectRateChartState(RateSelectState.expense, null);
+  }
+
   //rateChartStateセット（セレクタ変更）
   Future<void> setSelectRateChartState(
       RateSelectState rateSelectState, Category? category) async {
@@ -189,7 +192,7 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
       late final RateSelectState newSelectState;
       late final Category? newCategory;
       switch (rateChartState.rateSelectState) {
-        case RateSelectState.expenses:
+        case RateSelectState.expense:
           newSelectState =
               rateChartState.rateChartSectionDataList[index].rateSelectState;
           newCategory = null;
@@ -281,7 +284,7 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
   }
 
   //chart transitionへの推移
-  void goChartTransitionPage(int index) {
+  void goChartTransitionPage(int index) async {
     if (state.valueOrNull == null) {
       return;
     }
@@ -293,7 +296,7 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
     final DateTime selectDate = currentState.selectDate;
 
     switch (currentState.rateSelectState) {
-      case RateSelectState.expenses:
+      case RateSelectState.expense:
         if (index == 0) {
           transitionSelectState = TransitionSelectState.outgo;
           selectCategory = null;
@@ -313,7 +316,10 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
 
       case RateSelectState.category:
         transitionSelectState = TransitionSelectState.subCategory;
-        selectCategory = currentState.rateChartSectionDataList[index].category;
+        selectCategory =
+            currentState.rateChartSectionDataList[index].category ??
+                currentState.selectCategory;
+        //nullの時、親カテゴリーを入れる（parentCategoryId=nullかつsubCategoryの時：サブカテゴリーなしのデータ）
         break;
     }
 
@@ -326,13 +332,12 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
         break;
     }
 
-    ref.read(transitionChartProvider.notifier).pageTransitionFromRate(
+    await ref.read(transitionChartProvider.notifier).pageTransitionFromRate(
           transitionSelectState,
           selectCategory,
           transitionChartDateRange,
           selectDate,
         );
-    ref.read(chartPageProvider.notifier).changeChartSegmentToTransition();
   }
 
   //
@@ -372,19 +377,19 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
 
     //registerList取得→registerGroupList作成
     switch (currentState.rateSelectState) {
-      case RateSelectState.expenses:
+      case RateSelectState.expense:
         registerList = await RegisterDBProvider.getRegisterStateOfRange(
             startDate, endDate);
         registerGroupList = registerList
-            .groupListsBy<SelectExpenses?>(
-                (register) => register.category?.expenses)
+            .groupListsBy<SelectExpense?>(
+                (register) => register.category?.expense)
             .values
             .toList();
         break;
       case RateSelectState.outgo:
         registerList =
-            await RegisterDBProvider.getRegisterStateOfRangeAndSelectExpenses(
-                startDate, endDate, SelectExpenses.outgo);
+            await RegisterDBProvider.getRegisterStateOfRangeAndSelectExpense(
+                startDate, endDate, SelectExpense.outgo);
         registerGroupList = registerList
             .groupListsBy<int?>((register) => register.category?.id)
             .values
@@ -392,8 +397,8 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
         break;
       case RateSelectState.income:
         registerList =
-            await RegisterDBProvider.getRegisterStateOfRangeAndSelectExpenses(
-                startDate, endDate, SelectExpenses.income);
+            await RegisterDBProvider.getRegisterStateOfRangeAndSelectExpense(
+                startDate, endDate, SelectExpense.income);
         registerGroupList = registerList
             .groupListsBy<int?>((register) => register.category?.id)
             .values
@@ -461,9 +466,9 @@ class RateChartStateNotifier extends AsyncNotifier<RateChartState> {
     late final RateSelectState setRateSelectState;
 
     switch (rateSelectState) {
-      case RateSelectState.expenses:
-        title = registerGroup[0].category!.expenses.text;
-        if (registerGroup[0].category!.expenses == SelectExpenses.income) {
+      case RateSelectState.expense:
+        title = registerGroup[0].category!.expense.text;
+        if (registerGroup[0].category!.expense == SelectExpense.income) {
           color = Colors.blue;
           setRateSelectState = RateSelectState.income;
         } else {

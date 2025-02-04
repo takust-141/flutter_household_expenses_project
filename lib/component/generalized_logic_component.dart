@@ -13,11 +13,54 @@ class LogicComponent {
     return false;
   }
 
+  static bool isBeforeDate(DateTime date1, DateTime date2) {
+    return (date1.year < date2.year ||
+        (date1.year == date2.year && date1.month < date2.month) ||
+        (date1.year == date2.year &&
+            date1.month == date2.month &&
+            date1.day < date2.day));
+  }
+
   static bool matchMonth(DateTime date1, DateTime date2) {
+    return (date1.year == date2.year && date1.month == date2.month);
+  }
+
+  static bool isBeforeMonth(DateTime date1, DateTime date2) {
+    return (date1.year < date2.year ||
+        (date1.year == date2.year && date1.month < date2.month));
+  }
+
+  //0：一致、1：<、2：>
+  static int compMonth(DateTime date1, DateTime date2) {
     if (date1.year == date2.year && date1.month == date2.month) {
-      return true;
+      return 0;
+    } else if (isBeforeMonth(date1, date2)) {
+      return 1;
+    } else {
+      return 2;
     }
-    return false;
+  }
+
+  static int compYear(DateTime date1, DateTime date2) {
+    if (date1.year == date2.year) {
+      return 0;
+    } else if (isBeforeMonth(date1, date2)) {
+      return 1;
+    } else {
+      return 2;
+    }
+  }
+
+  //0：範囲内、1：startDateより前、2：endDateより後
+  static int isDateInRange(
+      DateTime targetDate, DateTime startDate, DateTime endDate) {
+    if (targetDate.isBefore(startDate)) {
+      return 1;
+    } else if (targetDate.isAfter(endDate)) {
+      return 2;
+    } else {
+      return 0;
+    }
   }
 
   //カンマ付与

@@ -64,48 +64,38 @@ class BottomAreaAvoiderState extends ConsumerState<BottomAreaAvoider> {
       return _rewrapScrollView(widget.child as SingleChildScrollView);
     }
     if (widget.autoScroll) {
-      return _wrapScrollView(widget.child);
+      List<Widget> widgetList = [];
+      if (widget.child != null) {
+        widgetList.add(widget.child!);
+      }
+      return _wrapScrollView(widgetList);
     }
     // Just embed the [child] directly in an [AnimatedContainer].
     return widget.child!;
   }
 
-  Widget _wrapScrollView(Widget? child) {
-    final mediaQuery = MediaQuery.of(context);
-    final double offset;
-    if (ref.read(offsetProvider) < mediaQuery.padding.bottom) {
-      offset = ref.read(offsetProvider);
-    } else {
-      offset = ref.read(offsetProvider) - mediaQuery.padding.bottom;
-    }
+  Widget _wrapScrollView(List<Widget> children) {
+    final double offset = ref.read(offsetProvider);
 
-    return SingleChildScrollView(
-      physics: (ref.watch(offsetProvider) != 0)
-          ? const NeverScrollableScrollPhysics()
-          : widget.physics,
-      controller: widget.scrollController,
-      child: Column(
-        children: [
-          child ?? const SizedBox(),
-          AnimatedSize(
-            duration: widget.duration,
-            curve: widget.curve,
-            child: SizedBox(height: offset),
-          )
-        ],
+    children.add(AnimatedSize(
+      duration: widget.duration,
+      curve: widget.curve,
+      child: SizedBox(height: offset),
+    ));
+    return SafeArea(
+      child: SingleChildScrollView(
+        physics: (ref.watch(offsetProvider) != 0)
+            ? const NeverScrollableScrollPhysics()
+            : widget.physics,
+        controller: widget.scrollController,
+        child: Column(
+          children: children,
+        ),
       ),
     );
   }
 
   Widget _rewrapScrollView(Widget scrollableWidget) {
-    final mediaQuery = MediaQuery.of(context);
-    final double offset;
-    if (ref.read(offsetProvider) < mediaQuery.padding.bottom) {
-      offset = ref.read(offsetProvider);
-    } else {
-      offset = ref.read(offsetProvider) - mediaQuery.padding.bottom;
-    }
-
     // scrollableWidgetの中身を取り出して、新しい子リストを作成
     List<Widget> children;
     if (scrollableWidget is SingleChildScrollView) {
@@ -113,14 +103,7 @@ class BottomAreaAvoiderState extends ConsumerState<BottomAreaAvoider> {
       if (scrollView.child is Column) {
         Column column = scrollView.child as Column;
         children = List.from(column.children);
-        children.add(SizedBox(height: offset));
-        return _wrapScrollView(
-          SingleChildScrollView(
-            physics: widget.physics,
-            controller: widget.scrollController,
-            child: Column(children: children),
-          ),
-        );
+        return _wrapScrollView(children);
       }
     }
     return scrollableWidget;

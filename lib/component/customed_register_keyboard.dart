@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/component/custom_date_picker.dart';
-import 'package:household_expenses_project/constant/constant.dart';
-import 'package:household_expenses_project/component/customed_keyboard_component.dart';
-import 'package:household_expenses_project/model/category.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
-import 'package:household_expenses_project/provider/category_list_provider.dart';
+import 'package:household_expense_project/component/custom_date_picker.dart';
+import 'package:household_expense_project/constant/constant.dart';
+import 'package:household_expense_project/component/customed_keyboard_component.dart';
+import 'package:household_expense_project/model/category.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/provider/category_list_provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -25,7 +25,7 @@ class RegisterKeyboardAction {
     required this.subCategoryNotifier,
     required this.dateNotifier,
     required this.enableNewAdd,
-    required this.provider,
+    required this.selectCategoryProviderIndex,
   });
 
   //フォームコントローラー
@@ -44,8 +44,7 @@ class RegisterKeyboardAction {
 
   final bool enableNewAdd;
 
-  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
-      provider;
+  final int selectCategoryProviderIndex;
 
   //四則演算
   bool mathFlag = false;
@@ -123,7 +122,7 @@ class RegisterKeyboardAction {
           footerBuilder: (_) => CategoryPickerKeyboard(
             notifier: categoryNotifier,
             enableNewAdd: enableNewAdd,
-            provider: provider,
+            selectCategoryProviderIndex: selectCategoryProviderIndex,
           ),
         ),
         KeyboardActionsItem(
@@ -134,7 +133,7 @@ class RegisterKeyboardAction {
             sub: true,
             enableNewAdd: enableNewAdd,
             parentNotifier: categoryNotifier,
-            provider: provider,
+            selectCategoryProviderIndex: selectCategoryProviderIndex,
           ),
         ),
         KeyboardActionsItem(
@@ -238,8 +237,7 @@ class CategoryPickerKeyboard extends ConsumerWidget
   final bool sub;
   final bool enableNewAdd;
   final ValueNotifier<Category?>? parentNotifier;
-  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
-      provider;
+  final int selectCategoryProviderIndex;
 
   CategoryPickerKeyboard({
     super.key,
@@ -247,7 +245,7 @@ class CategoryPickerKeyboard extends ConsumerWidget
     this.sub = false,
     required this.enableNewAdd,
     this.parentNotifier,
-    required this.provider,
+    required this.selectCategoryProviderIndex,
   });
 
   @override
@@ -261,21 +259,26 @@ class CategoryPickerKeyboard extends ConsumerWidget
     final List<Category> categoryList;
     late final bool isParentCategoryNull;
 
+    final selectCategoryProvider =
+        selectCategoryProviderList[selectCategoryProviderIndex];
     if (sub) {
-      categoryList = ref.watch(provider.select((p) => p.subCategoryList)) ?? [];
+      categoryList =
+          ref.watch(selectCategoryProvider.select((p) => p.subCategoryList)) ??
+              [];
       isParentCategoryNull =
-          ref.watch(provider.select((p) => p.category)) != null;
+          ref.watch(selectCategoryProvider.select((p) => p.category)) != null;
     } else {
-      categoryList = ref.watch(categoryListNotifierProvider).valueOrNull?[
-              ref.watch(provider.select((p) => p.selectExpenses))] ??
+      categoryList = ref.watch(categoryListNotifierProvider).valueOrNull?[ref
+              .watch(selectCategoryProvider.select((p) => p.selectExpense))] ??
           [];
       isParentCategoryNull = true;
     }
 
-    final selectCategoryStateProvider = ref.read(provider.notifier);
+    final selectCategoryNotifier = ref.read(selectCategoryProvider.notifier);
 
     return SafeArea(
       top: false,
+      maintainBottomViewPadding: true,
       child: Container(
         height: _kKeyboardHeight - mediaQuery.viewPadding.bottom,
         padding: smallHorizontalEdgeInsets,
@@ -287,8 +290,7 @@ class CategoryPickerKeyboard extends ConsumerWidget
                   ? CategoryKeyboardPanel(
                       category: null,
                       onTap: () {
-                        selectCategoryStateProvider
-                            .updateSelectSubCategory(null);
+                        selectCategoryNotifier.updateSelectSubCategory(null);
                       },
                       width: itemWidth,
                       height: itemHeight,
@@ -300,12 +302,12 @@ class CategoryPickerKeyboard extends ConsumerWidget
                   category: category,
                   onTap: sub
                       ? () {
-                          selectCategoryStateProvider
+                          selectCategoryNotifier
                               .updateSelectSubCategory(category);
                         }
                       : () {
                           if (category != notifier.value) {
-                            selectCategoryStateProvider
+                            selectCategoryNotifier
                                 .updateSelectParentCategory(category);
                           }
                         },
@@ -321,7 +323,7 @@ class CategoryPickerKeyboard extends ConsumerWidget
                   width: itemWidth,
                   height: itemHeight,
                   notifier: notifier,
-                  provider: provider,
+                  selectCategoryProviderIndex: selectCategoryProviderIndex,
                 )
             ],
           ),
@@ -431,8 +433,7 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
   final double height;
   final bool sub;
   final ValueNotifier<Category?> notifier;
-  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
-      provider;
+  final int selectCategoryProviderIndex;
 
   const AddCategoryKeyboardPanel({
     super.key,
@@ -441,26 +442,26 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
     required this.width,
     required this.sub,
     required this.notifier,
-    required this.provider,
+    required this.selectCategoryProviderIndex,
   });
 
   //registerページからカテゴリー新規追加時
   void goAddCategoryView(
-      GoRouter goRoute,
-      bool sub,
-      WidgetRef ref,
-      NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
-          provider,
-      BuildContext context) {
+    GoRouter goRoute,
+    bool sub,
+    WidgetRef ref,
+    int selectCategoryProviderIndex,
+    BuildContext context,
+  ) {
     FocusScope.of(context).unfocus();
-    if (sub) {
-      ref.read(provider.notifier).setNextInitState(sub);
-      goRoute.push('/setting/category_list/category_edit/sub_category_edit',
-          extra: provider);
-    } else {
-      ref.read(provider.notifier).setNextInitState(sub);
-      goRoute.push('/setting/category_list/category_edit', extra: provider);
-    }
+    ref
+        .read(selectCategoryProviderList[selectCategoryProviderIndex].notifier)
+        .setNextInitState(sub);
+    goRoute.push(
+        sub
+            ? '/setting/category_list/category_edit/sub_category_edit'
+            : '/setting/category_list/category_edit',
+        extra: selectCategoryProviderIndex);
   }
 
   @override
@@ -489,8 +490,8 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
             ),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () =>
-                  goAddCategoryView(goRoute, sub, ref, provider, context),
+              onTap: () => goAddCategoryView(
+                  goRoute, sub, ref, selectCategoryProviderIndex, context),
               onTapDown: (_) => panelBoarder.value = true,
               onTapUp: (_) => panelBoarder.value = false,
               onTapCancel: () => panelBoarder.value = false,

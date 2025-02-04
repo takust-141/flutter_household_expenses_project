@@ -1,7 +1,6 @@
 //フォームビルダー
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:household_expenses_project/constant/dimension.dart';
+import 'package:household_expense_project/constant/dimension.dart';
 
 //フォームビルダー
 Widget Function(BuildContext, T, bool?) categoryFormBulder<T>({
@@ -56,97 +55,4 @@ Widget Function(BuildContext, T, bool?) categoryFormBulder<T>({
       ),
     );
   };
-}
-
-//ダイアログ
-void openDialog({
-  required BuildContext context,
-  required String title,
-  required String text,
-  required Future<void> Function() onTap,
-  required bool isSubCategory,
-}) async {
-  final theme = Theme.of(context);
-  final navigator = Navigator.of(context);
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) {
-      return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(dialogRadius),
-        ),
-        child: Container(
-          padding: largeEdgeInsets,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(dialogRadius),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              AutoSizeText(
-                (isSubCategory ? "サブカテゴリー" : "カテゴリー") + title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-                maxLines: 1,
-              ),
-              const SizedBox(height: large),
-              AutoSizeText(text, textAlign: TextAlign.left),
-              const SizedBox(height: large),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: smallEdgeInsets,
-                        foregroundColor: theme.colorScheme.primary,
-                        side: BorderSide(
-                            color: theme.colorScheme.primary, width: 1.3),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(containreBorderRadius),
-                        ),
-                      ),
-                      child: const AutoSizeText(
-                        "キャンセル",
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () async {
-                        await onTap();
-                        if (!context.mounted) return;
-                        Navigator.pop(context);
-                        navigator.pop();
-                      },
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(containreBorderRadius),
-                        ),
-                      ),
-                      child: AutoSizeText(
-                        title,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
 }

@@ -1,32 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/component/generalized_logic_component.dart';
-import 'package:household_expenses_project/constant/dimension.dart';
-import 'package:household_expenses_project/provider/chart_page_provider/transition_chart_provider.dart';
-import 'package:household_expenses_project/view/chart_view/chart_transition_view/chart_transition_list.dart';
+import 'package:household_expense_project/component/generalized_logic_component.dart';
+import 'package:household_expense_project/constant/dimension.dart';
+import 'package:household_expense_project/provider/chart_page_provider/transition_chart_provider.dart';
+import 'package:household_expense_project/view/chart_view/chart_transition_view/chart_transition_list.dart';
 
-class ChartTransitionFigure extends ConsumerWidget {
+class ChartTransitionFigure extends HookConsumerWidget {
   const ChartTransitionFigure({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
     //riverpod
     final transitionChartNotifier = ref.read(transitionChartProvider.notifier);
     final TransitionChartState transitionChartState =
         ref.watch(transitionChartProvider).valueOrNull ??
             TransitionChartState.defaultState();
-    final bool isExpenses = transitionChartState.transitionSelectState ==
-        TransitionSelectState.expenses;
-    final ScrollController chartTransitionScrollController =
-        transitionChartState.chartTransitionScrollController;
+    final bool isExpense = transitionChartState.transitionSelectState ==
+        TransitionSelectState.expense;
+
+    final chartTransitionScrollController = useScrollController(
+      initialScrollOffset:
+          transitionChartNotifier.getChartTransitionScrollOffset(),
+      keepScrollOffset: false,
+    );
+
+    useEffect(() {
+      debugPrint("effect");
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // スクロールがウィジェットツリーに追加された後に jumpTo
+        if (chartTransitionScrollController.hasClients) {
+          chartTransitionScrollController
+              .jumpTo(transitionChartNotifier.getChartTransitionScrollOffset());
+        }
+      });
+      return null;
+    }, [
+      transitionChartState.transitionChartGroupDataList,
+      transitionChartState.loadingState,
+    ]);
+
     //chartパラメーター
     const double barChartHeight = 250;
     const BorderRadius barChartRadius =
         BorderRadius.vertical(top: Radius.circular(2));
     const double xTitleSize = 25;
+    const double barChartNextButtonHeight = 180;
 
     //グラフエリアのwidth
     double getBarChartWidth() {
@@ -36,7 +57,7 @@ class ChartTransitionFigure extends ConsumerWidget {
       late final double barChartWidth;
       final int listLength = transitionChartState
           .transitionChartGroupDataList.first.transitionChartRodDataList.length;
-      if (isExpenses) {
+      if (isExpense) {
         barChartWidth =
             listLength * (barGroupWidth + barChartItemWidth + barSpace);
       } else {
@@ -58,11 +79,6 @@ class ChartTransitionFigure extends ConsumerWidget {
               transitionChartState.transitionChartGroupDataList.first
                   .transitionChartRodDataList.length;
           i++) {
-        //選択rodの判定
-        final bool isSelectRod =
-            (transitionChartState.selectBarGroupIndex != null &&
-                    transitionChartState.selectRodDataIndex != null) &&
-                transitionChartState.selectBarGroupIndex == i;
         //BarChartデータ作成
         final data = BarChartGroupData(
           x: i,
@@ -73,8 +89,7 @@ class ChartTransitionFigure extends ConsumerWidget {
                 j++)
               BarChartRodData(
                 toY: transitionChartState.transitionChartGroupDataList[j]
-                    .transitionChartRodDataList[i].value
-                    .toDouble(),
+                    .transitionChartRodDataList[i],
                 color: transitionChartState
                         .transitionChartGroupDataList[j].chartColor ??
                     Theme.of(context).colorScheme.primary,
@@ -82,7 +97,7 @@ class ChartTransitionFigure extends ConsumerWidget {
                 borderRadius: barChartRadius,
                 borderSide: BorderSide(
                   color: theme.colorScheme.primary,
-                  width: (isSelectRod &&
+                  width: (transitionChartState.selectBarGroupIndex == i &&
                           transitionChartState.selectRodDataIndex == j)
                       ? 1.5
                       : 0,
@@ -186,19 +201,26 @@ class ChartTransitionFigure extends ConsumerWidget {
     }
 
     //return
-    return (transitionChartNotifier.isEmptyRegisterList())
-        ? Padding(
-            padding: const EdgeInsets.only(top: 15),
-            child: Text(
-              "データはありません",
-              style: theme.textTheme.bodyLarge,
+    return (transitionChartState.loadingState != 2 ||
+            ref.watch(transitionChartProvider).isRefreshing)
+        ? Container(
+            color: Colors.black.withOpacity(0.1),
+            child: const Center(
+              child: Padding(
+                padding: largeEdgeInsets,
+                child: SizedBox(
+                  height: 35,
+                  width: 35,
+                  child: CircularProgressIndicator(strokeWidth: 3),
+                ),
+              ),
             ),
           )
         : Expanded(
             child: Column(
               children: [
                 SizedBox(
-                  width: screenWidth,
+                  width: double.maxFinite,
                   height: barChartHeight,
                   child: RawScrollbar(
                     controller: chartTransitionScrollController,
@@ -216,6 +238,31 @@ class ChartTransitionFigure extends ConsumerWidget {
                         child: Row(
                           children: [
                             const SizedBox(width: barChartFigurePadding),
+                            IconButton.filled(
+                              icon: const Icon(Icons.keyboard_arrow_left),
+                              style: IconButton.styleFrom(
+                                backgroundColor:
+                                    theme.colorScheme.surfaceBright,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                fixedSize: const Size(
+                                    barChartItemWidth + ssmall,
+                                    barChartNextButtonHeight),
+                              ),
+                              constraints: BoxConstraints(
+                                minWidth: IconTheme.of(context).size ?? 24,
+                                minHeight: IconTheme.of(context).size ?? 24,
+                                maxHeight: double.infinity,
+                                maxWidth: double.infinity,
+                              ),
+                              padding: EdgeInsets.zero,
+                              iconSize: IconTheme.of(context).size,
+                              color: IconTheme.of(context).color,
+                              onPressed: () => transitionChartNotifier
+                                  .setNextRangeFigure(-1),
+                            ),
+                            const SizedBox(width: sssmall),
                             SizedBox(
                               width: getBarChartWidth(),
                               child: BarChart(
@@ -250,6 +297,31 @@ class ChartTransitionFigure extends ConsumerWidget {
                                 swapAnimationDuration: Duration.zero,
                               ),
                             ),
+                            const SizedBox(width: sssmall),
+                            IconButton.filled(
+                              icon: const Icon(Icons.keyboard_arrow_right),
+                              style: IconButton.styleFrom(
+                                backgroundColor:
+                                    theme.colorScheme.surfaceBright,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                fixedSize: const Size(
+                                    barChartItemWidth + ssmall,
+                                    barChartNextButtonHeight),
+                              ),
+                              constraints: BoxConstraints(
+                                minWidth: IconTheme.of(context).size ?? 24,
+                                minHeight: IconTheme.of(context).size ?? 24,
+                                maxHeight: double.infinity,
+                                maxWidth: double.infinity,
+                              ),
+                              padding: EdgeInsets.zero,
+                              iconSize: IconTheme.of(context).size,
+                              color: IconTheme.of(context).color,
+                              onPressed: () =>
+                                  transitionChartNotifier.setNextRangeFigure(1),
+                            ),
                             const SizedBox(width: barChartFigurePadding),
                           ],
                         ),
@@ -259,9 +331,7 @@ class ChartTransitionFigure extends ConsumerWidget {
                 ),
                 const SizedBox(height: small),
                 const Divider(height: 1),
-                const Expanded(
-                  child: ChartTransitionList(),
-                ),
+                const Expanded(child: ChartTransitionList()),
               ],
             ),
           );

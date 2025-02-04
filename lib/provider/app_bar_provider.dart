@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/component/segmented_button.dart';
-import 'package:household_expenses_project/constant/constant.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
-import 'package:household_expenses_project/view/calendar_view/calendar_page.dart';
-import 'package:household_expenses_project/view/chart_view/chart_page.dart';
-import 'package:household_expenses_project/view/search_view/search_page.dart';
+import 'package:household_expense_project/component/segmented_button.dart';
+import 'package:household_expense_project/constant/constant.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/provider/setting_recurring_provider.dart';
+import 'package:household_expense_project/view/calendar_view/calendar_page.dart';
+import 'package:household_expense_project/view/chart_view/chart_page.dart';
+import 'package:household_expense_project/view/search_view/search_page.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 const rootNameRegister = 'register';
@@ -19,6 +20,11 @@ const rootNameCategoryList = 'category_list';
 const rootNameCategoryEdit = 'category_edit';
 const rootNameSubCategoryEdit = 'sub_category_edit';
 const rootNameCalendarSetting = 'calendar_setting';
+const rootNameRecurringList = 'recurring_list';
+const rootNameRecurringEdit = 'recurring_edit';
+const rootNameRecurringSetting = 'recurring_setting';
+const rootNameRecurringSettingDetail = 'recurring_setting_detail';
+const rootNameRecurringSettingRegisterList = 'recurring_setting_register_list';
 
 const List<AppBarState> appBarStateStateList = [
   AppBarState(name: rootNameRegister, appBarTitle: null, appBarBack: false),
@@ -55,6 +61,23 @@ const List<AppBarState> appBarStateStateList = [
     cancelAndDo: true,
     appBarSideWidth: 100,
   ),
+  AppBarState(
+      name: rootNameRecurringList, appBarTitle: '定期収支設定', appBarBack: true),
+  AppBarState(
+      name: rootNameRecurringSetting, appBarTitle: '繰り返し設定', appBarBack: true),
+  AppBarState(name: rootNameRecurringSettingDetail, appBarBack: true),
+  AppBarState(
+    name: rootNameRecurringEdit,
+    appBarTitle: '定期収支編集',
+    appBarBack: true,
+    needBottomBar: false,
+    cancelAndDo: true,
+    appBarSideWidth: 100,
+  ),
+  AppBarState(
+      name: rootNameRecurringSettingRegisterList,
+      appBarTitle: '定期明細一覧',
+      appBarBack: true),
 ];
 
 //Provider
@@ -83,10 +106,10 @@ class AppBarState {
     this.isActiveCategoryDoneButton = false,
   });
 
-  AppBarState copyWith({String? name}) {
+  AppBarState copyWithTitle({String? title}) {
     return AppBarState(
-      name: name ?? this.name,
-      appBarTitle: appBarTitle,
+      name: name,
+      appBarTitle: title,
       appBarBack: appBarBack,
       cancelAndDo: cancelAndDo,
       needBottomBar: needBottomBar,
@@ -106,6 +129,18 @@ class AppBarState {
       isActiveCategoryDoneButton: isActive,
     );
   }
+
+  AppBarState copyWithIsActiveDeleteButton(bool isActive) {
+    return AppBarState(
+      name: name,
+      appBarTitle: appBarTitle,
+      appBarBack: appBarBack,
+      cancelAndDo: cancelAndDo,
+      needBottomBar: needBottomBar,
+      appBarSideWidth: appBarSideWidth,
+      isActiveCategoryDoneButton: isActiveCategoryDoneButton,
+    );
+  }
 }
 
 //Notifier
@@ -115,15 +150,21 @@ class AppBarNotifier extends Notifier<AppBarState> {
     return const AppBarState(name: '');
   }
 
-  void setAppBar(String? routeName) {
+  void setAppBar(GoRouterState goRouterState) {
+    String? routeName = goRouterState.topRoute?.name;
     if (state.name != routeName) {
       var newState = const AppBarState(name: '');
       for (AppBarState appBarState in appBarStateStateList) {
         if (appBarState.name == routeName) {
           newState = appBarState;
+          break;
         }
       }
       state = newState;
+      if (state.name == rootNameRecurringSettingDetail) {
+        state = state.copyWithTitle(
+            title: recurringDetailTitleList[goRouterState.extra as int]);
+      }
 
       //カテゴリー編集の時、完了ボタン判定
       if (state.name == rootNameCategoryEdit) {
@@ -150,6 +191,11 @@ class AppBarNotifier extends Notifier<AppBarState> {
     }
   }
 
+  //appbarの削除ボタン更新
+  void updateActiveDeleteButton(bool isActive) {
+    state = state.copyWithIsActiveDeleteButton(isActive);
+  }
+
   //appbar設定
   Widget? getAppBarLeadingWidget() {
     if (state.cancelAndDo) {
@@ -162,10 +208,13 @@ class AppBarNotifier extends Notifier<AppBarState> {
 
   Widget? getAppBarTitleWidget(TextStyle? fontStyle) {
     if (state.name == rootNameRegister) {
-      return SelectExpensesButton(registerCategoryStateNotifierProvider);
+      return SelectExpenseButton(registerCategoryStateNotifierProvider);
     }
     if (state.name == rootNameCategoryList) {
-      return SelectExpensesButton(settingCategoryStateNotifierProvider);
+      return SelectExpenseButton(settingCategoryStateNotifierProvider);
+    }
+    if (state.name == rootNameRecurringList) {
+      return SelectExpenseButton(registerEditCategoryStateNotifierProvider);
     }
     if (state.name == rootNameCalendar) {
       return CalendarAppBar();
@@ -199,6 +248,17 @@ class AppBarNotifier extends Notifier<AppBarState> {
             titleText = "サブカテゴリー 編集";
           }
         }
+        if (state.name == rootNameRecurringEdit) {
+          if (ref.read(settingRecurringyStateNotifierProvider
+                  .select((p) => p.selectRegisterRecurring)) ==
+              null) {
+            titleText = " 新規追加";
+          } else {
+            titleText = " 編集";
+          }
+          titleText =
+              "定期${ref.read(registerEditCategoryStateNotifierProvider.select((p) => p.selectExpense.text))}${titleText!}";
+        }
         if (titleText != null) {
           return Text(
             titleText!,
@@ -214,14 +274,28 @@ class AppBarNotifier extends Notifier<AppBarState> {
   }
 
   Widget? getAppBarTailingWidget(
-      GlobalKey<FormState>? formkey, GlobalKey<FormState>? subFormkey) {
+      GlobalKey<FormState>? formkey,
+      GlobalKey<FormState>? subFormkey,
+      GlobalKey<FormState>? recurringFormkey) {
     if (state.cancelAndDo) {
+      final ProviderListenable<bool> listenableProvider =
+          appBarProvider.select((p) => p.isActiveCategoryDoneButton);
       if (state.name == rootNameCategoryEdit) {
-        return AppBarDoneWidget(formkey);
+        return AppBarDoneWidget(formkey, listenableProvider);
       }
       if (state.name == rootNameSubCategoryEdit) {
-        return AppBarDoneWidget(subFormkey);
+        return AppBarDoneWidget(subFormkey, listenableProvider);
       }
+    }
+    if (state.name == rootNameRecurringEdit) {
+      final ProviderListenable<bool> listenableRecurringProvider =
+          settingRecurringyStateNotifierProvider
+              .select((p) => p.isActiveAppbarDeleteButton);
+      return AppBarDoneWidget(
+        recurringFormkey,
+        listenableRecurringProvider,
+        isDelete: true,
+      );
     }
     return null;
   }
@@ -290,23 +364,28 @@ class AppBarCancelWidget extends HookWidget {
 //完了ボタン
 class AppBarDoneWidget extends HookConsumerWidget {
   final GlobalKey<FormState>? formkey;
-  const AppBarDoneWidget(this.formkey, {super.key});
+  final ProviderListenable<bool> listenableProvider;
+  final bool isDelete;
+  const AppBarDoneWidget(
+    this.formkey,
+    this.listenableProvider, {
+    super.key,
+    this.isDelete = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final textColor = useState<Color>(theme.colorScheme.onSurface);
 
-    return ref.watch(
-                appBarProvider.select((p) => p.isActiveCategoryDoneButton)) ??
-            false
+    return ref.watch(listenableProvider) ?? false
         ? GestureDetector(
             child: AnimatedContainer(
               duration: listItemAnimationDuration,
               child: Padding(
                 padding: const EdgeInsets.only(right: appbarSidePadding),
                 child: Text(
-                  "完了",
+                  isDelete ? "削除" : "完了",
                   textAlign: TextAlign.right,
                   style: TextStyle(
                     color: textColor.value,
@@ -327,7 +406,7 @@ class AppBarDoneWidget extends HookConsumerWidget {
         : Padding(
             padding: const EdgeInsets.only(right: appbarSidePadding),
             child: Text(
-              "完了",
+              isDelete ? "削除" : "完了",
               textAlign: TextAlign.right,
               style: TextStyle(
                 color: theme.colorScheme.outline,

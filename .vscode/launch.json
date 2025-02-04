@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "household_expenses_project",
+            "name": "household_expense_project",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "household_expenses_project (profile mode)",
+            "name": "household_expense_project (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "household_expenses_project (release mode)",
+            "name": "household_expense_project (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

@@ -1,4 +1,4 @@
-import 'package:household_expenses_project/model/category.dart';
+import 'package:household_expense_project/model/category.dart';
 
 const String registerTable = 'register';
 const String registerId = '_id';
@@ -6,6 +6,9 @@ const String registerAmount = 'amount';
 const String registerCategoryId = 'category_id';
 const String registerMemo = 'memo';
 const String registerDate = 'date';
+const String registerRecurringId = 'recurring_id';
+const String registerRegistrationDate = 'registration_date';
+const String registerUpdateDate = 'update_date';
 
 final List<String> registerCategory1KeyList =
     categoryKeyList.map((key) => 'category_1_$key').toList();
@@ -15,10 +18,13 @@ final List<String> registerCategory2KeyList =
 class Register {
   int? id;
   int amount;
-  Category? category; /*カテゴリーは後から必ずセットする*/
+  Category? category; /*カテゴリーは後から必ずセットする 親カテゴリーのみはサブカテゴリーなし*/
   Category? subCategory;
   String? memo;
   DateTime date;
+  int? recurringId;
+  DateTime registrationDate;
+  DateTime? updateDate;
 
   Register({
     this.id,
@@ -27,6 +33,9 @@ class Register {
     this.subCategory,
     this.memo,
     required this.date,
+    this.recurringId,
+    required this.registrationDate,
+    this.updateDate,
   });
 
   //dbデータからmodelへ変換
@@ -49,7 +58,13 @@ class Register {
                 mapKeyList: registerCategory1KeyList)
             : null,
         memo = map[registerMemo],
-        date = DateTime.fromMillisecondsSinceEpoch(map[registerDate]);
+        date = DateTime.fromMillisecondsSinceEpoch(map[registerDate]),
+        recurringId = map[registerRecurringId],
+        registrationDate =
+            DateTime.fromMillisecondsSinceEpoch(map[registerRegistrationDate]),
+        updateDate = (map[registerUpdateDate] != null)
+            ? DateTime.fromMillisecondsSinceEpoch(map[registerUpdateDate])
+            : null;
 
   Map<String, Object?> toMap() {
     int categoryId = (subCategory == null) ? category!.id! : subCategory!.id!;
@@ -58,15 +73,19 @@ class Register {
       registerCategoryId: categoryId,
       registerMemo: memo,
       registerDate: date.millisecondsSinceEpoch,
+      registerRecurringId: recurringId,
+      registerRegistrationDate: registrationDate.millisecondsSinceEpoch,
+      registerUpdateDate: updateDate?.millisecondsSinceEpoch,
     };
   }
 
-  Register copyWith(
-      {int? amount,
-      Category? category,
-      Category? subCategory,
-      String? memo,
-      DateTime? date}) {
+  Register copyWith({
+    int? amount,
+    Category? category,
+    Category? subCategory,
+    String? memo,
+    DateTime? date,
+  }) {
     return Register(
       id: id,
       amount: amount ?? this.amount,
@@ -74,6 +93,9 @@ class Register {
       subCategory: subCategory ?? this.subCategory,
       memo: memo ?? this.memo,
       date: date ?? this.date,
+      recurringId: recurringId,
+      registrationDate: registrationDate,
+      updateDate: updateDate,
     );
   }
 }

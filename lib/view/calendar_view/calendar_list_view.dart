@@ -2,14 +2,14 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expenses_project/component/generalized_logic_component.dart';
-import 'package:household_expenses_project/constant/dimension.dart';
-import 'package:household_expenses_project/model/register.dart';
-import 'package:household_expenses_project/provider/calendar_page_provider.dart';
-import 'package:household_expenses_project/provider/register_edit_state.dart';
-import 'package:household_expenses_project/provider/select_category_provider.dart';
-import 'package:household_expenses_project/provider/setting_data_provider.dart';
-import 'package:household_expenses_project/view/calendar_view/register_modal_view.dart';
+import 'package:household_expense_project/component/generalized_logic_component.dart';
+import 'package:household_expense_project/constant/dimension.dart';
+import 'package:household_expense_project/model/register.dart';
+import 'package:household_expense_project/provider/calendar_page_provider.dart';
+import 'package:household_expense_project/provider/register_edit_state.dart';
+import 'package:household_expense_project/provider/select_category_provider.dart';
+import 'package:household_expense_project/provider/setting_data_provider.dart';
+import 'package:household_expense_project/component/custom_register_list_view/register_modal_view.dart';
 
 class CalendarListView extends HookConsumerWidget {
   const CalendarListView({super.key});
@@ -24,41 +24,50 @@ class CalendarListView extends HookConsumerWidget {
             .select((p) => p.valueOrNull?.listScrollController)) ??
         ScrollController();
 
-    return CustomScrollView(
-      controller: listScrollController,
-      slivers: [
-        SliverPadding(
-          padding: calendarSliverEdgeInsets,
-          sliver: SliverCrossAxisGroup(
-            slivers: [
-              //日付
-              SliverConstrainedCrossAxis(
-                maxExtent: registerDateWidth,
-                sliver: SliberDateGroup(registerList: registerList),
-              ),
-
-              //リスト
-              SliverMainAxisGroup(
+    return Padding(
+      padding: const EdgeInsets.only(right: scrollbarpadding),
+      child: Scrollbar(
+        controller: listScrollController,
+        thickness: scrollbarWidth,
+        radius: const Radius.circular(8.0),
+        thumbVisibility: true,
+        child: CustomScrollView(
+          controller: listScrollController,
+          slivers: [
+            SliverPadding(
+              padding: calendarSliverEdgeInsets,
+              sliver: SliverCrossAxisGroup(
                 slivers: [
-                  if (registerList.isNotEmpty)
-                    SliverFixedExtentList(
-                      delegate: SliverChildBuilderDelegate(
-                        (BuildContext context, int index) {
-                          return RegisterListItem(
-                            register: registerList[index],
-                            pagaProvider: calendarPageProvider,
-                          );
-                        },
-                        childCount: registerList.length,
-                      ),
-                      itemExtent: registerListHeight,
-                    ),
+                  //日付
+                  SliverConstrainedCrossAxis(
+                    maxExtent: registerDateWidth + ssmall,
+                    sliver: SliberDateGroup(registerList: registerList),
+                  ),
+
+                  //リスト
+                  SliverMainAxisGroup(
+                    slivers: [
+                      if (registerList.isNotEmpty)
+                        SliverFixedExtentList(
+                          delegate: SliverChildBuilderDelegate(
+                            (BuildContext context, int index) {
+                              return RegisterListItem(
+                                register: registerList[index],
+                                pagaProvider: calendarPageProvider,
+                              );
+                            },
+                            childCount: registerList.length,
+                          ),
+                          itemExtent: registerListHeight,
+                        ),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -79,7 +88,8 @@ class RegisterListItem extends HookConsumerWidget {
 
     return Container(
       height: registerListHeight - registerListPadding,
-      padding: const EdgeInsets.only(bottom: registerListPadding),
+      padding: const EdgeInsets.fromLTRB(
+          0, 0, small + scrollbarSpace, registerListPadding),
       child: GestureDetector(
         onTap: () {
           ref
@@ -190,20 +200,43 @@ class RegisterListItem extends HookConsumerWidget {
               ),
               Expanded(
                 flex: 1,
-                child: AutoSizeText(
-                  "${LogicComponent.addCommaToNum(register.amount)}円",
-                  maxLines: 2,
-                  textAlign: TextAlign.end,
-                  overflow: TextOverflow.visible,
-                  minFontSize: 10,
-                  style: TextStyle(
-                      color:
-                          register.category?.expenses == SelectExpenses.income
-                              ? Colors.blue[600]
-                              : Colors.red[600]),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 3),
+                    Expanded(
+                      flex: 1,
+                      child: (register.recurringId != null)
+                          ? Align(
+                              alignment: Alignment.centerRight,
+                              child: Icon(
+                                Icons.repeat,
+                                size: 13,
+                                color: theme.colorScheme.onSurface,
+                              ))
+                          : const SizedBox(),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: AutoSizeText(
+                          "${LogicComponent.addCommaToNum(register.amount)}円",
+                          maxLines: 2,
+                          textAlign: TextAlign.end,
+                          overflow: TextOverflow.visible,
+                          minFontSize: 12,
+                          style: TextStyle(
+                              color: register.category?.expense ==
+                                      SelectExpense.income
+                                  ? Colors.blue[600]
+                                  : Colors.red[600]),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: small),
+              const SizedBox(width: msmall),
             ],
           ),
         ),
@@ -229,6 +262,7 @@ class SliberDateGroup extends StatelessWidget {
       );
     }
 
+    //カレンダーとの対応づけのためMap型としている
     for (Register register in registerList!) {
       int day = register.date.day;
       if (!groupedByDay.containsKey(day)) {
@@ -251,7 +285,8 @@ class SliberDateGroup extends StatelessWidget {
                 ),
                 SliverToBoxAdapter(
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(0, 0, small, small),
+                    padding:
+                        const EdgeInsets.fromLTRB(msmall, 0, msmall, small),
                     height: (dayList.length - 1) * registerListHeight,
                     child: VerticalDivider(
                       color: theme.colorScheme.outlineVariant,
@@ -287,8 +322,8 @@ class CustomSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
     return SizedBox.expand(
       child: Container(
         color: theme.colorScheme.surfaceContainer,
-        padding: const EdgeInsets.fromLTRB(
-            sssmall, 0, small, registerListPadding + sssmall),
+        padding:
+            const EdgeInsets.fromLTRB(msmall, 0, msmall, registerListPadding),
         child: Column(
           children: [
             Flexible(
@@ -422,7 +457,7 @@ class CalendarMonthSumItem extends ConsumerWidget {
                         "${LogicComponent.addCommaToNum(totalIncome)}円",
                         textAlign: TextAlign.right,
                         style: theme.textTheme.bodyLarge
-                            ?.copyWith(height: 1.2, color: Colors.blue[900]),
+                            ?.copyWith(height: 1.2, color: Colors.blue[600]),
                         maxFontSize: 20,
                         minFontSize: 5,
                         maxLines: 2,
