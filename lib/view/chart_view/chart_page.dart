@@ -121,7 +121,7 @@ class ChartSegmentedButton extends HookConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: segmentedButtomRadius,
-        color: theme.colorScheme.inverseSurface.withOpacity(0.1),
+        color: theme.colorScheme.inverseSurface.withValues(alpha: 0.1),
       ),
       child: Stack(
         children: [

@@ -16,8 +16,8 @@ class CategoryKeyboardAction {
 
   TextEditingController categoryNameController;
   //customKeyboard用
-  final cateoryIconNotifer;
-  final cateoryColorNotifer;
+  final ValueNotifier<IconData> cateoryIconNotifer;
+  final ValueNotifier<Color> cateoryColorNotifer;
   //FocusNode
   final CustomFocusNode categoryNameNode;
   final CustomFocusNode categoryIconNode;

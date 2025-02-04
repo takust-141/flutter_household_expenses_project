@@ -272,7 +272,7 @@ class TransitionDropDownListItem extends ConsumerWidget {
               (transitionChartState.valueOrNull?.selectCategory == category &&
                       transitionChartState.valueOrNull?.transitionSelectState ==
                           transitionSelectState)
-                  ? theme.colorScheme.onSurface.withOpacity(0.1)
+                  ? theme.colorScheme.onSurface.withValues(alpha: 0.1)
                   : theme.colorScheme.surfaceBright,
         ),
         onPressed: () {
@@ -321,7 +321,7 @@ class TransitionRnageDropDownListItem extends ConsumerWidget {
           backgroundColor:
               (transitionChartState.valueOrNull?.transitionChartDateRange ==
                       transitionChartDateRange)
-                  ? theme.colorScheme.onSurface.withOpacity(0.1)
+                  ? theme.colorScheme.onSurface.withValues(alpha: 0.1)
                   : theme.colorScheme.surfaceBright,
         ),
         onPressed: () {

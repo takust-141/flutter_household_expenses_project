@@ -16,8 +16,8 @@ void updateSnackBarCallBack({
       ),
     ),
     backgroundColor: isError
-        ? theme.colorScheme.errorContainer.withOpacity(0.9)
-        : theme.colorScheme.onSurfaceVariant.withOpacity(0.9),
+        ? theme.colorScheme.errorContainer.withValues(alpha: 0.9)
+        : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.9),
     duration: const Duration(seconds: 4),
     padding: msmallEdgeInsets,
     margin: const EdgeInsets.fromLTRB(medium, 0, medium, small),

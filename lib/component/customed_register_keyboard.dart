@@ -378,7 +378,7 @@ class _CategoryKeyboardPanelState extends State<CategoryKeyboardPanel> {
                 border: widget.notifier.value?.id == widget.category?.id
                     ? Border.all(color: theme.colorScheme.primary, width: 2)
                     : Border.all(
-                        color: theme.colorScheme.outline.withOpacity(0.8),
+                        color: theme.colorScheme.outline.withValues(alpha: 0.8),
                         width: 1),
                 borderRadius: BorderRadius.circular(small),
               ),
@@ -484,7 +484,7 @@ class AddCategoryKeyboardPanel extends HookConsumerWidget {
               border: panelBoarder.value
                   ? Border.all(color: theme.colorScheme.primary, width: 2)
                   : Border.all(
-                      color: theme.colorScheme.outline.withOpacity(0.8),
+                      color: theme.colorScheme.outline.withValues(alpha: 0.8),
                       width: 1),
               borderRadius: BorderRadius.circular(small),
             ),

@@ -85,7 +85,7 @@ class ChartRatePage extends ConsumerWidget {
             child: GestureDetector(
               onTap: () => rateChartNotifier.tapDateButton(),
               child: Container(
-                color: theme.colorScheme.shadow.withOpacity(0.4),
+                color: theme.colorScheme.shadow.withValues(alpha: 0.4),
               ),
             ),
           ),
@@ -154,8 +154,9 @@ class ListWheelDateSelector extends ConsumerWidget {
                       height: theme.textTheme.bodyMedium?.fontSize,
                       child: TextButton(
                           style: ButtonStyle(
-                            overlayColor: WidgetStateProperty.all(
-                                theme.colorScheme.shadow.withOpacity(0.1)),
+                            overlayColor: WidgetStateProperty.all(theme
+                                .colorScheme.shadow
+                                .withValues(alpha: 0.1)),
                             splashFactory: NoSplash.splashFactory,
                             foregroundColor: WidgetStateProperty.all(
                                 theme.colorScheme.onSurface),
@@ -200,8 +201,9 @@ class ListWheelDateSelector extends ConsumerWidget {
                         height: 13,
                         child: TextButton(
                             style: ButtonStyle(
-                              overlayColor: WidgetStateProperty.all(
-                                  theme.colorScheme.shadow.withOpacity(0.1)),
+                              overlayColor: WidgetStateProperty.all(theme
+                                  .colorScheme.shadow
+                                  .withValues(alpha: 0.1)),
                               foregroundColor: WidgetStateProperty.all(
                                   theme.colorScheme.onSurface),
                             ),
@@ -248,7 +250,8 @@ class ChartRateDateSelector extends ConsumerWidget {
                     icon: const Icon(Icons.keyboard_arrow_left),
                     iconSize: IconTheme.of(context).size ?? 24,
                     color: theme.colorScheme.onSurface,
-                    disabledColor: theme.colorScheme.onSurface.withOpacity(0.4),
+                    disabledColor:
+                        theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     onPressed: (!data.isShowScrollView)
                         ? () => {rateChartNotifier.tapDateArrowButton(-1)}
                         : null),
@@ -259,7 +262,7 @@ class ChartRateDateSelector extends ConsumerWidget {
                       ? ButtonStyle(
                           elevation: WidgetStateProperty.all(1),
                           overlayColor: WidgetStateProperty.all(
-                              theme.colorScheme.shadow.withOpacity(0.1)),
+                              theme.colorScheme.shadow.withValues(alpha: 0.1)),
                           backgroundColor: WidgetStateProperty.all(Color.lerp(
                               theme.colorScheme.surfaceContainer,
                               theme.colorScheme.shadow,
@@ -268,7 +271,7 @@ class ChartRateDateSelector extends ConsumerWidget {
                       : ButtonStyle(
                           elevation: WidgetStateProperty.all(0),
                           overlayColor: WidgetStateProperty.all(
-                              theme.colorScheme.shadow.withOpacity(0.1)),
+                              theme.colorScheme.shadow.withValues(alpha: 0.1)),
                           backgroundColor: WidgetStateProperty.all(
                             theme.colorScheme.surfaceContainer,
                           ),
@@ -291,7 +294,8 @@ class ChartRateDateSelector extends ConsumerWidget {
                   icon: const Icon(Icons.keyboard_arrow_right),
                   iconSize: IconTheme.of(context).size ?? 24,
                   color: theme.iconTheme.color,
-                  disabledColor: theme.colorScheme.onSurface.withOpacity(0.4),
+                  disabledColor:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.4),
                   onPressed: (!data.isShowScrollView)
                       ? () => {rateChartNotifier.tapDateArrowButton(1)}
                       : null,

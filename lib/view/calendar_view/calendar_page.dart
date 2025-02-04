@@ -141,7 +141,7 @@ class CalendarPage extends ConsumerWidget {
                     ignoring: !isShowScrollView,
                     child: AnimatedContainer(
                       color: isShowScrollView
-                          ? theme.colorScheme.shadow.withOpacity(0.4)
+                          ? theme.colorScheme.shadow.withValues(alpha: 0.4)
                           : Colors.transparent,
                       duration: const Duration(milliseconds: 200),
                     ),
@@ -202,7 +202,7 @@ class CalendarPage extends ConsumerWidget {
                                               overlayColor:
                                                   WidgetStateProperty.all(theme
                                                       .colorScheme.shadow
-                                                      .withOpacity(0.1)),
+                                                      .withValues(alpha: 0.1)),
                                               splashFactory:
                                                   NoSplash.splashFactory,
                                               foregroundColor:
@@ -258,7 +258,7 @@ class CalendarPage extends ConsumerWidget {
                                               overlayColor:
                                                   WidgetStateProperty.all(theme
                                                       .colorScheme.shadow
-                                                      .withOpacity(0.1)),
+                                                      .withValues(alpha: 0.1)),
                                               foregroundColor:
                                                   WidgetStateProperty.all(theme
                                                       .colorScheme.onSurface),
@@ -523,7 +523,8 @@ class CalendarAppBar extends ConsumerWidget {
                     icon: const Icon(Icons.keyboard_arrow_left),
                     iconSize: IconTheme.of(context).size!,
                     color: theme.colorScheme.onSurface,
-                    disabledColor: theme.colorScheme.onSurface.withOpacity(0.4),
+                    disabledColor:
+                        theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     onPressed: (!data.isShowScrollView)
                         ? () {
                             data.pageViewController.previousPage(
@@ -540,7 +541,7 @@ class CalendarAppBar extends ConsumerWidget {
                       ? ButtonStyle(
                           elevation: WidgetStateProperty.all(1),
                           overlayColor: WidgetStateProperty.all(
-                              theme.colorScheme.shadow.withOpacity(0.1)),
+                              theme.colorScheme.shadow.withValues(alpha: 0.1)),
                           backgroundColor: WidgetStateProperty.all(Color.lerp(
                               theme.colorScheme.surfaceDim,
                               theme.colorScheme.shadow,
@@ -549,7 +550,7 @@ class CalendarAppBar extends ConsumerWidget {
                       : ButtonStyle(
                           elevation: WidgetStateProperty.all(0),
                           overlayColor: WidgetStateProperty.all(
-                              theme.colorScheme.shadow.withOpacity(0.1)),
+                              theme.colorScheme.shadow.withValues(alpha: 0.1)),
                           backgroundColor: WidgetStateProperty.all(
                             theme.colorScheme.surfaceDim,
                           ),
@@ -569,7 +570,8 @@ class CalendarAppBar extends ConsumerWidget {
                   icon: const Icon(Icons.keyboard_arrow_right),
                   iconSize: IconTheme.of(context).size!,
                   color: theme.iconTheme.color,
-                  disabledColor: theme.colorScheme.onSurface.withOpacity(0.4),
+                  disabledColor:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.4),
                   onPressed: (!data.isShowScrollView)
                       ? () {
                           data.pageViewController.nextPage(

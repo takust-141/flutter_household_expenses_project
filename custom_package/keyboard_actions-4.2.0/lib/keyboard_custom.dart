@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:keyboard_actions/keyboard_actions.dart';
 
 /// Signature for a function that creates a widget for a given value
 typedef WidgetKeyboardBuilder<T> = Widget Function(

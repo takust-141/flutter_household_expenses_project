@@ -47,8 +47,9 @@ class CustomExpandList extends HookWidget {
                     color: itemColor,
                     child: InkWell(
                       highlightColor:
-                          theme.colorScheme.onSurface.withOpacity(0.1),
-                      splashColor: theme.colorScheme.onSurface.withOpacity(0.1),
+                          theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                      splashColor:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.1),
                       onTap: () {
                         if (expandController.status.isForwardOrCompleted) {
                           expandController.reverse();

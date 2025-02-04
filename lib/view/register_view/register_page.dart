@@ -146,9 +146,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
       };
     }, []);
 
-    //画面サイズ取得
-    double appBarHeight = AppBar().preferredSize.height;
-
     //選択したカテゴリーの監視
     ref.listen<Category?>(
       selectCategoryStateProvider

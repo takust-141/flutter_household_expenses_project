@@ -80,7 +80,7 @@ class SearchAppBar extends HookConsumerWidget {
                 color: cancelIconColor.value,
                 size: 20,
               ),
-              splashColor: theme.colorScheme.surface.withOpacity(0.5),
+              splashColor: theme.colorScheme.surface.withValues(alpha: 0.5),
             ),
           ),
           border: OutlineInputBorder(

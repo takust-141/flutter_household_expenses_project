@@ -57,7 +57,7 @@ class ChartRateFigure extends ConsumerWidget {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface.withOpacity(0.8),
+              color: theme.colorScheme.surface.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(5),
             ),
             padding: sssmallEdgeInsets,
@@ -185,7 +185,7 @@ class ChartRateFigure extends ConsumerWidget {
                     },
                   ),
                 ),
-                swapAnimationDuration: Duration.zero,
+                duration: Duration.zero,
               ),
             );
           });

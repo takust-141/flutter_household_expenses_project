@@ -3,7 +3,6 @@ import 'package:collection/collection.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expense_project/model/category.dart';
 import 'package:household_expense_project/model/register.dart';
-import 'package:household_expense_project/provider/chart_page_provider/chart_page_provider.dart';
 import 'package:household_expense_project/provider/chart_page_provider/transition_chart_provider.dart';
 import 'package:household_expense_project/provider/register_db_provider.dart';
 import 'package:household_expense_project/provider/select_category_provider.dart';

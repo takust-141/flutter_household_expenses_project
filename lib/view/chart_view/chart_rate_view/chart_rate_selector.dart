@@ -260,7 +260,7 @@ class RateDropDownListItem extends ConsumerWidget {
               (rateChartState.valueOrNull?.selectCategory == category &&
                       rateChartState.valueOrNull?.rateSelectState ==
                           rateSelectState)
-                  ? theme.colorScheme.onSurface.withOpacity(0.1)
+                  ? theme.colorScheme.onSurface.withValues(alpha: 0.1)
                   : theme.colorScheme.surfaceBright,
         ),
         onPressed: () {
@@ -306,7 +306,7 @@ class RateRnageDropDownListItem extends ConsumerWidget {
           overlayColor: theme.colorScheme.onSurface,
           backgroundColor:
               (rateChartState.valueOrNull?.rateChartDateRange == chartDateRange)
-                  ? theme.colorScheme.onSurface.withOpacity(0.1)
+                  ? theme.colorScheme.onSurface.withValues(alpha: 0.1)
                   : theme.colorScheme.surfaceBright,
         ),
         onPressed: () {

@@ -130,7 +130,8 @@ class ChartTransitionFigure extends HookConsumerWidget {
       );
 
       return SideTitleWidget(
-        axisSide: meta.axisSide,
+        //axisSide: meta.axisSide,
+        meta: meta,
         space: sssmall, //margin
         child: text,
       );
@@ -204,7 +205,7 @@ class ChartTransitionFigure extends HookConsumerWidget {
     return (transitionChartState.loadingState != 2 ||
             ref.watch(transitionChartProvider).isRefreshing)
         ? Container(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             child: const Center(
               child: Padding(
                 padding: largeEdgeInsets,
@@ -294,7 +295,7 @@ class ChartTransitionFigure extends HookConsumerWidget {
                                   gridData: const FlGridData(show: false),
                                   barTouchData: getBarTouchData(),
                                 ),
-                                swapAnimationDuration: Duration.zero,
+                                duration: Duration.zero,
                               ),
                             ),
                             const SizedBox(width: sssmall),

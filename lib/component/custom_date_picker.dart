@@ -159,7 +159,7 @@ class _DatePickerKeyboardState extends ConsumerState<DatePickerKeyboard> {
                   TextButton(
                     style: ButtonStyle(
                       overlayColor: WidgetStateProperty.all(
-                          theme.colorScheme.shadow.withOpacity(0.1)),
+                          theme.colorScheme.shadow.withValues(alpha: 0.1)),
                     ),
                     onPressed: () {
                       if (!showScrollView.value) {
@@ -233,7 +233,7 @@ class _DatePickerKeyboardState extends ConsumerState<DatePickerKeyboard> {
                                       style: ButtonStyle(
                                         overlayColor: WidgetStateProperty.all(
                                             theme.colorScheme.shadow
-                                                .withOpacity(0.1)),
+                                                .withValues(alpha: 0.1)),
                                         splashFactory: NoSplash.splashFactory,
                                         foregroundColor:
                                             WidgetStateProperty.all(
@@ -281,7 +281,7 @@ class _DatePickerKeyboardState extends ConsumerState<DatePickerKeyboard> {
                                       style: ButtonStyle(
                                         overlayColor: WidgetStateProperty.all(
                                             theme.colorScheme.shadow
-                                                .withOpacity(0.1)),
+                                                .withValues(alpha: 0.1)),
                                         foregroundColor:
                                             WidgetStateProperty.all(
                                                 theme.colorScheme.onSurface),

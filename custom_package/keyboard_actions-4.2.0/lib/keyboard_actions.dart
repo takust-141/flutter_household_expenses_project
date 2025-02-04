@@ -25,8 +25,11 @@ const Cubic barAnimationCurve = Curves.easeOutSine;
 const Curve defaultCurve = Curves.easeIn;
 
 enum KeyboardActionsPlatform {
+  // ignore: constant_identifier_names
   ANDROID,
+  // ignore: constant_identifier_names
   IOS,
+  // ignore: constant_identifier_names
   ALL,
 }
 
@@ -533,7 +536,6 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
     }
   }
 
-  double _localMargin = 0.0;
 /*
   void _onLayout() {
     if (widget.isDialog) {

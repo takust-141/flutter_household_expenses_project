@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expense_project/component/customed_register_recurring_keyboard.dart';
-import 'package:household_expense_project/component/generalized_logic_component.dart';
 import 'package:household_expense_project/component/register_snackbar.dart';
 import 'package:household_expense_project/component/setting_component.dart';
 import 'package:household_expense_project/model/category.dart';
