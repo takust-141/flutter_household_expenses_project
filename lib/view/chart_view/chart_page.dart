@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expense_project/ad_helper.dart';
 import 'package:household_expense_project/constant/dimension.dart';
 import 'package:household_expense_project/provider/chart_page_provider/chart_page_provider.dart';
 import 'package:household_expense_project/provider/chart_page_provider/transition_chart_provider.dart';
@@ -8,28 +9,37 @@ import 'package:household_expense_project/view/chart_view/chart_rate_view/chart_
 import 'package:household_expense_project/view/chart_view/chart_transition_view/chart_transition_page.dart';
 
 //-------チャートページ---------------------------
-class ChartPage extends ConsumerWidget {
+class ChartPage extends HookConsumerWidget {
   const ChartPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return LayoutBuilder(builder: (context, constraint) {
-      return SafeArea(
-        child: SizedBox(
-          height: constraint.maxHeight,
-          width: constraint.maxWidth,
-          child: PageView(
-            controller: ref.watch(
-                chartPageProvider.select((p) => p.valueOrNull?.pageController)),
-            scrollDirection: Axis.horizontal,
-            children: const [
-              ChartRatePage(),
-              ChartTransitionPage(),
-            ],
-          ),
-        ),
-      );
-    });
+    final bannerAdHeight = useState<double>(0);
+    return SafeArea(
+      child: LayoutBuilder(builder: (context, constraint) {
+        return Column(
+          children: [
+            SizedBox(
+              height: constraint.maxHeight - bannerAdHeight.value,
+              width: constraint.maxWidth,
+              child: PageView(
+                physics: NeverScrollableScrollPhysics(),
+                controller: ref.watch(chartPageProvider
+                    .select((p) => p.valueOrNull?.pageController)),
+                scrollDirection: Axis.horizontal,
+                children: const [
+                  ChartRatePage(),
+                  ChartTransitionPage(),
+                ],
+              ),
+            ),
+            AdaptiveAdBanner(
+                key: GlobalKey(debugLabel: "chart_ad"),
+                setAdHeight: (height) => {bannerAdHeight.value = height}),
+          ],
+        );
+      }),
+    );
   }
 }
 

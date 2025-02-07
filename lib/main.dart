@@ -22,6 +22,7 @@ void main() async {
 
 class HouseholdExpenseApp extends StatelessWidget {
   const HouseholdExpenseApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     TextTheme textTheme =

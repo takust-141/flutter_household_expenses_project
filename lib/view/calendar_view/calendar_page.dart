@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expense_project/ad_helper.dart';
 import 'package:household_expense_project/component/generalized_logic_component.dart';
 import 'package:household_expense_project/constant/dimension.dart';
 import 'package:household_expense_project/provider/calendar_page_provider.dart';
@@ -122,6 +123,10 @@ class CalendarPage extends ConsumerWidget {
         //逆順(影の描画順序のために逆順としている)
         verticalDirection: VerticalDirection.up,
         children: [
+          //広告
+          AdaptiveAdBanner(
+            key: GlobalKey(debugLabel: "calendar_ad"),
+          ),
           //リスト表示
           Expanded(
             child: Stack(

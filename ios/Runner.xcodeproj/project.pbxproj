@@ -198,7 +198,7 @@
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				478D3DC2821ED175D8F247E5 /* [CP] Embed Pods Frameworks */,
-				600B752E51DB453FB8416E53 /* [CP] Copy Pods Resources */,
+				61078BBF281C20369F36227C /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -347,7 +347,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		600B752E51DB453FB8416E53 /* [CP] Copy Pods Resources */ = {
+		61078BBF281C20369F36227C /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (

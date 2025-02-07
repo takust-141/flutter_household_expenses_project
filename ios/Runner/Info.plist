@@ -46,6 +46,11 @@
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 
-	<key>FLTEnableImpeller</key><false />  <!--  Using the Impeller rendering backendのエラー対策-->
+	<!--Google AdMob-->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
+
+	<!--<key>FLTEnableImpeller</key><false />-->  <!--  Using the Impeller rendering backendのエラー対策-->
 </dict>
 </plist>
+

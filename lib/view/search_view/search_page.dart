@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expense_project/ad_helper.dart';
 import 'package:household_expense_project/component/custom_register_list_view/custom_register_list.dart';
 import 'package:household_expense_project/constant/dimension.dart';
 import 'package:household_expense_project/provider/search_page_provider.dart';
 
 //-------検索ページ---------------------------
-class SearchPage extends ConsumerWidget {
+class SearchPage extends HookConsumerWidget {
   const SearchPage({super.key});
 
   @override
@@ -17,15 +18,29 @@ class SearchPage extends ConsumerWidget {
             .select((p) => p.valueOrNull?.searchRegisterList)) ??
         [];
 
+    final bannerAdHeight = useState<double>(0);
+
     return SafeArea(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onPanDown: (_) => {searchFocusNode?.unfocus()},
-        child: CustomRegisterList(
-          registerList: registerList,
-          isDisplayYear: true,
-          registerEditProvider: searchPageProvider,
-        ),
+        child: LayoutBuilder(builder: (context, boxConstraints) {
+          return Column(
+            children: [
+              SizedBox(
+                height: boxConstraints.maxHeight - bannerAdHeight.value,
+                child: CustomRegisterList(
+                  registerList: registerList,
+                  isDisplayYear: true,
+                  registerEditProvider: searchPageProvider,
+                ),
+              ),
+              AdaptiveAdBanner(
+                  key: GlobalKey(debugLabel: "search_ad"),
+                  setAdHeight: (height) => {bannerAdHeight.value = height}),
+            ],
+          );
+        }),
       ),
     );
   }
