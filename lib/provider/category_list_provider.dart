@@ -91,6 +91,7 @@ class CategoryNotifier
           text: isError ? 'カテゴリーの登録に失敗しました' : 'カテゴリーを登録しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }
@@ -128,6 +129,7 @@ class CategoryNotifier
           text: isError ? 'カテゴリーの削除に失敗しました' : 'カテゴリーを削除しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }
@@ -159,6 +161,7 @@ class CategoryNotifier
           text: isError ? 'カテゴリーの更新に失敗しました' : 'カテゴリーを更新しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }

@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expense_project/ad_helper.dart';
 import 'package:household_expense_project/constant/constant.dart';
 
 void updateSnackBarCallBack({
   required String text,
   required BuildContext context,
   bool isError = false,
+  required ref,
 }) {
   final theme = Theme.of(context);
+  double bottomHeight = 0;
+  if (ref is WidgetRef || ref is Ref) {
+    bottomHeight =
+        ref.read(adNotifierProvider.select((p) => p.bottomBannerHeight));
+  }
+
   SnackBar snackBar = SnackBar(
     content: Text(
       text,
@@ -20,7 +29,7 @@ void updateSnackBarCallBack({
         : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.9),
     duration: const Duration(seconds: 4),
     padding: msmallEdgeInsets,
-    margin: const EdgeInsets.fromLTRB(medium, 0, medium, small),
+    margin: EdgeInsets.fromLTRB(medium, 0, medium, small + bottomHeight),
     behavior: SnackBarBehavior.floating,
     elevation: 3,
   );

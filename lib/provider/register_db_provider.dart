@@ -35,6 +35,7 @@ class RegisterDBProvider {
           text: isError ? '明細の登録に失敗しました' : '明細を登録しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }
@@ -61,6 +62,7 @@ class RegisterDBProvider {
           text: isError ? '明細の更新に失敗しました' : '明細を更新しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }
@@ -87,6 +89,7 @@ class RegisterDBProvider {
           text: isError ? '明細の削除に失敗しました' : '明細を削除しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }

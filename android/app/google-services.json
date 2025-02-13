@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "198093048548",
+    "project_id": "flutterhouseholdexpensesapp",
+    "storage_bucket": "flutterhouseholdexpensesapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:198093048548:android:dc0c9f3d56953b01db3af1",
+        "android_client_info": {
+          "package_name": "com.tomakust.household_expense_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAj-hw_dOeEfy3YMdT92hJMo6jR3Oi1H1Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

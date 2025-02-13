@@ -3,7 +3,33 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+//広告高さ考慮用Provider
+final adNotifierProvider =
+    NotifierProvider<AdStateNotifier, AdState>(AdStateNotifier.new);
+
+@immutable
+class AdState {
+  final double bottomBannerHeight;
+  const AdState({
+    required this.bottomBannerHeight,
+  });
+}
+
+class AdStateNotifier extends Notifier<AdState> {
+  @override
+  AdState build() {
+    return const AdState(bottomBannerHeight: 0);
+  }
+
+  void setBottomHeight(double height) {
+    state = AdState(bottomBannerHeight: height);
+  }
+}
+
+//
+//Helper
 class AdHelper {
   static String get bannerAdUnitId {
     if (Platform.isAndroid) {
@@ -24,13 +50,12 @@ class AdHelper {
   }
 }
 
-class AdaptiveAdBanner extends StatelessWidget {
+class AdaptiveAdBanner extends ConsumerWidget {
   const AdaptiveAdBanner({super.key, this.setAdHeight});
 
   final ValueChanged<double>? setAdHeight;
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final adUnitId = AdHelper.bannerAdUnitId;
     return LayoutBuilder(builder: (context, constraint) {
       return HookBuilder(builder: (context) {
@@ -39,10 +64,13 @@ class AdaptiveAdBanner extends StatelessWidget {
           useMemoized(
             () async {
               final adWidth = constraint.maxWidth.truncate();
-              final adSize = await AdSize.getAnchoredAdaptiveBannerAdSize(
-                MediaQuery.of(context).orientation,
+              final adSize = await AdSize
+                  .getCurrentOrientationAnchoredAdaptiveBannerAdSize(
                 adWidth,
               ) as AdSize;
+              ref
+                  .read(adNotifierProvider.notifier)
+                  .setBottomHeight(adSize.height.toDouble());
 
               return BannerAd(
                 size: adSize,

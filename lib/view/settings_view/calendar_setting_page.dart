@@ -24,23 +24,27 @@ class CalendarSettingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      color: theme.colorScheme.surfaceContainer,
-      child: ListView(
-        padding: viewEdgeInsets,
-        children: [
-          Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(containreBorderRadius),
-            ),
-            child: const Column(
-              children: [
-                StartOfWeek(),
-              ],
-            ),
+    return SafeArea(
+      child: Center(
+        child: Container(
+          color: theme.colorScheme.surfaceContainer,
+          padding: viewEdgeInsets,
+          child: Column(
+            children: [
+              Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(containreBorderRadius),
+                ),
+                child: const Column(
+                  children: [
+                    StartOfWeek(),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -104,7 +108,7 @@ class _StartOfWeekState extends ConsumerState<StartOfWeek> {
             ),
             const Spacer(),
             MenuAnchor(
-              alignmentOffset: const Offset(sssmall, small),
+              alignmentOffset: const Offset(sssmall, small + small),
               style: MenuStyle(
                 padding: WidgetStateProperty.all(const EdgeInsets.all(0)),
               ),

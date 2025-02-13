@@ -420,6 +420,7 @@ class RegisterRecurringNotifier
           text: isError ? '定期収支の削除に失敗しました' : '定期収支を削除しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }
@@ -481,6 +482,7 @@ class RegisterRecurringNotifier
           text: isError ? '定期収支の更新に失敗しました' : '定期収支を更新しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }
@@ -549,6 +551,7 @@ class RegisterRecurringNotifier
           text: isError ? '定期収支の更新に失敗しました' : '定期収支を更新しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }
@@ -587,6 +590,7 @@ class RegisterRecurringNotifier
           text: isError ? '定期収支の更新に失敗しました' : '定期収支を更新しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }
@@ -629,6 +633,7 @@ class RegisterRecurringNotifier
           text: isError ? '定期収支の更新に失敗しました' : '定期収支を更新しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }

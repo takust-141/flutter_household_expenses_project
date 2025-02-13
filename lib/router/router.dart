@@ -156,6 +156,16 @@ final router = GoRouter(
                     ),
                   ],
                 ),
+                GoRoute(
+                  path: 'contact',
+                  name: rootNameContact,
+                  builder: (context, state) => const ContactFormPage(),
+                ),
+                GoRoute(
+                  path: 'theme_color_setting',
+                  name: rootNameThemeColorSetting,
+                  builder: (context, state) => const ThemeColorSettingPage(),
+                ),
               ],
             ),
           ],

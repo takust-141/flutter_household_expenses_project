@@ -166,6 +166,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
+  cloud_functions:
+    dependency: "direct main"
+    description:
+      name: cloud_functions
+      sha256: "2d9aca6b6a97926e97b48d160ec07dedd3fbc35be83bcb07455830b9861b55d6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.3.2"
+  cloud_functions_platform_interface:
+    dependency: transitive
+    description:
+      name: cloud_functions_platform_interface
+      sha256: "4a1f23f21333c67bb767dffccdf3a85e8194b21ffcff5aef8039bac2107abc5e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.6.2"
+  cloud_functions_web:
+    dependency: transitive
+    description:
+      name: cloud_functions_web
+      sha256: "09a2674fc446a33ec2207e6c802a6ece4bfa3be080f9178d0bb44b07c8bd6c1e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.10.8"
   code_builder:
     dependency: transitive
     description:
@@ -270,6 +294,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.1"
+  firebase_core:
+    dependency: "direct main"
+    description:
+      name: firebase_core
+      sha256: "93dc4dd12f9b02c5767f235307f609e61ed9211047132d07f9e02c668f0bfc33"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.11.0"
+  firebase_core_platform_interface:
+    dependency: transitive
+    description:
+      name: firebase_core_platform_interface
+      sha256: d7253d255ff10f85cfd2adaba9ac17bae878fa3ba577462451163bd9f1d1f0bf
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.4.0"
+  firebase_core_web:
+    dependency: transitive
+    description:
+      name: firebase_core_web
+      sha256: "0e13c80f0de8acaa5d0519cbe23c8b4cc138a2d5d508b5755c861bdfc9762678"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.20.0"
   fixnum:
     dependency: transitive
     description:
@@ -1015,13 +1063,13 @@ packages:
     source: hosted
     version: "2.10.0"
   webview_flutter_wkwebview:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: webview_flutter_wkwebview
-      sha256: "8e0593559bfecd35eb1757d6907ed6b995a41ef82607d6113df897c2805ce6be"
+      sha256: "4adc14ea9a770cc9e2c8f1ac734536bd40e82615bd0fa6b94be10982de656cc7"
       url: "https://pub.dev"
     source: hosted
-    version: "3.18.0"
+    version: "3.17.0"
   xdg_directories:
     dependency: transitive
     description:

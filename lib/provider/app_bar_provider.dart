@@ -25,6 +25,8 @@ const rootNameRecurringEdit = 'recurring_edit';
 const rootNameRecurringSetting = 'recurring_setting';
 const rootNameRecurringSettingDetail = 'recurring_setting_detail';
 const rootNameRecurringSettingRegisterList = 'recurring_setting_register_list';
+const rootNameContact = 'contact';
+const rootNameThemeColorSetting = 'theme_color_setting';
 
 const List<AppBarState> appBarStateStateList = [
   AppBarState(name: rootNameRegister, appBarTitle: null, appBarBack: false),
@@ -77,6 +79,11 @@ const List<AppBarState> appBarStateStateList = [
   AppBarState(
       name: rootNameRecurringSettingRegisterList,
       appBarTitle: '定期明細一覧',
+      appBarBack: true),
+  AppBarState(name: rootNameContact, appBarTitle: 'お問い合わせ', appBarBack: true),
+  AppBarState(
+      name: rootNameThemeColorSetting,
+      appBarTitle: 'テーマカラー設定',
       appBarBack: true),
 ];
 

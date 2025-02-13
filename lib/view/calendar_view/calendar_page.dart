@@ -124,9 +124,7 @@ class CalendarPage extends ConsumerWidget {
         verticalDirection: VerticalDirection.up,
         children: [
           //広告
-          AdaptiveAdBanner(
-            key: GlobalKey(debugLabel: "calendar_ad"),
-          ),
+          const AdaptiveAdBanner(key: GlobalObjectKey("calendar_ad")),
           //リスト表示
           Expanded(
             child: Stack(

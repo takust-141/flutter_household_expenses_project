@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expense_project/ad_helper.dart';
@@ -15,18 +14,16 @@ class SettingPage extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     var goRoute = GoRouter.of(context);
-    final bannerAdHeight = useState<double>(0);
 
     return SafeArea(
       child: Container(
         color: theme.colorScheme.surfaceContainer,
-        child: LayoutBuilder(builder: (context, boxConstraints) {
-          return Column(
-            children: [
-              SizedBox(
-                height: boxConstraints.maxHeight - bannerAdHeight.value,
-                child: ListView(
-                  padding: viewEdgeInsets,
+        child: Column(
+          children: [
+            Expanded(
+              child: Padding(
+                padding: viewEdgeInsets,
+                child: Column(
                   children: [
                     Container(
                       clipBehavior: Clip.antiAlias,
@@ -52,7 +49,7 @@ class SettingPage extends HookConsumerWidget {
                             color: theme.colorScheme.outline,
                           ),
                           SettingListItem(
-                            setText: "カレンダー設定",
+                            setText: "カレンダー開始日設定",
                             onTapRoute: () =>
                                 goRoute.push('/setting/calendar_setting'),
                           ),
@@ -66,18 +63,35 @@ class SettingPage extends HookConsumerWidget {
                             onTapRoute: () =>
                                 goRoute.push('/setting/recurring_list'),
                           ),
+                          Divider(
+                            height: 0,
+                            thickness: 0.2,
+                            color: theme.colorScheme.outline,
+                          ),
+                          SettingListItem(
+                            setText: "問い合わせ",
+                            onTapRoute: () => goRoute.push('/setting/contact'),
+                          ),
+                          Divider(
+                            height: 0,
+                            thickness: 0.2,
+                            color: theme.colorScheme.outline,
+                          ),
+                          SettingListItem(
+                            setText: "テーマカラー設定",
+                            onTapRoute: () =>
+                                goRoute.push('/setting/theme_color_setting'),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
               ),
-              AdaptiveAdBanner(
-                  key: GlobalKey(debugLabel: "setting_ad"),
-                  setAdHeight: (height) => {bannerAdHeight.value = height}),
-            ],
-          );
-        }),
+            ),
+            const AdaptiveAdBanner(key: GlobalObjectKey("setting_ad")),
+          ],
+        ),
       ),
     );
   }

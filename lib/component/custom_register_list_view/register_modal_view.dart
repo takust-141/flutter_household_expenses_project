@@ -564,6 +564,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
           text: '入力が正しくありません',
           context: context,
           isError: true,
+          ref: ref,
         );
       }
     }

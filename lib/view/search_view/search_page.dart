@@ -7,7 +7,7 @@ import 'package:household_expense_project/constant/dimension.dart';
 import 'package:household_expense_project/provider/search_page_provider.dart';
 
 //-------検索ページ---------------------------
-class SearchPage extends HookConsumerWidget {
+class SearchPage extends ConsumerWidget {
   const SearchPage({super.key});
 
   @override
@@ -18,29 +18,22 @@ class SearchPage extends HookConsumerWidget {
             .select((p) => p.valueOrNull?.searchRegisterList)) ??
         [];
 
-    final bannerAdHeight = useState<double>(0);
-
     return SafeArea(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onPanDown: (_) => {searchFocusNode?.unfocus()},
-        child: LayoutBuilder(builder: (context, boxConstraints) {
-          return Column(
-            children: [
-              SizedBox(
-                height: boxConstraints.maxHeight - bannerAdHeight.value,
-                child: CustomRegisterList(
-                  registerList: registerList,
-                  isDisplayYear: true,
-                  registerEditProvider: searchPageProvider,
-                ),
+        child: Column(
+          children: [
+            Expanded(
+              child: CustomRegisterList(
+                registerList: registerList,
+                isDisplayYear: true,
+                registerEditProvider: searchPageProvider,
               ),
-              AdaptiveAdBanner(
-                  key: GlobalKey(debugLabel: "search_ad"),
-                  setAdHeight: (height) => {bannerAdHeight.value = height}),
-            ],
-          );
-        }),
+            ),
+            const AdaptiveAdBanner(key: GlobalObjectKey("search_ad"))
+          ],
+        ),
       ),
     );
   }

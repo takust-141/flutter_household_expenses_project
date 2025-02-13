@@ -4,13 +4,19 @@ import 'package:household_expense_project/provider/preferences_service.dart';
 import 'package:household_expense_project/router/router.dart';
 import 'package:household_expense_project/constant/constant.dart';
 import 'package:household_expense_project/view_model/db_helper.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'interface/firebase_options.dart';
 
 void main() async {
-  //sqlite初期化用
   WidgetsFlutterBinding.ensureInitialized();
   try {
+    //DB
     await DbHelper.openDataBase();
+    //PreferencesService
     await PreferencesService.getInstance();
+    //Firebase
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
   } catch (e) {
     rethrow;
   }

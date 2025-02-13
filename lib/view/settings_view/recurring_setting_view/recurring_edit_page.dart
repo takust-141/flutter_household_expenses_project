@@ -310,6 +310,7 @@ class _RecurringEditPageState extends ConsumerState<RecurringEditPage> {
           text: '入力が正しくありません',
           context: context,
           isError: true,
+          ref: ref,
         );
         return;
       }
@@ -320,6 +321,7 @@ class _RecurringEditPageState extends ConsumerState<RecurringEditPage> {
           text: '終了日付は開始日付より後にしてください',
           context: context,
           isError: true,
+          ref: ref,
         );
         return;
       }
@@ -343,6 +345,7 @@ class _RecurringEditPageState extends ConsumerState<RecurringEditPage> {
             text: "繰り返し設定を正しく入力してください",
             context: context,
             isError: false,
+            ref: ref,
           );
         }
         return;
@@ -486,6 +489,7 @@ class _RecurringEditPageState extends ConsumerState<RecurringEditPage> {
               text: snackText,
               context: context,
               isError: isError,
+              ref: ref,
             );
             if (!isError) {
               //登録完了時

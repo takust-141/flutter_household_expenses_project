@@ -9,36 +9,29 @@ import 'package:household_expense_project/view/chart_view/chart_rate_view/chart_
 import 'package:household_expense_project/view/chart_view/chart_transition_view/chart_transition_page.dart';
 
 //-------チャートページ---------------------------
-class ChartPage extends HookConsumerWidget {
+class ChartPage extends ConsumerWidget {
   const ChartPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bannerAdHeight = useState<double>(0);
     return SafeArea(
-      child: LayoutBuilder(builder: (context, constraint) {
-        return Column(
-          children: [
-            SizedBox(
-              height: constraint.maxHeight - bannerAdHeight.value,
-              width: constraint.maxWidth,
-              child: PageView(
-                physics: NeverScrollableScrollPhysics(),
-                controller: ref.watch(chartPageProvider
-                    .select((p) => p.valueOrNull?.pageController)),
-                scrollDirection: Axis.horizontal,
-                children: const [
-                  ChartRatePage(),
-                  ChartTransitionPage(),
-                ],
-              ),
+      child: Column(
+        children: [
+          Expanded(
+            child: PageView(
+              physics: NeverScrollableScrollPhysics(),
+              controller: ref.watch(chartPageProvider
+                  .select((p) => p.valueOrNull?.pageController)),
+              scrollDirection: Axis.horizontal,
+              children: const [
+                ChartRatePage(),
+                ChartTransitionPage(),
+              ],
             ),
-            AdaptiveAdBanner(
-                key: GlobalKey(debugLabel: "chart_ad"),
-                setAdHeight: (height) => {bannerAdHeight.value = height}),
-          ],
-        );
-      }),
+          ),
+          const AdaptiveAdBanner(key: GlobalObjectKey("chart_ad")),
+        ],
+      ),
     );
   }
 }

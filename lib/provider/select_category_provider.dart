@@ -325,6 +325,7 @@ class SelectCategoryStateNotifier
           text: isError ? 'カテゴリーの削除に失敗しました' : 'カテゴリーを削除しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }
@@ -359,6 +360,7 @@ class SelectCategoryStateNotifier
           text: isError ? 'カテゴリーの更新に失敗しました' : 'カテゴリーを更新しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }
@@ -401,6 +403,7 @@ class SelectCategoryStateNotifier
           text: isError ? 'カテゴリーの削除に失敗しました' : 'サブカテゴリーを削除しました',
           context: context,
           isError: isError,
+          ref: ref,
         );
       }
     }

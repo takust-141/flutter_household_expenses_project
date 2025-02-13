@@ -1,0 +1,46 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "flutterhouseholdexpensesapp",
+          "appId": "1:198093048548:android:dc0c9f3d56953b01db3af1",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "flutterhouseholdexpensesapp",
+          "appId": "1:198093048548:ios:4b0089422a4b493edb3af1",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "flutterhouseholdexpensesapp",
+          "configurations": {
+            "android": "1:198093048548:android:dc0c9f3d56953b01db3af1",
+            "ios": "1:198093048548:ios:4b0089422a4b493edb3af1"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ]
+}

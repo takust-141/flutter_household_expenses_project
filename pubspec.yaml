@@ -42,6 +42,8 @@ dependencies:
   auto_size_text: ^3.0.0
   holiday_jp: ^0.0.8
   google_mobile_ads: ^5.3.1
+  firebase_core: ^3.11.0
+  cloud_functions: ^5.3.2
 
 
 dev_dependencies:
@@ -55,6 +57,9 @@ dev_dependencies:
   custom_lint: ^0.7.2
   riverpod_lint: ^2.3.10
 
+#admob利用時のvmエラー回避用
+dependency_overrides:
+  webview_flutter_wkwebview: 3.17.0
 
 flutter:
   generate: true       #多言語対応のファイルが自動生成
