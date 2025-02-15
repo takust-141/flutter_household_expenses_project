@@ -13,17 +13,20 @@ class SettingListItem extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
+    final colorScheme = Theme.of(context).colorScheme;
+    final listItemColor = useState<Color>(colorScheme.surfaceBright);
+    useEffect(() {
+      listItemColor.value = colorScheme.surfaceBright;
+      return () {};
+    }, [colorScheme]);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => onTapRoute(),
       onTapDown: (_) =>
-          {listItemColor.value = theme.colorScheme.surfaceContainerHighest},
-      onTapUp: (_) => {listItemColor.value = theme.colorScheme.surfaceBright},
-      onTapCancel: () =>
-          {listItemColor.value = theme.colorScheme.surfaceBright},
+          {listItemColor.value = colorScheme.surfaceContainerHighest},
+      onTapUp: (_) => {listItemColor.value = colorScheme.surfaceBright},
+      onTapCancel: () => {listItemColor.value = colorScheme.surfaceBright},
       child: AnimatedContainer(
         color: listItemColor.value,
         duration: listItemAnimationDuration,
@@ -37,9 +40,7 @@ class SettingListItem extends HookWidget {
             ),
             const Spacer(),
             Icon(Symbols.chevron_right,
-                weight: 300,
-                size: 25,
-                color: theme.colorScheme.onSurfaceVariant),
+                weight: 300, size: 25, color: colorScheme.onSurfaceVariant),
           ],
         ),
       ),

@@ -23,11 +23,16 @@ class RateChartListItem extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
-    final listItemIconBackColor =
-        useState<Color>(theme.colorScheme.surfaceBright);
     final rateChartNotifier = ref.read(rateChartProvider.notifier);
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final listItemColor = useState<Color>(colorScheme.surfaceBright);
+    final listItemIconBackColor = useState<Color>(colorScheme.surfaceBright);
+    useEffect(() {
+      listItemColor.value = colorScheme.surfaceBright;
+      listItemIconBackColor.value = colorScheme.surfaceBright;
+      return () {};
+    }, [colorScheme]);
 
     const double listItemHeight = 50;
 
@@ -45,13 +50,11 @@ class RateChartListItem extends HookConsumerWidget {
             child: GestureDetector(
               onTap: () =>
                   {rateChartNotifier.setSelectRateChartStateFromGlaph(index)},
-              onTapDown: (_) => {
-                listItemColor.value = theme.colorScheme.surfaceContainerHighest
-              },
-              onTapUp: (_) =>
-                  {listItemColor.value = theme.colorScheme.surfaceBright},
+              onTapDown: (_) =>
+                  {listItemColor.value = colorScheme.surfaceContainerHighest},
+              onTapUp: (_) => {listItemColor.value = colorScheme.surfaceBright},
               onTapCancel: () =>
-                  {listItemColor.value = theme.colorScheme.surfaceBright},
+                  {listItemColor.value = colorScheme.surfaceBright},
               child: Material(
                 clipBehavior: Clip.antiAlias,
                 elevation: 1.0,
@@ -91,7 +94,7 @@ class RateChartListItem extends HookConsumerWidget {
                         textAlign: TextAlign.end,
                         overflow: TextOverflow.visible,
                         minFontSize: 10,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        style: TextStyle(color: colorScheme.onSurface),
                       ),
                     ),
                     Expanded(
@@ -102,7 +105,7 @@ class RateChartListItem extends HookConsumerWidget {
                         textAlign: TextAlign.end,
                         overflow: TextOverflow.visible,
                         minFontSize: 10,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
+                        style: TextStyle(color: colorScheme.onSurface),
                       ),
                     ),
                     const SizedBox(width: small),
@@ -115,20 +118,18 @@ class RateChartListItem extends HookConsumerWidget {
 
           //推移チャート移動ボタン
           SizedBox(
-            width: theme.iconTheme.size ?? 24 + small,
+            width: Theme.of(context).iconTheme.size ?? 24 + small,
             height: listItemHeight - small,
             child: GestureDetector(
               onTap: () => rateChartNotifier.goChartTransitionPage(index),
               onTapDown: (_) => {
                 listItemIconBackColor.value =
-                    theme.colorScheme.surfaceContainerHighest
+                    colorScheme.surfaceContainerHighest
               },
-              onTapUp: (_) => {
-                listItemIconBackColor.value = theme.colorScheme.surfaceBright
-              },
-              onTapCancel: () => {
-                listItemIconBackColor.value = theme.colorScheme.surfaceBright
-              },
+              onTapUp: (_) =>
+                  {listItemIconBackColor.value = colorScheme.surfaceBright},
+              onTapCancel: () =>
+                  {listItemIconBackColor.value = colorScheme.surfaceBright},
               child: Material(
                 clipBehavior: Clip.antiAlias,
                 elevation: 1.0,
@@ -138,7 +139,8 @@ class RateChartListItem extends HookConsumerWidget {
                 ),
                 child: Icon(
                   Icons.keyboard_arrow_right,
-                  color: theme.iconTheme.color ?? theme.colorScheme.onSurface,
+                  color: Theme.of(context).iconTheme.color ??
+                      colorScheme.onSurface,
                 ),
               ),
             ),

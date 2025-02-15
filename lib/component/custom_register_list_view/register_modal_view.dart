@@ -132,6 +132,10 @@ class AppBarCancelWidget extends HookWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cancelTextColor = useState<Color>(theme.colorScheme.onSurface);
+    useEffect(() {
+      cancelTextColor.value = theme.colorScheme.onSurface;
+      return () {};
+    }, [theme]);
 
     return GestureDetector(
       child: AnimatedContainer(
@@ -167,6 +171,11 @@ class AppBarDoneWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final doneTextColor = useState<Color>(theme.colorScheme.onSurface);
+
+    useEffect(() {
+      doneTextColor.value = theme.colorScheme.onSurface;
+      return () {};
+    }, [theme]);
 
     //新規でない場合、削除ボタンを有効化
     return (ref.watch(formKeyProvider).isNewRegister)
@@ -212,8 +221,8 @@ class AppBarDoneWidget extends HookConsumerWidget {
 
 //
 //-------register編集------------
-class RegisterEditBodyView extends StatefulHookConsumerWidget {
-  const RegisterEditBodyView({
+class RegisterEditBodyView extends HookConsumerWidget {
+  RegisterEditBodyView({
     super.key,
     required this.register,
     required this.registerEditStateProvider,
@@ -224,138 +233,99 @@ class RegisterEditBodyView extends StatefulHookConsumerWidget {
       registerEditStateProvider;
   final int selectCategoryStateProviderIndex;
 
-  @override
-  ConsumerState<RegisterEditBodyView> createState() =>
-      _RegisterEditBodyViewState();
-}
-
-class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
-  //フォームコントローラー
-  late final TextEditingController amountOfMoneyTextController;
-  late final TextEditingController memoTextController;
-
-  //customKeyboard用
-  late ValueNotifier<Category?> categoryNotifier;
-  late ValueNotifier<Category?> subCategoryNotifier;
-  late ValueNotifier<DateTime> dateNotifier;
-
-  //FocusNode
-  final CustomFocusNode amountOfMoneyNode = CustomFocusNode();
-  final CustomFocusNode categoryNode = CustomFocusNode();
-  final CustomFocusNode subCategoryNode = CustomFocusNode();
-  final CustomFocusNode memoNode = CustomFocusNode();
-  final CustomFocusNode dateNode = CustomFocusNode();
-
   final formatter = DateFormat('yyyy年 M月 d日');
   final double suffixIconSize = 20;
   final memoFormKey = GlobalKey();
   final textFormKey = GlobalKey();
 
-  late final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
-      selectCategoryStateProvider;
-
-  late RegisterKeyboardAction registerKeyboardAction;
-  late VoidCallback formInputCheck;
-
   @override
-  void initState() {
-    super.initState();
-    selectCategoryStateProvider =
-        selectCategoryProviderList[widget.selectCategoryStateProviderIndex];
-    Category? initCategory = ref.read(selectCategoryStateProvider).category;
-    Category? initSubCategory =
-        ref.read(selectCategoryStateProvider).subCategory;
+  Widget build(BuildContext context, WidgetRef ref) {
+    //FocusNode
+    final amountOfMoneyNode =
+        useState(CustomFocusNode(debugLabel: "amount focus"));
 
-    categoryNotifier = ValueNotifier<Category?>(initCategory);
-    subCategoryNotifier = ValueNotifier<Category?>(initSubCategory);
-    DateTime initDate = ref
-            .read(widget.registerEditStateProvider.notifier)
-            .currentSelectDate() ??
-        DateTime.now();
-    dateNotifier = ValueNotifier<DateTime>(widget.register?.date ?? initDate);
-    amountOfMoneyTextController =
-        TextEditingController(text: widget.register?.amount.toString());
-    memoTextController = TextEditingController(text: widget.register?.memo);
+    final categoryNode = useState(CustomFocusNode());
+    final subCategoryNode = useState(CustomFocusNode());
+    final memoNode = useState(CustomFocusNode());
+    final dateNode = useState(CustomFocusNode());
 
-    registerKeyboardAction = RegisterKeyboardAction(
-      moneyTextController: amountOfMoneyTextController,
-      moneyNode: amountOfMoneyNode,
-      categoryNotifier: categoryNotifier,
-      categoryNode: categoryNode,
-      subCategoryNode: subCategoryNode,
-      subCategoryNotifier: subCategoryNotifier,
-      memoTextController: memoTextController,
-      memoNode: memoNode,
-      dateNode: dateNode,
-      dateNotifier: dateNotifier,
-      selectCategoryProviderIndex: widget.selectCategoryStateProviderIndex,
-      enableNewAdd: false,
+    final TextEditingController amountOfMoneyTextController =
+        useTextEditingController(text: register?.amount.toString() ?? "");
+    final TextEditingController memoTextController =
+        useTextEditingController(text: register?.memo ?? "");
+
+    final ValueNotifier<
+            NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>>
+        selectCategoryStateProvider =
+        useState(selectCategoryProviderList[selectCategoryStateProviderIndex]);
+
+    final ValueNotifier<Category?> categoryNotifier =
+        useValueNotifier(ref.read(selectCategoryStateProvider.value).category);
+    final ValueNotifier<Category?> subCategoryNotifier = useValueNotifier(
+        ref.read(selectCategoryStateProvider.value).subCategory);
+    final ValueNotifier<DateTime> dateNotifier = useValueNotifier(
+        register?.date ??
+            ref.read(registerEditStateProvider.notifier).currentSelectDate() ??
+            DateTime.now());
+    final ValueNotifier<RegisterKeyboardAction> registerKeyboardAction =
+        useState(
+      RegisterKeyboardAction(
+        moneyTextController: amountOfMoneyTextController,
+        moneyNode: amountOfMoneyNode.value,
+        categoryNotifier: categoryNotifier,
+        categoryNode: categoryNode.value,
+        subCategoryNode: subCategoryNode.value,
+        subCategoryNotifier: subCategoryNotifier,
+        memoTextController: memoTextController,
+        memoNode: memoNode.value,
+        dateNode: dateNode.value,
+        dateNotifier: dateNotifier,
+        selectCategoryProviderIndex: selectCategoryStateProviderIndex,
+        enableNewAdd: false,
+      ),
     );
 
-    //金額Focusのcomputeリスナー
-    amountOfMoneyNode.addListener(registerKeyboardAction.focusChange);
+    //初期化
+    useEffect(() {
+      //金額Focusのcomputeリスナー
+      amountOfMoneyNode.addListener(registerKeyboardAction.value.focusChange);
 
-    //完了ボタンのリスナー追加
-    formInputCheck = () => ref
-        .read(widget.registerEditStateProvider.notifier)
-        .formInputCheck(amountOfMoneyTextController, categoryNotifier);
+      //完了ボタンのリスナー追加
+      formInputCheck() => ref
+          .read(registerEditStateProvider.notifier)
+          .formInputCheck(amountOfMoneyTextController, categoryNotifier);
 
-    //各コントローラーが変化した際にリスナーを実施
-    amountOfMoneyTextController.addListener(formInputCheck);
-    categoryNotifier.addListener(formInputCheck);
-    subCategoryNotifier.addListener(formInputCheck);
-    memoTextController.addListener(formInputCheck);
-    dateNotifier.addListener(formInputCheck);
+      //各コントローラーが変化した際にリスナーを実施
+      amountOfMoneyTextController.addListener(formInputCheck);
+      categoryNotifier.addListener(formInputCheck);
+      subCategoryNotifier.addListener(formInputCheck);
+      memoTextController.addListener(formInputCheck);
+      dateNotifier.addListener(formInputCheck);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      amountOfMoneyNode.attach(textFormKey.currentContext);
-      memoNode.attach(memoFormKey.currentContext);
-    });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        amountOfMoneyNode.value.attach(textFormKey.currentContext);
+        memoNode.value.attach(memoFormKey.currentContext);
+      });
+      return () {
+        amountOfMoneyTextController.removeListener(formInputCheck);
+        categoryNotifier.removeListener(formInputCheck);
+        subCategoryNotifier.removeListener(formInputCheck);
+        memoTextController.removeListener(formInputCheck);
+        dateNotifier.removeListener(formInputCheck);
+      };
+    }, []);
 
-    /*
-    final double registerSpacerHeight = mediaquery.size.height -
-        appBarHeight -
-        mediaQuery.viewPadding.bottom -
-        MediaQueryData.fromView(View.of(context)).padding.top -
-        ((large * 3) +
-            (medium * 4) +
-            amountOfMoneyFormHeight +
-            (registerItemHeight * 4) +
-            registerButtonHeight);
-            */
-  }
-
-  @override
-  void dispose() {
-    categoryNotifier.removeListener(formInputCheck);
-    amountOfMoneyTextController.removeListener(formInputCheck);
-    amountOfMoneyTextController.dispose();
-    amountOfMoneyNode.dispose();
-    categoryNode.dispose();
-    subCategoryNode.dispose();
-    memoNode.dispose();
-    dateNode.dispose();
-    categoryNotifier.dispose();
-    subCategoryNotifier.dispose();
-    dateNotifier.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final Color defaultColor = theme.colorScheme.onSurfaceVariant;
     final registerTextColor = theme.colorScheme.inverseSurface;
     //登録ボタン用
-    final isActiveRegisterButton = ref
-            .watch(widget.registerEditStateProvider)
-            .valueOrNull
-            ?.isActiveDoneButton ??
-        false;
+    final isActiveRegisterButton =
+        ref.watch(registerEditStateProvider).valueOrNull?.isActiveDoneButton ??
+            false;
 
     //選択したカテゴリーの監視
     ref.listen<Category?>(
-      selectCategoryStateProvider
+      selectCategoryStateProvider.value
           .select((categoryState) => categoryState.category),
       (_, newCategory) {
         categoryNotifier.value = newCategory;
@@ -363,7 +333,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
     );
     //選択したサブカテゴリーListの監視
     ref.listen<Category?>(
-      selectCategoryStateProvider
+      selectCategoryStateProvider.value
           .select((categoryState) => categoryState.subCategory),
       (_, newCategory) {
         subCategoryNotifier.value = newCategory;
@@ -478,15 +448,15 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
         int amount = int.tryParse(amountOfMoneyTextController.text) ?? 0;
 
         newRegister = Register(
-          id: widget.register?.id,
+          id: register?.id,
           amount: amount,
           category: categoryNotifier.value,
           subCategory: subCategoryNotifier.value,
           memo: memoTextController.text,
           date: dateNotifier.value,
-          recurringId: widget.register?.recurringId,
-          registrationDate: widget.register?.registrationDate ?? DateTime.now(),
-          updateDate: (widget.register?.id == null) ? null : DateTime.now(),
+          recurringId: register?.recurringId,
+          registrationDate: register?.registrationDate ?? DateTime.now(),
+          updateDate: (register?.id == null) ? null : DateTime.now(),
         );
 
         if (newRegister.id == null) {
@@ -515,7 +485,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
                       .setInitNotifier();
                 },
                 //日付以降を変更
-                (widget.register?.date == newRegister.date)
+                (register?.date == newRegister.date)
                     ? () async {
                         //更新用 Idのバックアップ（recurringList更新用）
                         ref
@@ -533,7 +503,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
                       }
                     : null,
                 //全てを変更
-                (widget.register?.date == newRegister.date)
+                (register?.date == newRegister.date)
                     ? () async {
                         //更新用 Idのバックアップ（recurringList更新用）
                         ref
@@ -655,7 +625,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
     //削除処理
     void onTapDeleteRegister() {
       openConfDialog(() {
-        RegisterDBProvider.deleteRegisterFromId(widget.register!, ref, context);
+        RegisterDBProvider.deleteRegisterFromId(register!, ref, context);
         ref
             .read(settingRecurringyStateNotifierProvider.notifier)
             .setInitNotifier();
@@ -678,7 +648,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
           autoScroll: true,
           overscroll: 10,
           tapOutsideBehavior: TapOutsideBehavior.translucentDismiss,
-          config: registerKeyboardAction.buildConfig(context),
+          config: registerKeyboardAction.value.buildConfig(context),
           child: Padding(
             padding: viewEdgeInsets,
             child: Form(
@@ -701,7 +671,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
                               onTapDeleteRegister();
                             },
                             keyboardType: TextInputType.number,
-                            focusNode: amountOfMoneyNode,
+                            focusNode: amountOfMoneyNode.value,
                             controller: amountOfMoneyTextController,
                             decoration: InputDecoration(
                               contentPadding: mediumEdgeInsets,
@@ -744,7 +714,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
                   const SizedBox(height: large),
                   //-----カテゴリー-----
                   KeyboardCustomInput<Category?>(
-                    focusNode: categoryNode,
+                    focusNode: categoryNode.value,
                     height: registerItemHeight,
                     notifier: categoryNotifier,
                     builder: categoryFormBulder("カテゴリー"),
@@ -752,7 +722,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
                   const SizedBox(height: medium),
                   //-----サブカテゴリー-----
                   KeyboardCustomInput<Category?>(
-                    focusNode: subCategoryNode,
+                    focusNode: subCategoryNode.value,
                     height: registerItemHeight,
                     notifier: subCategoryNotifier,
                     builder: categoryFormBulder("サブカテゴリー"),
@@ -761,13 +731,13 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
                   //-----メモ-----
                   registerFormItem(
                     registerFormItemKey: memoFormKey,
-                    formFocusNode: memoNode,
+                    formFocusNode: memoNode.value,
                     title: "メモ",
                     formWidget: TextField(
                       keyboardType: TextInputType.text,
                       maxLines: 1,
                       controller: memoTextController,
-                      focusNode: memoNode,
+                      focusNode: memoNode.value,
                       decoration: InputDecoration(
                         contentPadding: EdgeInsets.symmetric(
                             horizontal: medium,
@@ -807,7 +777,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
                   const SizedBox(height: medium),
                   //日付
                   KeyboardCustomInput<DateTime>(
-                    focusNode: dateNode,
+                    focusNode: dateNode.value,
                     height: registerItemHeight,
                     notifier: dateNotifier,
                     builder: (context, val, hasFocus) {
@@ -884,9 +854,7 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
                                     2),
                       ),
                       child: AutoSizeText(
-                        (widget.register?.recurringId == null)
-                            ? "登　　録"
-                            : "更　　新",
+                        (register?.recurringId == null) ? "登　　録" : "更　　新",
                         maxLines: 1,
                       ),
                     ),

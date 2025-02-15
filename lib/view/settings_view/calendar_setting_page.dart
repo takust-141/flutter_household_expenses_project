@@ -72,6 +72,10 @@ class _StartOfWeekState extends ConsumerState<StartOfWeek> {
     final theme = Theme.of(context);
     final isSelectedWeek = useState(DateTime.sunday);
     final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
+    useEffect(() {
+      listItemColor.value = theme.colorScheme.surfaceBright;
+      return () {};
+    }, [theme]);
 
     //初期値セット
     useEffect(() {

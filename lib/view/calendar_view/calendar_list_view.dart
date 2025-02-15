@@ -83,8 +83,12 @@ class RegisterListItem extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
+    final colorScheme = Theme.of(context).colorScheme;
+    final listItemColor = useState<Color>(colorScheme.surfaceBright);
+    useEffect(() {
+      listItemColor.value = colorScheme.surfaceBright;
+      return () {};
+    }, [colorScheme]);
 
     return Container(
       height: registerListHeight - registerListPadding,
@@ -99,10 +103,9 @@ class RegisterListItem extends HookConsumerWidget {
           showRegisterModal(context, ref, register, pagaProvider);
         },
         onTapDown: (_) =>
-            {listItemColor.value = theme.colorScheme.surfaceContainerHighest},
-        onTapUp: (_) => {listItemColor.value = theme.colorScheme.surfaceBright},
-        onTapCancel: () =>
-            {listItemColor.value = theme.colorScheme.surfaceBright},
+            {listItemColor.value = colorScheme.surfaceContainerHighest},
+        onTapUp: (_) => {listItemColor.value = colorScheme.surfaceBright},
+        onTapCancel: () => {listItemColor.value = colorScheme.surfaceBright},
         child: Material(
           clipBehavior: Clip.antiAlias,
           elevation: 1.0,
@@ -187,9 +190,10 @@ class RegisterListItem extends HookConsumerWidget {
                         child: AutoSizeText(
                           register.memo ?? "",
                           minFontSize: 10,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
                           textAlign: TextAlign.start,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -211,7 +215,7 @@ class RegisterListItem extends HookConsumerWidget {
                               child: Icon(
                                 Icons.repeat,
                                 size: 13,
-                                color: theme.colorScheme.onSurface,
+                                color: colorScheme.onSurface,
                               ))
                           : const SizedBox(),
                     ),
@@ -280,7 +284,8 @@ class SliberDateGroup extends StatelessWidget {
             SliverMainAxisGroup(
               slivers: [
                 SliverPersistentHeader(
-                  delegate: CustomSliverHeaderDelegate(date: dayList[0]!),
+                  delegate: CustomSliverHeaderDelegate(
+                      date: dayList[0]!, context: context),
                   pinned: true,
                 ),
                 SliverToBoxAdapter(
@@ -305,9 +310,11 @@ class SliberDateGroup extends StatelessWidget {
 class CustomSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
   final double height = registerListHeight;
   final DateTime date;
+  final BuildContext context;
 
   CustomSliverHeaderDelegate({
     required this.date,
+    required this.context,
   });
 
   @override
@@ -352,6 +359,9 @@ class CustomSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(CustomSliverHeaderDelegate oldDelegate) {
+    if (Theme.of(oldDelegate.context) == Theme.of(context)) {
+      return true;
+    }
     if (oldDelegate.date.year == date.year &&
         oldDelegate.date.month == date.month &&
         oldDelegate.date.day == date.day) {

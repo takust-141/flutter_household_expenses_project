@@ -421,6 +421,7 @@ class RegisterRecurringNotifier
           context: context,
           isError: isError,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
       }
     }
@@ -483,6 +484,7 @@ class RegisterRecurringNotifier
           context: context,
           isError: isError,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
       }
     }
@@ -552,6 +554,7 @@ class RegisterRecurringNotifier
           context: context,
           isError: isError,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
       }
     }
@@ -591,6 +594,7 @@ class RegisterRecurringNotifier
           context: context,
           isError: isError,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
       }
     }
@@ -634,6 +638,7 @@ class RegisterRecurringNotifier
           context: context,
           isError: isError,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
       }
     }

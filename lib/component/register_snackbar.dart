@@ -9,12 +9,15 @@ void updateSnackBarCallBack({
   required BuildContext context,
   bool isError = false,
   required ref,
+  bool? isNotNeedBottomHeight,
 }) {
   final theme = Theme.of(context);
   double bottomHeight = 0;
-  if (ref is WidgetRef || ref is Ref) {
-    bottomHeight =
-        ref.read(adNotifierProvider.select((p) => p.bottomBannerHeight));
+  if (isNotNeedBottomHeight != true) {
+    if (ref is WidgetRef || ref is Ref) {
+      bottomHeight =
+          ref.read(adNotifierProvider.select((p) => p.bottomBannerHeight));
+    }
   }
 
   SnackBar snackBar = SnackBar(

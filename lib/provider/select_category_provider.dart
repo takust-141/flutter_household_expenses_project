@@ -326,6 +326,7 @@ class SelectCategoryStateNotifier
           context: context,
           isError: isError,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
       }
     }
@@ -361,6 +362,7 @@ class SelectCategoryStateNotifier
           context: context,
           isError: isError,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
       }
     }
@@ -404,6 +406,7 @@ class SelectCategoryStateNotifier
           context: context,
           isError: isError,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
       }
     }

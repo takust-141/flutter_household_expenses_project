@@ -160,8 +160,12 @@ class RegisterListItem extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
+    final colorScheme = Theme.of(context).colorScheme;
+    final listItemColor = useState<Color>(colorScheme.surfaceBright);
+    useEffect(() {
+      listItemColor.value = colorScheme.surfaceBright;
+      return () {};
+    }, [colorScheme]);
 
     return Row(
       children: [
@@ -173,7 +177,7 @@ class RegisterListItem extends HookConsumerWidget {
           child: (isNewDate)
               ? SizedBox.expand(
                   child: Container(
-                    color: theme.colorScheme.surfaceContainer,
+                    color: colorScheme.surfaceContainer,
                     padding: const EdgeInsets.fromLTRB(
                         msmall, 0, msmall, registerListPadding),
                     child: Column(
@@ -184,9 +188,12 @@ class RegisterListItem extends HookConsumerWidget {
                             child: Text(
                               register.date.day.toString(),
                               textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
                           ),
                         ),
@@ -225,13 +232,11 @@ class RegisterListItem extends HookConsumerWidget {
                         register.category, register.subCategory);
                 showRegisterModal(context, ref, register, registerEditProvider);
               },
-              onTapDown: (_) => {
-                listItemColor.value = theme.colorScheme.surfaceContainerHighest
-              },
-              onTapUp: (_) =>
-                  {listItemColor.value = theme.colorScheme.surfaceBright},
+              onTapDown: (_) =>
+                  {listItemColor.value = colorScheme.surfaceContainerHighest},
+              onTapUp: (_) => {listItemColor.value = colorScheme.surfaceBright},
               onTapCancel: () =>
-                  {listItemColor.value = theme.colorScheme.surfaceBright},
+                  {listItemColor.value = colorScheme.surfaceBright},
               child: Material(
                 clipBehavior: Clip.antiAlias,
                 elevation: 1.0,
@@ -317,9 +322,12 @@ class RegisterListItem extends HookConsumerWidget {
                               child: AutoSizeText(
                                 register.memo ?? "",
                                 minFontSize: 10,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
                                 textAlign: TextAlign.start,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -341,7 +349,7 @@ class RegisterListItem extends HookConsumerWidget {
                                     child: Icon(
                                       Icons.repeat,
                                       size: 13,
-                                      color: theme.colorScheme.onSurface,
+                                      color: colorScheme.onSurface,
                                     ))
                                 : const SizedBox(),
                           ),

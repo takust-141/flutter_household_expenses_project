@@ -13,7 +13,7 @@ class SettingPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    var goRoute = GoRouter.of(context);
+    final goRoute = GoRouter.of(context);
 
     return SafeArea(
       child: Container(

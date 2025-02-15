@@ -372,8 +372,13 @@ class DatePickerPanel extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final panelItemColor = useState<Color>(theme.colorScheme.surfaceBright);
+    final colorScheme = Theme.of(context).colorScheme;
+    final panelItemColor = useState<Color>(colorScheme.surfaceBright);
+    useEffect(() {
+      panelItemColor.value = colorScheme.surfaceBright;
+      return () {};
+    }, [colorScheme]);
+
     final calendarPageState = ref.watch(calendarProvider);
     final calendarProviderNotifier = ref.read(calendarProvider.notifier);
 
@@ -391,10 +396,9 @@ class DatePickerPanel extends HookConsumerWidget {
           .read(calendarProvider.notifier)
           .tapCalendarPanel(context, date, ref),
       onTapDown: (_) =>
-          {panelItemColor.value = theme.colorScheme.surfaceContainerHighest},
-      onTapUp: (_) => {panelItemColor.value = theme.colorScheme.surfaceBright},
-      onTapCancel: () =>
-          {panelItemColor.value = theme.colorScheme.surfaceBright},
+          {panelItemColor.value = colorScheme.surfaceContainerHighest},
+      onTapUp: (_) => {panelItemColor.value = colorScheme.surfaceBright},
+      onTapCancel: () => {panelItemColor.value = colorScheme.surfaceBright},
       child: Container(
         alignment: Alignment.center,
         width: double.maxFinite,
@@ -404,15 +408,13 @@ class DatePickerPanel extends HookConsumerWidget {
             : const EdgeInsets.symmetric(vertical: 1.9, horizontal: 2.9),
         decoration: isSelectedDate
             ? BoxDecoration(
-                color: Color.lerp(theme.colorScheme.primaryContainer,
-                    panelItemColor.value, 0.5),
-                border:
-                    Border.all(color: theme.colorScheme.primary, width: 1.5),
+                color: Color.lerp(
+                    colorScheme.primaryContainer, panelItemColor.value, 0.5),
+                border: Border.all(color: colorScheme.primary, width: 1.5),
               )
             : BoxDecoration(
                 color: panelItemColor.value,
-                border:
-                    Border.all(color: theme.colorScheme.outline, width: 0.1),
+                border: Border.all(color: colorScheme.outline, width: 0.1),
               ),
         child: Column(
           children: [
@@ -423,17 +425,17 @@ class DatePickerPanel extends HookConsumerWidget {
                 date.day.toString(),
                 textAlign: TextAlign.center,
                 style: LogicComponent.matchDates(DateTime.now(), date)
-                    ? theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                        height: 1.0,
-                        fontSize: 12,
-                      )
-                    : theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface,
-                        height: 1.0,
-                        fontSize: 12,
-                      ),
+                    ? Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.primary,
+                          height: 1.0,
+                          fontSize: 12,
+                        )
+                    : Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                          height: 1.0,
+                          fontSize: 12,
+                        ),
               ),
             ),
             calendarPageState.maybeWhen(
@@ -456,11 +458,11 @@ class DatePickerPanel extends HookConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.right,
                         maxLines: 1,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.blue[600],
-                          fontSize: 10,
-                          height: 1,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.blue[600],
+                              fontSize: 10,
+                              height: 1,
+                            ),
                       ),
                     ),
                     SizedBox(
@@ -477,11 +479,11 @@ class DatePickerPanel extends HookConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.right,
                         maxLines: 1,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: Colors.red[600],
-                          fontSize: 10,
-                          height: 1,
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Colors.red[600],
+                              fontSize: 10,
+                              height: 1,
+                            ),
                       ),
                     ),
                   ],
@@ -539,25 +541,10 @@ class CalendarAppBar extends ConsumerWidget {
                 const SizedBox(width: large),
 
                 //年月ボタン
-                ElevatedButton(
-                  style: data.isShowScrollView
-                      ? ButtonStyle(
-                          elevation: WidgetStateProperty.all(1),
-                          overlayColor: WidgetStateProperty.all(
-                              theme.colorScheme.shadow.withValues(alpha: 0.1)),
-                          backgroundColor: WidgetStateProperty.all(Color.lerp(
-                              theme.colorScheme.surfaceDim,
-                              theme.colorScheme.shadow,
-                              0.1)),
-                        )
-                      : ButtonStyle(
-                          elevation: WidgetStateProperty.all(0),
-                          overlayColor: WidgetStateProperty.all(
-                              theme.colorScheme.shadow.withValues(alpha: 0.1)),
-                          backgroundColor: WidgetStateProperty.all(
-                            theme.colorScheme.surfaceDim,
-                          ),
-                        ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: theme.scaffoldBackgroundColor,
+                  ),
                   onPressed: () {
                     calendarProviderNotifier.tapMonthButton();
                   },

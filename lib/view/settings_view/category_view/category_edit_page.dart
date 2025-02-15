@@ -263,7 +263,6 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                             widget.isSubPage);
                                   }
                                 } else {
-                                  debugPrint("edit");
                                   widget.isSubPage
                                       ? await selectCategoryStateNotifier
                                           .updateCategoryOfDB(
@@ -515,6 +514,10 @@ class SubCategoryListItem extends HookConsumerWidget {
     final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
     final GoRouter goRoute = GoRouter.of(context);
     final Color defaultColor = theme.colorScheme.onSurfaceVariant;
+    useEffect(() {
+      listItemColor.value = theme.colorScheme.surfaceBright;
+      return () {};
+    }, [theme]);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

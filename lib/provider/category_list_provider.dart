@@ -92,6 +92,7 @@ class CategoryNotifier
           context: context,
           isError: isError,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
       }
     }
@@ -130,6 +131,7 @@ class CategoryNotifier
           context: context,
           isError: isError,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
       }
     }
@@ -162,6 +164,7 @@ class CategoryNotifier
           context: context,
           isError: isError,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
       }
     }

@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:keyboard_actions/external/keyboard_avoider/bottom_area_avoider.dart';
 import 'package:keyboard_actions/external/platform_check/platform_check.dart';
 
@@ -63,7 +63,7 @@ enum TapOutsideBehavior {
 ///   1. using scaffold is not required
 ///   2. content is only shrunk as needed (a problem with scaffold)
 ///   3. we shrink an additional [_kBarSize] so the keyboard action bar doesn't cover content either.
-class KeyboardActions extends ConsumerStatefulWidget {
+class KeyboardActions extends StatefulHookConsumerWidget {
   /// Any content you want to resize/scroll when the keyboard comes up
   final Widget? child;
 
@@ -125,7 +125,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
   KeyboardActionsConfig? config;
 
   /// private state
-  Map<int, KeyboardActionsItem> _map = {};
+  Map<int, KeyboardActionsItem> actionMap = {};
   KeyboardActionsItem? _currentAction;
   int? _currentIndex = 0;
   OverlayEntry? _overlayEntry;
@@ -167,62 +167,37 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
   /// The current next index, or null.
   int? get _nextIndex {
     final nextIndex = _currentIndex! + 1;
-    return nextIndex < _map.length ? nextIndex : null;
+    return nextIndex < actionMap.length ? nextIndex : null;
   }
-
-  /// The distance from the bottom of the KeyboardActions widget to the
-  /// bottom of the view port.
-  ///
-  /// Used to correctly calculate the offset to "avoid" with BottomAreaAvoider.
-  /*
-  double get _distanceBelowWidget {
-    if (_keyParent.currentContext != null) {
-      final widgetRenderBox =
-          _keyParent.currentContext!.findRenderObject() as RenderBox;
-      final fullHeight = MediaQuery.of(context).size.height;
-      final widgetHeight = widgetRenderBox.size.height;
-      final widgetTop = widgetRenderBox.localToGlobal(Offset.zero).dy;
-      final widgetBottom = widgetTop + widgetHeight;
-      final distanceBelowWidget = fullHeight - widgetBottom;
-      return distanceBelowWidget;
-    }
-    return 0;
-  }*/
 
   /// Set the config for the keyboard action bar.
   void setConfig(KeyboardActionsConfig newConfig) {
     clearConfig();
     config = newConfig;
     for (int i = 0; i < config!.actions!.length; i++) {
-      _addAction(i, config!.actions![i]);
+      actionMap[i] = config!.actions![i];
     }
-    _startListeningFocus();
+    //各FocusNodeへリスナー追加
+    for (var action in actionMap.values) {
+      action.focusNode.addListener(_focusNodeListener);
+    }
   }
 
-  /// Clear any existing configuration. Unsubscribe from focus listeners.
+  //clear fonfig
   void clearConfig() {
-    _dismissListeningFocus();
-    _clearAllFocusNode();
+    //各FocusNodeのリスナー削除
+    for (var action in actionMap.values) {
+      action.focusNode.removeListener(_focusNodeListener);
+    }
+    actionMap = <int, KeyboardActionsItem>{}; //clearFocusNode
     config = null;
-  }
-
-  void _addAction(int index, KeyboardActionsItem action) {
-    _map[index] = action;
-  }
-
-  void _clearAllFocusNode() {
-    _map = <int, KeyboardActionsItem>{};
-  }
-
-  void _clearFocus() {
-    _currentAction?.focusNode.unfocus();
   }
 
   bool hasFocusFound = false;
   Future<Null> _focusNodeListener() async {
     hasFocusFound = false;
-    for (var key in _map.keys) {
-      final currentAction = _map[key]!;
+    for (var key in actionMap.keys) {
+      final currentAction = actionMap[key]!;
       if (currentAction.focusNode.hasFocus) {
         hasFocusFound = true;
         _currentAction = currentAction;
@@ -244,7 +219,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
   void _onTapUp() {
     //DumpFocusTree();
     if (_previousIndex != null) {
-      final currentAction = _map[_previousIndex!]!;
+      final currentAction = actionMap[_previousIndex!]!;
       if (currentAction.enabled) {
         //currentAction.focusNode.previousFocus();
         _shouldGoToNextFocus(currentAction, _previousIndex);
@@ -257,7 +232,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
 
   void _onTapDown() {
     if (_nextIndex != null) {
-      final currentAction = _map[_nextIndex!]!;
+      final currentAction = actionMap[_nextIndex!]!;
       if (currentAction.enabled) {
         //currentAction.focusNode.nextFocus();
         _shouldGoToNextFocus(currentAction, _nextIndex);
@@ -318,18 +293,6 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
     }
   }
 
-  void _startListeningFocus() {
-    for (var action in _map.values) {
-      action.focusNode.addListener(_focusNodeListener);
-    }
-  }
-
-  void _dismissListeningFocus() {
-    for (var action in _map.values) {
-      action.focusNode.removeListener(_focusNodeListener);
-    }
-  }
-
   bool _inserted = false;
 
   /// Insert the keyboard bar as an Overlay.
@@ -360,7 +323,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
                   if (!widget.keepFocusOnTappingNode ||
                       _currentAction!.focusNode.rect.contains(event.position) !=
                           true) {
-                    _clearFocus();
+                    _currentAction?.focusNode.unfocus();
                   }
                 },
                 behavior: widget.tapOutsideBehavior ==
@@ -536,29 +499,6 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
     }
   }
 
-/*
-  void _onLayout() {
-    if (widget.isDialog) {
-      final render =
-          _keyParent.currentContext?.findRenderObject() as RenderBox?;
-      final fullHeight = MediaQuery.of(context).size.height;
-      final localHeight = render?.size.height ?? 0;
-      _localMargin = (fullHeight - localHeight) / 2;
-    }
-  }*/
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      if (state == AppLifecycleState.paused) {
-        FocusScope.of(context).requestFocus(FocusNode());
-        _focusChanged(false);
-      }
-    }
-
-    super.didChangeAppLifecycleState(state);
-  }
-
   @override
   void didUpdateWidget(KeyboardActions oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -579,31 +519,18 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
   @override
   void initState() {
     _bottomAvoidScrollController = ScrollController();
-    _bottomAvoidScrollController.addListener(() {
-      // スクロール位置が変更された際の処理
-      //_currentAction?.focusNode.resizeRect();
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      //_currentAction?.focusNode.resizeRect();
-    });
-
     _overlayState = Overlay.of(context, rootOverlay: true);
     WidgetsBinding.instance.addObserver(this);
+
     if (widget.enable) {
       setConfig(widget.config);
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        //_onLayout();
         _resetOffset();
       });
     }
     setAnimationController();
-    super.initState();
-  }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+    super.initState();
   }
 
   void setAnimationController() {
@@ -659,7 +586,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
   void _onKeyboardChanged(bool isVisible) {
     bool footerHasSize = _checkIfFooterHasSize();
     if (!isVisible && isKeyboardOpen && !footerHasSize) {
-      _clearFocus();
+      _currentAction?.focusNode.unfocus();
     }
   }
 
@@ -717,7 +644,7 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
                     if (_currentAction?.onTapAction != null) {
                       _currentAction!.onTapAction!();
                     }
-                    _clearFocus();
+                    _currentAction?.focusNode.unfocus();
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -757,6 +684,11 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
     // If we don't, we get "LayoutBuilder does not support returning intrinsic dimensions".
     // See https://github.com/flutter/flutter/issues/18108.
     // The SizedBox can be removed when thats fixed.
+    useEffect(() {
+      setConfig(widget.config);
+      return () {};
+    }, [widget.config]);
+
     return widget.enable && !widget.disableScroll
         ? Material(
             color: Colors.transparent,

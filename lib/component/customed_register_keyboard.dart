@@ -280,6 +280,7 @@ class CategoryPickerKeyboard extends ConsumerWidget
       top: false,
       maintainBottomViewPadding: true,
       child: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
         height: _kKeyboardHeight - mediaQuery.viewPadding.bottom,
         padding: smallHorizontalEdgeInsets,
         width: double.infinity,

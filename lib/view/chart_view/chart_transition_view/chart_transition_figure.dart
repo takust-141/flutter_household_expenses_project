@@ -28,7 +28,6 @@ class ChartTransitionFigure extends HookConsumerWidget {
     );
 
     useEffect(() {
-      debugPrint("effect");
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // スクロールがウィジェットツリーに追加された後に jumpTo
         if (chartTransitionScrollController.hasClients) {

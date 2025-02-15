@@ -84,6 +84,10 @@ class RegisterRecurringListItem extends HookConsumerWidget {
     final isNewAdd = (registerRecurring.id == null);
     final theme = Theme.of(context);
     final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
+    useEffect(() {
+      listItemColor.value = theme.colorScheme.surfaceBright;
+      return () {};
+    }, [theme]);
     var goRoute = GoRouter.of(context);
     final Color defaultColor = theme.colorScheme.onSurfaceVariant;
     final provider = settingRecurringyStateNotifierProvider;

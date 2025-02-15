@@ -82,9 +82,10 @@ const List<AppBarState> appBarStateStateList = [
       appBarBack: true),
   AppBarState(name: rootNameContact, appBarTitle: 'お問い合わせ', appBarBack: true),
   AppBarState(
-      name: rootNameThemeColorSetting,
-      appBarTitle: 'テーマカラー設定',
-      appBarBack: true),
+    name: rootNameThemeColorSetting,
+    appBarTitle: 'テーマカラー設定',
+    appBarBack: true,
+  ),
 ];
 
 //Provider
@@ -269,7 +270,8 @@ class AppBarNotifier extends Notifier<AppBarState> {
         if (titleText != null) {
           return Text(
             titleText!,
-            style: fontStyle?.copyWith(fontSize: 18),
+            style: fontStyle?.copyWith(
+                fontSize: 18, color: Theme.of(context).colorScheme.onSurface),
             key: ValueKey<String?>(state.appBarTitle),
             overflow: TextOverflow.ellipsis,
           );
@@ -316,6 +318,10 @@ class AppBarBackWidget extends HookWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final backIconColor = useState<Color>(theme.colorScheme.onSurface);
+    useEffect(() {
+      backIconColor.value = theme.colorScheme.onSurface;
+      return () {};
+    }, [theme]);
 
     return GestureDetector(
       child: AnimatedContainer(
@@ -343,6 +349,10 @@ class AppBarCancelWidget extends HookWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textColor = useState<Color>(theme.colorScheme.onSurface);
+    useEffect(() {
+      textColor.value = theme.colorScheme.onSurface;
+      return () {};
+    }, [theme]);
 
     return GestureDetector(
       child: AnimatedContainer(
@@ -384,6 +394,10 @@ class AppBarDoneWidget extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final textColor = useState<Color>(theme.colorScheme.onSurface);
+    useEffect(() {
+      textColor.value = theme.colorScheme.onSurface;
+      return () {};
+    }, [theme]);
 
     return ref.watch(listenableProvider) ?? false
         ? GestureDetector(
@@ -403,7 +417,6 @@ class AppBarDoneWidget extends HookConsumerWidget {
               ),
             ),
             onTap: () {
-              debugPrint("onTap");
               formkey?.currentState?.save();
             },
             onTapDown: (_) => {textColor.value = theme.colorScheme.outline},

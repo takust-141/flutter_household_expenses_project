@@ -86,6 +86,11 @@ class CategoryListItem extends HookConsumerWidget {
     var goRoute = GoRouter.of(context);
     final Color defaultColor = theme.colorScheme.onSurfaceVariant;
 
+    useEffect(() {
+      listItemColor.value = theme.colorScheme.surfaceBright;
+      return () {};
+    }, [theme]);
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () async {

@@ -179,6 +179,10 @@ class RecurringSettingListItem extends HookWidget {
     final theme = Theme.of(context);
     var goRoute = GoRouter.of(context);
     final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
+    useEffect(() {
+      listItemColor.value = theme.colorScheme.surfaceBright;
+      return () {};
+    }, [theme]);
 
     void onTapList() {
       if (isNotActive) {
@@ -257,6 +261,10 @@ class RecurringSettingSelector extends HookWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final listItemColor = useState<Color>(theme.colorScheme.surfaceBright);
+    useEffect(() {
+      listItemColor.value = theme.colorScheme.surfaceBright;
+      return () {};
+    }, [theme]);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

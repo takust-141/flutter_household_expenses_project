@@ -24,12 +24,9 @@ class RegisterPage extends StatefulHookConsumerWidget {
 }
 
 class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
-  final _formkey = GlobalKey();
-
-  //フォームコントローラー
-  final TextEditingController amountOfMoneyTextController =
-      TextEditingController();
-  final TextEditingController memoTextController = TextEditingController();
+  final int selectCategoryProviderIndex = 1;
+  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
+      selectCategoryStateProvider = registerCategoryStateNotifierProvider;
 
   //customKeyboard用
   late ValueNotifier<Category?> categoryNotifier;
@@ -37,78 +34,21 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
   late ValueNotifier<DateTime> dateNotifier;
 
   //FocusNode
-  final CustomFocusNode amountOfMoneyNode = CustomFocusNode();
-  final CustomFocusNode categoryNode = CustomFocusNode();
-  final CustomFocusNode subCategoryNode = CustomFocusNode();
-  final CustomFocusNode memoNode = CustomFocusNode();
-  final CustomFocusNode dateNode = CustomFocusNode();
+  late CustomFocusNode amountOfMoneyNode;
+  late CustomFocusNode categoryNode;
+  late CustomFocusNode subCategoryNode;
+  late CustomFocusNode memoNode;
+  late CustomFocusNode dateNode;
 
   final formatter = DateFormat('yyyy年 M月 d日');
   final double suffixIconSize = 20;
   final amountOfMoneyFormKey = GlobalKey();
   final memoFormKey = GlobalKey();
-
-  final int selectCategoryProviderIndex = 1;
-  final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
-      selectCategoryStateProvider = registerCategoryStateNotifierProvider;
-
-  late RegisterKeyboardAction registerKeyboardAction;
-
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     //画面遷移検出
     widget.routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    categoryNotifier = ValueNotifier<Category?>(null);
-    subCategoryNotifier = ValueNotifier<Category?>(null);
-
-    dateNotifier = ValueNotifier<DateTime>(DateTime(
-        DateTime.now().year, DateTime.now().month, DateTime.now().day));
-
-    registerKeyboardAction = RegisterKeyboardAction(
-      moneyTextController: amountOfMoneyTextController,
-      moneyNode: amountOfMoneyNode,
-      categoryNotifier: categoryNotifier,
-      categoryNode: categoryNode,
-      subCategoryNode: subCategoryNode,
-      subCategoryNotifier: subCategoryNotifier,
-      memoTextController: memoTextController,
-      memoNode: memoNode,
-      dateNode: dateNode,
-      dateNotifier: dateNotifier,
-      selectCategoryProviderIndex: selectCategoryProviderIndex,
-      enableNewAdd: true,
-    );
-
-    //金額Focusのcomputeリスナー
-    amountOfMoneyNode.addListener(registerKeyboardAction.focusChange);
-
-    //FocusNode attach
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      memoNode.attach(memoFormKey.currentContext);
-      amountOfMoneyNode.attach(amountOfMoneyFormKey.currentContext);
-    });
-  }
-
-  @override
-  void dispose() {
-    amountOfMoneyTextController.dispose();
-    widget.routeObserver.unsubscribe(this);
-    amountOfMoneyNode.dispose();
-    categoryNode.dispose();
-    subCategoryNode.dispose();
-    memoNode.dispose();
-    dateNode.dispose();
-    categoryNotifier.dispose();
-    subCategoryNotifier.dispose();
-    dateNotifier.dispose();
-    super.dispose();
   }
 
   //カテゴリー新規登録からpopした時に呼ばれる
@@ -121,7 +61,69 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
   }
 
   @override
+  void dispose() {
+    widget.routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final formkey = GlobalKey();
+
+    //フォームコントローラー
+    TextEditingController amountOfMoneyTextController =
+        useTextEditingController();
+    TextEditingController memoTextController = useTextEditingController();
+
+    final ValueNotifier<RegisterKeyboardAction?> registerKeyboardAction =
+        useState(null);
+
+    useEffect(() {
+      categoryNotifier = ValueNotifier<Category?>(null);
+      subCategoryNotifier = ValueNotifier<Category?>(null);
+      dateNotifier = ValueNotifier<DateTime>(DateTime(
+          DateTime.now().year, DateTime.now().month, DateTime.now().day));
+      amountOfMoneyNode = CustomFocusNode();
+      categoryNode = CustomFocusNode();
+      subCategoryNode = CustomFocusNode();
+      memoNode = CustomFocusNode();
+      dateNode = CustomFocusNode();
+
+      registerKeyboardAction.value = RegisterKeyboardAction(
+        moneyTextController: amountOfMoneyTextController,
+        moneyNode: amountOfMoneyNode,
+        categoryNotifier: categoryNotifier,
+        categoryNode: categoryNode,
+        subCategoryNode: subCategoryNode,
+        subCategoryNotifier: subCategoryNotifier,
+        memoTextController: memoTextController,
+        memoNode: memoNode,
+        dateNode: dateNode,
+        dateNotifier: dateNotifier,
+        selectCategoryProviderIndex: selectCategoryProviderIndex,
+        enableNewAdd: true,
+      );
+
+      //金額Focusのcomputeリスナー
+      amountOfMoneyNode.addListener(registerKeyboardAction.value!.focusChange);
+
+      //FocusNode attach
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        memoNode.attach(memoFormKey.currentContext);
+        amountOfMoneyNode.attach(amountOfMoneyFormKey.currentContext);
+      });
+      return () {
+        amountOfMoneyNode.dispose();
+        categoryNode.dispose();
+        subCategoryNode.dispose();
+        memoNode.dispose();
+        dateNode.dispose();
+        categoryNotifier.dispose();
+        subCategoryNotifier.dispose();
+        dateNotifier.dispose();
+      };
+    }, []);
+
     final theme = Theme.of(context);
     final Color defaultColor = theme.colorScheme.onSurfaceVariant;
     final registerTextColor = theme.colorScheme.inverseSurface;
@@ -293,11 +295,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
                 autoScroll: true,
                 overscroll: 40,
                 tapOutsideBehavior: TapOutsideBehavior.translucentDismiss,
-                config: registerKeyboardAction.buildConfig(context),
+                config: registerKeyboardAction.value!.buildConfig(context),
                 child: Padding(
                   padding: viewEdgeInsets,
                   child: Form(
-                    key: _formkey,
+                    key: formkey,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [

@@ -81,7 +81,6 @@ class _RecurringEditPageState extends ConsumerState<RecurringEditPage> {
 
     //フォーム入力チェック
     void formInputCheck() {
-      debugPrint("formInput check");
       isActiveRegisterButton.value =
           amountOfMoneyTextController.text.isNotEmpty &&
               (categoryNotifier.value != null);
@@ -311,6 +310,7 @@ class _RecurringEditPageState extends ConsumerState<RecurringEditPage> {
           context: context,
           isError: true,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
         return;
       }
@@ -322,6 +322,7 @@ class _RecurringEditPageState extends ConsumerState<RecurringEditPage> {
           context: context,
           isError: true,
           ref: ref,
+          isNotNeedBottomHeight: true,
         );
         return;
       }
@@ -346,6 +347,7 @@ class _RecurringEditPageState extends ConsumerState<RecurringEditPage> {
             context: context,
             isError: false,
             ref: ref,
+            isNotNeedBottomHeight: true,
           );
         }
         return;
@@ -490,6 +492,7 @@ class _RecurringEditPageState extends ConsumerState<RecurringEditPage> {
               context: context,
               isError: isError,
               ref: ref,
+              isNotNeedBottomHeight: true,
             );
             if (!isError) {
               //登録完了時
