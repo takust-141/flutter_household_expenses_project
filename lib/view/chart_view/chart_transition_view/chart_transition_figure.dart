@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -122,7 +123,7 @@ class ChartTransitionFigure extends HookConsumerWidget {
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.bold,
-            fontSize: 9,
+            fontSize: 8.5,
           ),
           maxLines: 2,
         ),
@@ -204,7 +205,7 @@ class ChartTransitionFigure extends HookConsumerWidget {
     return (transitionChartState.loadingState != 2 ||
             ref.watch(transitionChartProvider).isRefreshing)
         ? Container(
-            color: Colors.black.withValues(alpha: 0.1),
+            //color: Colors.black.withValues(alpha: 0.1),
             child: const Center(
               child: Padding(
                 padding: largeEdgeInsets,
@@ -242,7 +243,9 @@ class ChartTransitionFigure extends HookConsumerWidget {
                               icon: const Icon(Icons.keyboard_arrow_left),
                               style: IconButton.styleFrom(
                                 backgroundColor:
-                                    theme.colorScheme.surfaceBright,
+                                    theme.colorScheme.primaryContainer,
+                                foregroundColor:
+                                    theme.colorScheme.onPrimaryContainer,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -302,7 +305,9 @@ class ChartTransitionFigure extends HookConsumerWidget {
                               icon: const Icon(Icons.keyboard_arrow_right),
                               style: IconButton.styleFrom(
                                 backgroundColor:
-                                    theme.colorScheme.surfaceBright,
+                                    theme.colorScheme.primaryContainer,
+                                foregroundColor:
+                                    theme.colorScheme.onPrimaryContainer,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),

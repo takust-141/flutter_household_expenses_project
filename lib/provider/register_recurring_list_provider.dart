@@ -115,7 +115,7 @@ class RegisterRecurringNotifier
       rethrow;
     } finally {
       //register recurring List更新
-      state = AsyncValue.data(await getAllRegisterRecurringList());
+      state = AsyncData(await getAllRegisterRecurringList());
       //register表示の更新
       RegisterDBProvider.refreshFromCategory(ref);
       indicatorOverlay.removeOverlay();
@@ -405,7 +405,7 @@ class RegisterRecurringNotifier
       state = AsyncValue.error(e, stackTrace);
     } finally {
       //register recurring List更新
-      state = AsyncValue.data(await getAllRegisterRecurringList());
+      state = AsyncData(await getAllRegisterRecurringList());
       //register表示の更新
       RegisterDBProvider.refreshFromCategory(ref);
       //selectRegisterRecurringの更新 ＊基本的にnullで更新（バックアップがある時のみバックアップを設定）
@@ -469,7 +469,7 @@ class RegisterRecurringNotifier
       state = AsyncValue.error(e, stackTrace);
     } finally {
       //register recurring List更新
-      state = AsyncValue.data(await getAllRegisterRecurringList());
+      state = AsyncData(await getAllRegisterRecurringList());
       //register表示の更新
       RegisterDBProvider.refreshFromCategory(ref);
       //selectRegisterRecurringの更新 ＊基本的にnullで更新（バックアップがある時のみバックアップを設定）
@@ -539,7 +539,7 @@ class RegisterRecurringNotifier
       state = AsyncValue.error(e, stackTrace);
     } finally {
       //register recurring List更新
-      state = AsyncValue.data(await getAllRegisterRecurringList());
+      state = AsyncData(await getAllRegisterRecurringList());
       //register表示の更新
       RegisterDBProvider.refreshFromCategory(ref);
       //selectRegisterRecurringの更新 ＊基本的にnullで更新（バックアップがある時のみバックアップを設定）
@@ -579,7 +579,7 @@ class RegisterRecurringNotifier
       state = AsyncValue.error(e, stackTrace);
     } finally {
       //register recurring List更新
-      state = AsyncValue.data(await getAllRegisterRecurringList());
+      state = AsyncData(await getAllRegisterRecurringList());
       //register表示の更新
       RegisterDBProvider.refreshFromCategory(ref);
       //selectRegisterRecurringの更新 ＊基本的にnullで更新（バックアップがある時のみバックアップを設定）
@@ -622,7 +622,7 @@ class RegisterRecurringNotifier
       state = AsyncValue.error(e, stackTrace);
     } finally {
       //register recurring List更新
-      state = AsyncValue.data(await getAllRegisterRecurringList());
+      state = AsyncData(await getAllRegisterRecurringList());
       //register表示の更新
       RegisterDBProvider.refreshFromCategory(ref);
       //selectRegisterRecurringの更新 ＊基本的にnullで更新（バックアップがある時のみバックアップを設定）
@@ -661,6 +661,6 @@ class RegisterRecurringNotifier
   //カテゴリー削除時のリフレッシュ
   Future<void> refreshFromCategory(Ref ref) async {
     //リフレッシュ
-    state = AsyncValue.data(await getAllRegisterRecurringList());
+    state = AsyncData(await getAllRegisterRecurringList());
   }
 }

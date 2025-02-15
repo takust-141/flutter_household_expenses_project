@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expense_project/provider/preferences_service.dart';
+import 'package:household_expense_project/view_model/preferences_service.dart';
 import 'package:household_expense_project/provider/setting_theme_provider.dart';
 import 'package:household_expense_project/router/router.dart';
-import 'package:household_expense_project/constant/constant.dart';
 import 'package:household_expense_project/view_model/db_helper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'interface/firebase_options.dart';
@@ -14,7 +13,7 @@ void main() async {
     //DB
     await DbHelper.openDataBase();
     //PreferencesService
-    await PreferencesService.getInstance();
+    PreferencesService.getInstance();
     //Firebase
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
@@ -32,11 +31,18 @@ class HouseholdExpenseApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp.router(
-      title: "Household Expense App",
-      theme: ref.watch(settingThemeProvider.select((p) => p.lightTheme)),
-      darkTheme: ref.watch(settingThemeProvider.select((p) => p.darkTheme)),
-      routerConfig: router,
+    return ref.watch(
+      settingThemeProvider.select(
+        (state) => state.maybeWhen(
+          data: (themeState) => MaterialApp.router(
+            title: "Household Expense App",
+            theme: themeState.lightTheme,
+            darkTheme: themeState.darkTheme,
+            routerConfig: router,
+          ),
+          orElse: () => SizedBox.shrink(),
+        ),
+      ),
     );
   }
 }

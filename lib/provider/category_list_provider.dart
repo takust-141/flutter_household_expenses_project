@@ -171,7 +171,7 @@ class CategoryNotifier
   }
 
   Future<void> updateCategoryListState() async {
-    state = AsyncValue.data(await getAllCategory());
+    state = AsyncData(await getAllCategory());
   }
 
   //idからメインカテゴリを返す（現在のstateから）

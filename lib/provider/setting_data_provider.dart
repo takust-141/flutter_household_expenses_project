@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expense_project/provider/preferences_service.dart';
+import 'package:household_expense_project/view_model/preferences_service.dart';
 
 //Provider
 final settingDataProvider =
@@ -54,7 +54,7 @@ class SettingDataNotifier extends AsyncNotifier<SettingDataState> {
 
   //週始まりの更新
   Future<void> updateStartOfWeek(int startWeek) async {
-    state = AsyncValue.data(state.value!.copyWith(
+    state = AsyncData(state.value!.copyWith(
       calendarStartWeek: startWeek,
       weeks: calcCalendar(startWeek),
     ));

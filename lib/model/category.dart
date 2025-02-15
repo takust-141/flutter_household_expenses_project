@@ -21,16 +21,6 @@ const List<String> categoryKeyList = [
   categoryExpense
 ];
 
-final Map<String, Color> categoryColors = {
-  for (var color in keyboardColors) color.toString(): color,
-  'default': keyboardColors[0],
-};
-
-final Map<String, IconData> categoryIcons = {
-  for (var icon in keyboardIcons) icon.toString(): icon,
-  'default': keyboardIcons[0],
-};
-
 class Category {
   int? id;
   String name;

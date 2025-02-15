@@ -14,9 +14,6 @@ class ThemeColorSettingPage extends ConsumerWidget {
 
     final List<Color> seedColorList = keyboardColors;
 
-    final selectSeedColor =
-        ref.watch(settingThemeProvider.select((p) => p.seedColor));
-
     final themeNotifier = ref.read(settingThemeProvider.notifier);
 
     return SafeArea(
@@ -134,7 +131,7 @@ class ColorSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final selectSeedColor =
-        ref.watch(settingThemeProvider.select((p) => p.seedColor));
+        ref.watch(settingThemeProvider.select((p) => p.valueOrNull?.seedColor));
     return LayoutBuilder(builder: (context, boxConstraints) {
       return SizedBox(
         height: boxConstraints.maxWidth * 0.8,
@@ -171,8 +168,8 @@ class BlightnessButton extends ConsumerWidget {
     final theme = Theme.of(context);
     final String text = ["デフォルト", "ライト", "ダーク"][blightnessIndex];
 
-    final settingBrightness =
-        ref.watch(settingThemeProvider.select((p) => p.brightness));
+    final settingBrightness = ref
+        .watch(settingThemeProvider.select((p) => p.valueOrNull?.brightness));
     final isSelect = (settingBrightness == blightnessIndex);
 
     return OutlinedButton(
@@ -211,8 +208,8 @@ class ContrastButton extends ConsumerWidget {
     final theme = Theme.of(context);
     final String text = ["低", "中", "高"][contrastIndex];
 
-    final contrastLevel =
-        ref.watch(settingThemeProvider.select((p) => p.contrastLevel));
+    final contrastLevel = ref.watch(
+        settingThemeProvider.select((p) => p.valueOrNull?.contrastLevel));
     final isSelect = (contrastLevel == contrastIndex * 0.5);
 
     return OutlinedButton(
