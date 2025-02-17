@@ -11,9 +11,10 @@ class PreferencesService {
 
   static const String startCalendarDateKey = 'startCalendarDate';
   static const String startOfWeekKey = 'startOfWeek';
-  static const String themeSeedColor = 'themeSeedColor';
-  static const String themeBrightness = 'themeBrightness';
-  static const String themeContrastLevel = 'themeContrastLevel';
+  static const String themeSeedColorKey = 'themeSeedColor';
+  static const String themeBrightnessKey = 'themeBrightness';
+  static const String themeContrastLevelKey = 'themeContrastLevel';
+  static const String versionFlagKey = 'versionFlag';
 
   static late final SharedPreferencesAsync asyncPrefs;
 
@@ -55,20 +56,33 @@ class PreferencesService {
   //Theme設定
   static Future<void> setTheme(
       int brightness, double contrustLevel, Color seedColor) async {
-    await asyncPrefs.setInt(themeBrightness, brightness);
-    await asyncPrefs.setDouble(themeContrastLevel, contrustLevel);
-    await asyncPrefs.setString(themeSeedColor, seedColor.toString());
+    await asyncPrefs.setInt(themeBrightnessKey, brightness);
+    await asyncPrefs.setDouble(themeContrastLevelKey, contrustLevel);
+    await asyncPrefs.setString(themeSeedColorKey, seedColor.toString());
   }
 
   static Future<(int, double, Color)> getTheme() async {
     final int brightness =
-        await asyncPrefs.getInt(themeBrightness) ?? 0; //初期値デフォルト
+        await asyncPrefs.getInt(themeBrightnessKey) ?? 0; //初期値デフォルト
     final double contrustLevel =
-        await asyncPrefs.getDouble(themeContrastLevel) ?? 0.0; //初期値0.0
-    final String? seedColorString = await asyncPrefs.getString(themeSeedColor);
+        await asyncPrefs.getDouble(themeContrastLevelKey) ?? 0.0; //初期値0.0
+    final String? seedColorString =
+        await asyncPrefs.getString(themeSeedColorKey);
     final Color seedColor =
         themeColorMap[seedColorString] ?? themeColorMap['default']!; //初期値赤
 
     return (brightness, contrustLevel, seedColor);
+  }
+
+  //
+  //バージョン通知 （0：メッセージ不要、1：メッセージ必要）
+  static Future<void> setVersionFlag(int versionFlag) async {
+    await asyncPrefs.setInt(versionFlagKey, versionFlag);
+  }
+
+  static Future<int> getVersionFlag() async {
+    final int versionFlag = await asyncPrefs.getInt(versionFlagKey) ?? 0;
+
+    return versionFlag;
   }
 }

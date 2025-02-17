@@ -38,7 +38,7 @@ class DbHelper {
     return path;
   }
 
-  static Future openDataBase() async {
+  static Future<void> openDataBase() async {
     final path = await getDBPath('register');
     database = await openDatabase(
       path,

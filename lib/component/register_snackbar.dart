@@ -16,7 +16,7 @@ void updateSnackBarCallBack({
   if (isNotNeedBottomHeight != true) {
     if (ref is WidgetRef || ref is Ref) {
       bottomHeight =
-          ref.read(adNotifierProvider.select((p) => p.bottomBannerHeight));
+          ref.read(adNotifierProvider).valueOrNull?.bottomBannerHeight ?? 0;
     }
   }
 
@@ -38,6 +38,37 @@ void updateSnackBarCallBack({
   );
 
   HapticFeedback.lightImpact();
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(snackBar);
+}
+
+void versionUpdateSnackBar({
+  required BuildContext context,
+  required ref,
+}) {
+  final theme = Theme.of(context);
+  double bottomHeight = 0;
+  if (ref is WidgetRef || ref is Ref) {
+    bottomHeight =
+        ref.read(adNotifierProvider).valueOrNull?.bottomBannerHeight ?? 0;
+  }
+
+  SnackBar snackBar = SnackBar(
+    content: Text(
+      "バージョン更新のお知らせ\nストアよりアプリをアップデートしてご利用ください。",
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.surface,
+      ),
+    ),
+    backgroundColor: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.9),
+    duration: const Duration(seconds: 4),
+    padding: msmallEdgeInsets,
+    margin: EdgeInsets.fromLTRB(medium, 0, medium, small + bottomHeight),
+    behavior: SnackBarBehavior.floating,
+    elevation: 3,
+  );
+
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(snackBar);

@@ -8,7 +8,7 @@ final settingDataProvider =
         SettingDataNotifier.new);
 
 const defaultWeeks = ["月", "火", "水", "木", "金", "土", "日"];
-const defaultStartWeek = DateTime.sunday;
+const defaultStartWeek = DateTime.monday;
 final defaultStartCalendarDate = DateTime(DateTime.now().year - 100, 1, 1);
 
 //状態管理

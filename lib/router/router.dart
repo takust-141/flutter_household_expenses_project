@@ -30,6 +30,7 @@ final router = GoRouter(
       },
       branches: [
         StatefulShellBranch(
+          preload: true,
           observers: [registerRouteObserver],
           routes: <RouteBase>[
             GoRoute(
@@ -62,6 +63,7 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          preload: true,
           routes: <RouteBase>[
             GoRoute(
               path: '/search',
@@ -71,6 +73,7 @@ final router = GoRouter(
           ],
         ),
         StatefulShellBranch(
+          preload: true,
           navigatorKey: _shellNavigatorKey,
           routes: <RouteBase>[
             GoRoute(

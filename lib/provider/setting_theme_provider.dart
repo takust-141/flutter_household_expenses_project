@@ -94,30 +94,11 @@ class SettingThemeNotifier extends AsyncNotifier<SettingThemeState> {
   }
 
   void rebuildTheme() {
-    ThemeData lightTheme;
-    ThemeData darkTheme;
     final prestate = state.valueOrNull ?? _defaultState;
-    //モノクロ設定
-    if (prestate.seedColor == Colors.grey.shade800) {
-      if (prestate.contrastLevel == 0.0) {
-        lightTheme = MonoMaterialTheme(_notoTextTheme).light();
-        darkTheme = MonoMaterialTheme(_notoTextTheme).dark();
-      } else if (prestate.contrastLevel == 0.5) {
-        lightTheme = MonoMaterialTheme(_notoTextTheme).lightMediumContrast();
-        darkTheme = MonoMaterialTheme(_notoTextTheme).darkMediumContrast();
-      } else {
-        lightTheme = MonoMaterialTheme(_notoTextTheme).lightHighContrast();
-        darkTheme = MonoMaterialTheme(_notoTextTheme).darkHighContrast();
-      }
-      if (prestate.brightness == 1) {
-        darkTheme = lightTheme;
-      } else if (prestate.brightness == 2) {
-        lightTheme = darkTheme;
-      }
-    } else {
-      (lightTheme, darkTheme) = getThemeData(
-          prestate.brightness, prestate.contrastLevel, prestate.seedColor);
-    }
+
+    final (ThemeData lightTheme, ThemeData darkTheme) = getThemeData(
+        prestate.brightness, prestate.contrastLevel, prestate.seedColor);
+
     PreferencesService.setTheme(
         prestate.brightness, prestate.contrastLevel, prestate.seedColor);
 
@@ -127,23 +108,47 @@ class SettingThemeNotifier extends AsyncNotifier<SettingThemeState> {
     ));
   }
 
+  //
   //ThemeData作成関数
   (ThemeData, ThemeData) getThemeData(
       int brightness, double contrastLevel, Color seedColor) {
-    final lightTheme = ThemeData(
-        textTheme: _notoTextTheme,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seedColor,
-          brightness: (brightness != 2) ? Brightness.light : Brightness.dark,
-          contrastLevel: contrastLevel,
-        ));
-    final darkTheme = ThemeData(
-        textTheme: _notoTextTheme,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: seedColor,
-          brightness: (brightness != 1) ? Brightness.dark : Brightness.light,
-          contrastLevel: contrastLevel,
-        ));
+    ThemeData lightTheme;
+    ThemeData darkTheme;
+
+    //モノクロ設定
+    if (seedColor == Colors.grey.shade800) {
+      if (contrastLevel == 0.0) {
+        lightTheme = MonoMaterialTheme(_notoTextTheme).light();
+        darkTheme = MonoMaterialTheme(_notoTextTheme).dark();
+      } else if (contrastLevel == 0.5) {
+        lightTheme = MonoMaterialTheme(_notoTextTheme).lightMediumContrast();
+        darkTheme = MonoMaterialTheme(_notoTextTheme).darkMediumContrast();
+      } else {
+        lightTheme = MonoMaterialTheme(_notoTextTheme).lightHighContrast();
+        darkTheme = MonoMaterialTheme(_notoTextTheme).darkHighContrast();
+      }
+      if (brightness == 1) {
+        darkTheme = lightTheme;
+      } else if (brightness == 2) {
+        lightTheme = darkTheme;
+      }
+    } else {
+      lightTheme = ThemeData(
+          textTheme: _notoTextTheme,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: seedColor,
+            brightness: (brightness != 2) ? Brightness.light : Brightness.dark,
+            contrastLevel: contrastLevel,
+          ));
+      darkTheme = ThemeData(
+          textTheme: _notoTextTheme,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: seedColor,
+            brightness: (brightness != 1) ? Brightness.dark : Brightness.light,
+            contrastLevel: contrastLevel,
+          ));
+    }
+
     return (lightTheme, darkTheme);
   }
 }

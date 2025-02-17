@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expense_project/component/segmented_button.dart';
 import 'package:household_expense_project/constant/constant.dart';
+import 'package:household_expense_project/provider/app_version_provider.dart';
 import 'package:household_expense_project/provider/select_category_provider.dart';
 import 'package:household_expense_project/provider/setting_recurring_provider.dart';
 import 'package:household_expense_project/view/calendar_view/calendar_page.dart';
@@ -306,6 +307,9 @@ class AppBarNotifier extends Notifier<AppBarState> {
         isDelete: true,
       );
     }
+    if (state.name == rootNameRegister) {
+      return AppBarInformationWidget();
+    }
     return null;
   }
 }
@@ -435,5 +439,29 @@ class AppBarDoneWidget extends HookConsumerWidget {
               ),
             ),
           );
+  }
+}
+
+//情報ボタン
+class AppBarInformationWidget extends ConsumerWidget {
+  const AppBarInformationWidget({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ref.watch(appVersionProvider).maybeWhen(
+        data: (data) {
+          return (data.needUpdateInfo)
+              ? IconButton(
+                  icon: const Icon(Icons.info_outline),
+                  iconSize: IconTheme.of(context).size,
+                  color: IconTheme.of(context).color,
+                  disabledColor: Theme.of(context).disabledColor,
+                  onPressed: () =>
+                      {ref.read(appVersionProvider.notifier).showInformation()},
+                  style: IconButton.styleFrom(overlayColor: Colors.transparent),
+                )
+              : SizedBox.shrink();
+        },
+        orElse: () => SizedBox.shrink());
   }
 }

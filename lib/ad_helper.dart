@@ -11,20 +11,33 @@ final adNotifierProvider =
 
 @immutable
 class AdState {
-  final double bottomBannerHeight;
+  final AdSize? adSize;
   const AdState({
-    required this.bottomBannerHeight,
+    required this.adSize,
   });
+
+  AdState copyWith({
+    AdSize? adSize,
+  }) {
+    return AdState(
+      adSize: adSize ?? this.adSize,
+    );
+  }
 }
 
 class AdStateNotifier extends Notifier<AdState> {
   @override
   AdState build() {
-    return const AdState(bottomBannerHeight: 0);
+    return const AdState(adSize: null);
   }
 
-  void setBottomHeight(double height) {
-    state = AdState(bottomBannerHeight: height);
+  Future<void> initAdState(BuildContext context) async {
+    final adSize =
+        await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+      MediaQuery.of(context).size.width.truncate(),
+    ) as AdSize;
+
+    state = AdState(adSize: adSize);
   }
 }
 
@@ -50,65 +63,48 @@ class AdHelper {
   }
 }
 
-class AdaptiveAdBanner extends ConsumerWidget {
+//
+//widget
+class AdaptiveAdBanner extends HookConsumerWidget {
   const AdaptiveAdBanner({super.key, this.setAdHeight});
 
   final ValueChanged<double>? setAdHeight;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final adUnitId = AdHelper.bannerAdUnitId;
-    return LayoutBuilder(builder: (context, constraint) {
-      return HookBuilder(builder: (context) {
-        final bannerLoaded = useState(false);
-        final bannerAd = useFuture(
-          useMemoized(
-            () async {
-              final adWidth = constraint.maxWidth.truncate();
-              final adSize = await AdSize
-                  .getCurrentOrientationAnchoredAdaptiveBannerAdSize(
-                adWidth,
-              ) as AdSize;
-              ref
-                  .read(adNotifierProvider.notifier)
-                  .setBottomHeight(adSize.height.toDouble());
+    final adSize =
+        ref.watch(adNotifierProvider.select((p) => p.adSize)) ?? AdSize.banner;
 
-              return BannerAd(
-                size: adSize,
-                adUnitId: adUnitId,
-                listener: BannerAdListener(
-                  onAdFailedToLoad: (ad, error) {
-                    ad.dispose();
-                    bannerLoaded.value = false;
-                    setAdHeight?.call(0);
-                  },
-                  onAdLoaded: (ad) {
-                    bannerLoaded.value = true;
-                    setAdHeight?.call(adSize.height.toDouble());
-                  },
-                ),
-                request: const AdRequest(),
-              );
-            },
-          ),
-        ).data;
+    final bannerAd = useState<BannerAd?>(null);
 
-        if (bannerAd == null) {
-          return const SizedBox.shrink();
-        }
+    useEffect(() {
+      debugPrint("useeffect");
+      BannerAd(
+        adUnitId: AdHelper.bannerAdUnitId,
+        request: const AdRequest(),
+        size: adSize,
+        listener: BannerAdListener(
+          onAdLoaded: (ad) {
+            bannerAd.value = ad as BannerAd;
+            debugPrint("load ad");
+          },
+          onAdFailedToLoad: (ad, err) {
+            ad.dispose();
+          },
+        ),
+      ).load();
+      return () {
+        bannerAd.value?.dispose();
+        bannerAd.value = null;
+      };
+    }, []);
 
-        useEffect(() {
-          bannerAd.load();
-          return () async => await bannerAd.dispose();
-        }, [bannerAd]);
-
-        return bannerLoaded.value
-            ? SizedBox(
-                width: bannerAd.size.width.toDouble(),
-                height: bannerAd.size.height.toDouble(),
-                child: AdWidget(ad: bannerAd),
-              )
-            : const SizedBox.shrink();
-      });
-    });
+    return Container(
+      color: Theme.of(context).colorScheme.surfaceContainerLowest,
+      width: adSize.width.toDouble(),
+      height: adSize.height.toDouble(),
+      child: (bannerAd.value != null)
+          ? AdWidget(ad: bannerAd.value!)
+          : SizedBox.shrink(),
+    );
   }
 }
