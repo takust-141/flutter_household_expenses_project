@@ -158,28 +158,31 @@ class _RecurringEditPageState extends ConsumerState<RecurringEditPage> {
     }, []);
 
     //selectRegisterRecrring更新時のコールバック
-    useEffect(() {
-      final selectRegisterRecurring = ref.watch(
-          settingRecurringyStateNotifierProvider
-              .select((p) => p.selectRegisterRecurring));
 
-      //value初期値設定
-      amountOfMoneyTextController.text =
-          selectRegisterRecurring?.amount?.toString() ?? "";
-      categoryNotifier.value = selectRegisterRecurring?.category;
-      subCategoryNotifier.value = selectRegisterRecurring?.subCategory;
-      memoTextController.text = selectRegisterRecurring?.memo ?? "";
+    if (settingRecurringState.selectRegisterRecurring?.id != null) {
+      useEffect(() {
+        final selectRegisterRecurring = ref.watch(
+            settingRecurringyStateNotifierProvider
+                .select((p) => p.selectRegisterRecurring));
 
-      DateTime currentDate = DateTime(
-          DateTime.now().year, DateTime.now().month, DateTime.now().day);
-      startDateNotifier.value =
-          selectRegisterRecurring?.startDate ?? currentDate;
-      endDateNotifier.value = selectRegisterRecurring?.endDate;
-      return null;
-    }, [
-      ref.watch(settingRecurringyStateNotifierProvider
-          .select((p) => p.selectInitNotifier))
-    ]);
+        //value初期値設定
+        amountOfMoneyTextController.text =
+            selectRegisterRecurring?.amount?.toString() ?? "";
+        categoryNotifier.value = selectRegisterRecurring?.category;
+        subCategoryNotifier.value = selectRegisterRecurring?.subCategory;
+        memoTextController.text = selectRegisterRecurring?.memo ?? "";
+
+        DateTime currentDate = DateTime(
+            DateTime.now().year, DateTime.now().month, DateTime.now().day);
+        startDateNotifier.value =
+            selectRegisterRecurring?.startDate ?? currentDate;
+        endDateNotifier.value = selectRegisterRecurring?.endDate;
+        return null;
+      }, [
+        ref.watch(settingRecurringyStateNotifierProvider
+            .select((p) => p.selectInitNotifier))
+      ]);
+    }
 
     //選択したカテゴリーの監視
     ref.listen<Category?>(

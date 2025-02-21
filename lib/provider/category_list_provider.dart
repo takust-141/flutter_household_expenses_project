@@ -34,10 +34,10 @@ class CategoryNotifier
     //各SelectCategoryStateの更新
     await Future.wait([
       ref
-          .read(registerCategoryStateNotifierProvider.notifier)
+          .read(registerEditCategoryStateNotifierProvider.notifier)
           .resetSelectCategoryState(categoryListMap),
       ref
-          .read(registerEditCategoryStateNotifierProvider.notifier)
+          .read(registerCategoryStateNotifierProvider.notifier)
           .resetSelectCategoryState(categoryListMap),
       ref
           .read(settingCategoryStateNotifierProvider.notifier)
@@ -161,6 +161,41 @@ class CategoryNotifier
       if (context.mounted) {
         updateSnackBarCallBack(
           text: isError ? 'カテゴリーの更新に失敗しました' : 'カテゴリーを更新しました',
+          context: context,
+          isError: isError,
+          ref: ref,
+          isNotNeedBottomHeight: true,
+        );
+      }
+    }
+  }
+
+  //カテゴリー更新
+  Future updateCategoryOrder(
+      List<Category> categoryList, BuildContext context) async {
+    bool isError = false;
+    state = const AsyncValue.loading();
+    final IndicatorOverlay indicatorOverlay = IndicatorOverlay();
+    indicatorOverlay.insertOverlay(context);
+
+    try {
+      await CategoryDBHelper.updateCategoryListOrder(categoryList);
+    } catch (e, stackTrace) {
+      isError = true;
+      state = AsyncValue.error(e, stackTrace);
+    } finally {
+      await Future.wait([
+        //カテゴリー更新
+        updateCategoryListState(),
+        //register更新
+        _refreshRegister(),
+      ]);
+
+      indicatorOverlay.removeOverlay();
+      //スナックバー表示
+      if (context.mounted && !isError) {
+        updateSnackBarCallBack(
+          text: 'カテゴリーを並び替えました',
           context: context,
           isError: isError,
           ref: ref,

@@ -9,6 +9,7 @@ import 'package:household_expense_project/component/setting_component.dart';
 import 'package:household_expense_project/constant/keyboard_components.dart';
 import 'package:household_expense_project/model/category.dart';
 import 'package:household_expense_project/provider/app_bar_provider.dart';
+import 'package:household_expense_project/provider/reorderable_provider.dart';
 import 'package:household_expense_project/provider/select_category_provider.dart';
 import 'package:household_expense_project/provider/category_list_provider.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
@@ -16,7 +17,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:household_expense_project/constant/constant.dart';
 
 //-------カテゴリ編集ページ---------------------------
-class CategoryEditPage extends ConsumerStatefulWidget {
+class CategoryEditPage extends StatefulHookConsumerWidget {
   final GlobalKey<FormState>? formKey;
   final bool isSubPage;
   final int providerIndex;
@@ -127,95 +128,107 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
     final selectCategoryStateNotifier =
         ref.read(selectCategoryprovider.notifier);
 
-    final subCategoryListProvider =
-        ref.watch(selectCategoryprovider.select((p) => p.subCategoryList));
-
     final currentExpense =
         ref.watch(selectCategoryprovider.select((p) => p.selectExpense));
 
-    final int numOfSubCategory = ref
-            .read(selectCategoryprovider.select((p) => p.subCategoryList))
-            ?.length ??
-        0;
+    //hooks
+    final ValueNotifier<List<Category>> subCategoryList = useState(
+        ref.watch(selectCategoryprovider.select((p) => p.subCategoryList)) ??
+            []);
+    useEffect(() {
+      subCategoryList.value = [
+        ...ref.watch(selectCategoryprovider.select((p) => p.subCategoryList)) ??
+            []
+      ];
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(reorderableProvider.notifier).initReorderState();
+      });
+      return () {};
+    }, [ref.watch(selectCategoryprovider.select((p) => p.subCategoryList))]);
+    final isReorder =
+        ref.watch(reorderableProvider.select((p) => p.isSubCategoryReorder));
 
-    return Container(
-      color: theme.colorScheme.surfaceContainer,
-      child: KeyboardActions(
-        keepFocusOnTappingNode: true,
-        autoScroll: true,
-        overscroll: 10,
-        tapOutsideBehavior: TapOutsideBehavior.translucentDismiss,
-        config: categoryKeyboardAction.buildConfig(context),
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: medium),
-          child: Padding(
-            padding: viewEdgeInsets,
-            child: Column(
-              children: [
-                //-----カテゴリーカード表示-----
-                ValueListenableBuilder(
-                  valueListenable: cateoryColorNotifer,
-                  builder: (context, color, _) {
-                    return Container(
-                      width: categoryCardWidth,
-                      height: categoryCardHeight,
-                      padding: smallEdgeInsets,
-                      margin: mediumEdgeInsets,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: color, width: 3),
-                        borderRadius: BorderRadius.circular(small),
-                      ),
-                      child: Column(
-                        children: [
-                          ValueListenableBuilder(
-                            valueListenable: cateoryIconNotifer,
-                            builder: (BuildContext context, iconData, _) {
-                              return Icon(
-                                iconData,
-                                color: color,
-                                size: 60,
-                                weight: 300,
-                              );
-                            },
-                          ),
-                          const Spacer(),
-                          ValueListenableBuilder(
-                            valueListenable: categoryNameController,
-                            builder: (BuildContext context, value, _) {
-                              return AutoSizeText(
-                                categoryNameController.text,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                minFontSize: 11,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
+    return SafeArea(
+      child: Container(
+        color: theme.colorScheme.surfaceContainer,
+        child: LayoutBuilder(builder: (context, boxConstraints) {
+          final double subCategoryAreaheight = boxConstraints.maxHeight -
+              (large * 5 +
+                  small * 2 +
+                  categoryCardHeight +
+                  formItemHeight * 4 +
+                  listHeight);
+          return KeyboardActions(
+            keepFocusOnTappingNode: true,
+            autoScroll: true,
+            overscroll: 10,
+            tapOutsideBehavior: TapOutsideBehavior.translucentDismiss,
+            config: categoryKeyboardAction.buildConfig(context),
+            child: Padding(
+              padding: viewEdgeInsets,
+              child: Column(
+                children: [
+                  //-----カテゴリーカード表示-----
+                  ValueListenableBuilder(
+                    valueListenable: cateoryColorNotifer,
+                    builder: (context, color, _) {
+                      return Container(
+                        width: categoryCardWidth,
+                        height: categoryCardHeight,
+                        padding: smallEdgeInsets,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: color, width: 3),
+                          borderRadius: BorderRadius.circular(small),
+                        ),
+                        child: Column(
+                          children: [
+                            ValueListenableBuilder(
+                              valueListenable: cateoryIconNotifer,
+                              builder: (BuildContext context, iconData, _) {
+                                return Icon(
+                                  iconData,
                                   color: color,
-                                  fontSize: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.fontSize,
-                                ),
-                              );
-                            },
-                          ),
-                          const Spacer(),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: medium),
+                                  size: 60,
+                                  weight: 300,
+                                );
+                              },
+                            ),
+                            const Spacer(),
+                            ValueListenableBuilder(
+                              valueListenable: categoryNameController,
+                              builder: (BuildContext context, value, _) {
+                                return AutoSizeText(
+                                  categoryNameController.text,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  minFontSize: 11,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: color,
+                                    fontSize: Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.fontSize,
+                                  ),
+                                );
+                              },
+                            ),
+                            const Spacer(),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: large),
 
-                //-----フォーム-----
-                Form(
-                  key: widget.formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      //カテゴリ名
-                      Padding(
-                        padding: mediumEdgeInsets,
-                        child: categoryFormBulder<String>(
+                  //-----フォーム-----
+                  Form(
+                    key: widget.formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        //カテゴリ名
+                        categoryFormBulder<String>(
                           title: widget.isSubPage
                               ? "サブ\nカテゴリー名"
                               : "$categoryTitle名",
@@ -295,12 +308,9 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                             ),
                           ),
                         )(context, "val", categoryNameHasFocus),
-                      ),
-
-                      //アイコン
-                      Padding(
-                        padding: mediumEdgeInsets,
-                        child: KeyboardCustomInput<IconData>(
+                        SizedBox(height: small),
+                        //アイコン
+                        KeyboardCustomInput<IconData>(
                           focusNode: categoryIconNode,
                           notifier: cateoryIconNotifer,
                           builder: categoryFormBulder<IconData>(
@@ -312,12 +322,9 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                             ),
                           ),
                         ),
-                      ),
-
-                      //色
-                      Padding(
-                        padding: mediumEdgeInsets,
-                        child: KeyboardCustomInput<Color>(
+                        SizedBox(height: small),
+                        //色
+                        KeyboardCustomInput<Color>(
                           focusNode: categoryColorNode,
                           notifier: cateoryColorNotifer,
                           builder: categoryFormBulder<Color>(
@@ -325,67 +332,143 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                             inputWidgetBuilder: (val) => Container(
                               decoration: BoxDecoration(
                                 color: val,
-                                borderRadius: formInputInnerBoarderRadius,
+                                borderRadius: formInputBoarderRadius,
                               ),
                             ),
                           ),
                         ),
-                      ),
 
-                      if (selectedCategory != null)
-                        Column(
-                          children: [
-                            if (!widget.isSubPage)
-                              //サブカテゴリー
-                              Container(
-                                clipBehavior: Clip.antiAlias,
-                                decoration: BoxDecoration(
-                                    color: theme.colorScheme.surface,
-                                    borderRadius: formInputInnerBoarderRadius),
-                                margin: mediumEdgeInsets,
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      height: listHeight,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                      alignment: Alignment.centerLeft,
-                                      padding:
-                                          const EdgeInsets.only(left: medium),
-                                      child: Text(
-                                        "サブカテゴリー",
-                                        textAlign: TextAlign.left,
-                                        style: TextStyle(
-                                            color: theme.colorScheme.surface,
-                                            fontWeight: FontWeight.w600),
-                                      ),
-                                    ),
-                                    for (int i = 0;
-                                        i < numOfSubCategory;
-                                        i++) ...{
-                                      SubCategoryListItem(
-                                        category: subCategoryListProvider![i],
-                                        provider: selectCategoryprovider,
-                                      ),
-                                      Divider(
-                                        height: 0,
-                                        thickness: 0.2,
-                                        color: theme.colorScheme.outline,
-                                      ),
-                                    },
-                                    SubCategoryListItem(
-                                      isNewAdd: true,
-                                      category: null,
-                                      provider: selectCategoryprovider,
-                                    )
-                                  ],
-                                ),
+                        if (selectedCategory != null) ...{
+                          if (!widget.isSubPage)
+                            //サブカテゴリーヘッダ
+                            Container(
+                              margin: EdgeInsets.only(top: large),
+                              height: listHeight,
+                              alignment: Alignment.centerLeft,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.vertical(
+                                    top:
+                                        Radius.circular(containreBorderRadius)),
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
-                            const SizedBox(height: medium),
-                            Row(
+                              padding: const EdgeInsets.only(left: medium),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    "サブカテゴリー",
+                                    textAlign: TextAlign.left,
+                                    style: TextStyle(
+                                        color: theme.colorScheme.surface,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                  Spacer(),
+                                  //reorderIconButton
+                                  IconButton(
+                                    icon: ref
+                                            .watch(reorderableProvider)
+                                            .isSubCategoryReorder
+                                        ? const Icon(Icons.check)
+                                        : const Icon(Icons.reorder),
+                                    iconSize: IconTheme.of(context).size,
+                                    color: theme.colorScheme.surface,
+                                    disabledColor:
+                                        Theme.of(context).disabledColor,
+                                    onPressed: () => {
+                                      ref
+                                          .read(reorderableProvider.notifier)
+                                          .changeSubCategoryReorder(context)
+                                    },
+                                    style: IconButton.styleFrom(
+                                        overlayColor: Colors.transparent),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          //サブカテゴリーリスト
+                          if (!widget.isSubPage)
+                            SizedBox(
+                              height: subCategoryAreaheight,
+                              child: ReorderableListView(
+                                buildDefaultDragHandles: false,
+                                onReorder: (int oldIndex, int newIndex) {
+                                  if (oldIndex < newIndex) {
+                                    newIndex -= 1;
+                                  }
+                                  final Category item =
+                                      subCategoryList.value.removeAt(oldIndex);
+                                  subCategoryList.value.insert(newIndex, item);
+
+                                  subCategoryList.value = [
+                                    ...subCategoryList.value
+                                  ]; //useStateリビルド用の再割り当て
+                                  //update用セット
+                                  ref
+                                      .read(reorderableProvider.notifier)
+                                      .setReorderSubCategoryList(
+                                          subCategoryList.value);
+                                },
+                                footer: isReorder
+                                    ? SizedBox.shrink()
+                                    : SubCategoryListItem(
+                                        isNewAdd: true,
+                                        category: null,
+                                        provider: selectCategoryprovider,
+                                        isBottom: true,
+                                      ),
+                                children: [
+                                  for (int i = 0;
+                                      i < subCategoryList.value.length;
+                                      i++) ...{
+                                    (isReorder)
+                                        ? ReorderableDragStartListener(
+                                            key: Key(
+                                                "${subCategoryList.value[i].id}"),
+                                            index: i,
+                                            child: SubCategoryListItem(
+                                              key: Key(
+                                                  "${subCategoryList.value[i].id}"),
+                                              category:
+                                                  subCategoryList.value[i],
+                                              provider: selectCategoryprovider,
+                                              isBottom: isReorder &&
+                                                  (i ==
+                                                      subCategoryList
+                                                              .value.length -
+                                                          1),
+                                              isDivider: !isReorder ||
+                                                  (i !=
+                                                      subCategoryList
+                                                              .value.length -
+                                                          1),
+                                            ),
+                                          )
+                                        : SubCategoryListItem(
+                                            key: Key(
+                                                "${subCategoryList.value[i].id}"),
+                                            category: subCategoryList.value[i],
+                                            provider: selectCategoryprovider,
+                                            isBottom: isReorder &&
+                                                (i ==
+                                                    subCategoryList
+                                                            .value.length -
+                                                        1),
+                                            isDivider: !isReorder ||
+                                                (i !=
+                                                    subCategoryList
+                                                            .value.length -
+                                                        1),
+                                          ),
+                                  },
+                                ],
+                              ),
+                            ),
+                          SizedBox(height: large),
+                          SizedBox(
+                            height: formItemHeight,
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 //カテゴリー移行
-                                const SizedBox(width: medium),
                                 Expanded(
                                   flex: 1,
                                   child: OutlinedButton(
@@ -430,7 +513,7 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: lmedium),
+                                const SizedBox(width: medium),
                                 //カテゴリー削除
                                 Expanded(
                                   flex: 1,
@@ -476,19 +559,18 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: medium),
                               ],
                             ),
-                            const SizedBox(height: large),
-                          ],
-                        ),
-                    ],
+                          ),
+                        }
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
@@ -500,11 +582,15 @@ class SubCategoryListItem extends HookConsumerWidget {
   final bool isNewAdd;
   final NotifierProvider<SelectCategoryStateNotifier, SelectCategoryState>
       provider;
+  final bool isBottom;
+  final bool isDivider;
   const SubCategoryListItem({
     super.key,
     required this.category,
     this.isNewAdd = false,
     required this.provider,
+    this.isBottom = false,
+    this.isDivider = false,
   });
   final String _defaultName = "新規追加";
 
@@ -522,10 +608,13 @@ class SubCategoryListItem extends HookConsumerWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () {
-        ref.read(provider.notifier).updateSelectSubCategory(category);
-        //settingCategoryStateNotifierProviderをセット
-        goRoute.push('/setting/category_list/category_edit/sub_category_edit',
-            extra: 0);
+        if (!ref
+            .read(reorderableProvider.select((p) => p.isSubCategoryReorder))) {
+          ref.read(provider.notifier).updateSelectSubCategory(category);
+          //settingCategoryStateNotifierProviderをセット
+          goRoute.push('/setting/category_list/category_edit/sub_category_edit',
+              extra: 0);
+        }
       },
       onTapDown: (_) =>
           {listItemColor.value = theme.colorScheme.surfaceContainerHighest},
@@ -533,9 +622,23 @@ class SubCategoryListItem extends HookConsumerWidget {
       onTapCancel: () =>
           {listItemColor.value = theme.colorScheme.surfaceBright},
       child: AnimatedContainer(
-        color: listItemColor.value,
         height: listHeight,
         duration: listItemAnimationDuration,
+        decoration: BoxDecoration(
+          color: listItemColor.value,
+          border: isDivider
+              ? Border(
+                  bottom: BorderSide(
+                    width: 0.2,
+                    color: theme.colorScheme.outline,
+                  ),
+                )
+              : Border(),
+          borderRadius: BorderRadius.vertical(
+            bottom:
+                isBottom ? Radius.circular(containreBorderRadius) : Radius.zero,
+          ),
+        ),
         padding: const EdgeInsets.fromLTRB(medium, small, medium, small),
         child: Row(
           children: [
@@ -568,10 +671,16 @@ class SubCategoryListItem extends HookConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Icon(Symbols.chevron_right,
-                weight: 300,
-                size: 25,
-                color: theme.colorScheme.onSurfaceVariant),
+            (ref.watch(
+                    reorderableProvider.select((p) => p.isSubCategoryReorder)))
+                ? Icon(Symbols.reorder,
+                    weight: 300,
+                    size: 25,
+                    color: theme.colorScheme.onSurfaceVariant)
+                : Icon(Symbols.chevron_right,
+                    weight: 300,
+                    size: 25,
+                    color: theme.colorScheme.onSurfaceVariant),
           ],
         ),
       ),

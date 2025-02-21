@@ -286,4 +286,28 @@ class RegisterRecurringDBHelper {
     }
     return registerRecurringList;
   }
+
+  //更新（order変更）
+  static Future<void> updateOrderRecurring(
+      List<RegisterRecurring> registerRecurringList) async {
+    try {
+      String sql =
+          'UPDATE $registerRecurringTable SET $registerRecurringOrder = CASE ';
+      List<dynamic> arguments = [];
+
+      for (int i = 0; i < registerRecurringList.length; i++) {
+        sql += 'WHEN $registerRecurringPrimaryId = ? THEN ? ';
+        arguments.add(registerRecurringList[i].id); // ID
+        arguments.add(i + 1); // order
+      }
+      sql +=
+          'END WHERE $registerRecurringPrimaryId IN (${registerRecurringList.map((e) => '?').join(', ')})';
+      arguments.addAll(registerRecurringList.map((e) => e.id).toList());
+
+      // update
+      await _database.rawUpdate(sql, arguments);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

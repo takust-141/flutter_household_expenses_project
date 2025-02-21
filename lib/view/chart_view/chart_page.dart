@@ -29,7 +29,7 @@ class ChartPage extends ConsumerWidget {
               ],
             ),
           ),
-          const AdaptiveAdBanner(key: GlobalObjectKey("chart_ad")),
+          const AdaptiveAdBanner(2, key: GlobalObjectKey("chart_ad")),
         ],
       ),
     );

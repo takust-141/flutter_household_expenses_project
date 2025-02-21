@@ -1,4 +1,3 @@
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -204,16 +203,13 @@ class ChartTransitionFigure extends HookConsumerWidget {
     //return
     return (transitionChartState.loadingState != 2 ||
             ref.watch(transitionChartProvider).isRefreshing)
-        ? Container(
-            //color: Colors.black.withValues(alpha: 0.1),
-            child: const Center(
-              child: Padding(
-                padding: largeEdgeInsets,
-                child: SizedBox(
-                  height: 35,
-                  width: 35,
-                  child: CircularProgressIndicator(strokeWidth: 3),
-                ),
+        ? const Center(
+            child: Padding(
+              padding: largeEdgeInsets,
+              child: SizedBox(
+                height: 35,
+                width: 35,
+                child: CircularProgressIndicator(strokeWidth: 3),
               ),
             ),
           )

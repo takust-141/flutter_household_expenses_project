@@ -106,13 +106,6 @@ class CalendarPageNotifier
   late CalendarPageState _defaultState;
   @override
   Future<CalendarPageState> build() async {
-    ref.onDispose(() {
-      state.valueOrNull?.pageViewController.dispose();
-      state.valueOrNull?.listWheelYearController.dispose();
-      state.valueOrNull?.listWheelMonthController.dispose();
-      state.valueOrNull?.listScrollController.dispose();
-    });
-
     final registerList =
         await RegisterDBProvider.getRegisterStateOfMonth(DateTime.now());
     final registerDaySumMap = calcDaySumRegister(registerList);

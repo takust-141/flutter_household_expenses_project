@@ -301,6 +301,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
                       ? 0
                       : registerSpacerHeight;
                   return KeyboardActions(
+                    keepFocusOnTappingNode: true,
                     autoScroll: true,
                     overscroll: 40,
                     tapOutsideBehavior: TapOutsideBehavior.translucentDismiss,
@@ -553,7 +554,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
                   );
                 }),
               ),
-              const AdaptiveAdBanner(key: GlobalObjectKey("register_ad")),
+              const AdaptiveAdBanner(0, key: GlobalObjectKey("register_ad")),
             ],
           ),
           VersionUpdateSnackBar(),

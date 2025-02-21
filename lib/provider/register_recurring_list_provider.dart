@@ -644,6 +644,41 @@ class RegisterRecurringNotifier
     }
   }
 
+  //update
+  //Orderアップデート
+  Future updateRecurringListOrder(
+    List<RegisterRecurring> registerRecurringList,
+    BuildContext context,
+  ) async {
+    state = const AsyncValue.loading();
+    final IndicatorOverlay indicatorOverlay = IndicatorOverlay();
+    indicatorOverlay.insertOverlay(context);
+    bool isError = false;
+
+    try {
+      //registerRecrring更新
+      await RegisterRecurringDBHelper.updateOrderRecurring(
+          registerRecurringList);
+    } catch (e, stackTrace) {
+      isError = true;
+      state = AsyncValue.error(e, stackTrace);
+    } finally {
+      //register recurring List更新
+      state = AsyncData(await getAllRegisterRecurringList());
+      indicatorOverlay.removeOverlay();
+      //スナックバー表示
+      if (context.mounted && !isError) {
+        updateSnackBarCallBack(
+          text: '定期収支を並び替えました',
+          context: context,
+          isError: isError,
+          ref: ref,
+          isNotNeedBottomHeight: true,
+        );
+      }
+    }
+  }
+
   //IdからList内のRegisterRecurringを取得
   RegisterRecurring? getRegisterRecurringFromId(int recurringId) {
     final List<RegisterRecurring> registerRecurringList = state.valueOrNull?[

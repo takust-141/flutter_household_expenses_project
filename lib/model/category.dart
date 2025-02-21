@@ -70,14 +70,18 @@ class Category {
   }
 
   Category copyWith(
-      {String? name, IconData? icon, Color? color, SelectExpense? expense}) {
+      {String? name,
+      IconData? icon,
+      Color? color,
+      int? order,
+      SelectExpense? expense}) {
     return Category(
       id: id,
       name: name ?? this.name,
       icon: icon ?? this.icon,
       color: color ?? this.color,
       parentId: parentId,
-      order: order,
+      order: order ?? this.order,
       expense: expense ?? this.expense,
     );
   }

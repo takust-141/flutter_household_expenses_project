@@ -89,7 +89,7 @@ class SettingPage extends HookConsumerWidget {
                 ),
               ),
             ),
-            const AdaptiveAdBanner(key: GlobalObjectKey("setting_ad")),
+            const AdaptiveAdBanner(4, key: GlobalObjectKey("setting_ad")),
           ],
         ),
       ),

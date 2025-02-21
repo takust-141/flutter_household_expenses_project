@@ -14,9 +14,12 @@ void updateSnackBarCallBack({
   final theme = Theme.of(context);
   double bottomHeight = 0;
   if (isNotNeedBottomHeight != true) {
-    if (ref is WidgetRef || ref is Ref) {
+    if (ref is WidgetRef) {
       bottomHeight =
-          ref.read(adNotifierProvider).valueOrNull?.bottomBannerHeight ?? 0;
+          ref.read(adNotifierProvider).adSize?.height.toDouble() ?? 0;
+    } else if (ref is Ref) {
+      bottomHeight =
+          ref.read(adNotifierProvider).adSize?.height.toDouble() ?? 0;
     }
   }
 
@@ -49,9 +52,11 @@ void versionUpdateSnackBar({
 }) {
   final theme = Theme.of(context);
   double bottomHeight = 0;
-  if (ref is WidgetRef || ref is Ref) {
-    bottomHeight =
-        ref.read(adNotifierProvider).valueOrNull?.bottomBannerHeight ?? 0;
+
+  if (ref is WidgetRef) {
+    bottomHeight = ref.read(adNotifierProvider).adSize?.height.toDouble() ?? 0;
+  } else if (ref is Ref) {
+    bottomHeight = ref.read(adNotifierProvider).adSize?.height.toDouble() ?? 0;
   }
 
   SnackBar snackBar = SnackBar(

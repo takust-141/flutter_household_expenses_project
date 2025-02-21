@@ -142,7 +142,7 @@ void openDialog({
 }
 
 //汎用ダイアログ（複数ボタン）
-Future<void> openDialogopenDialogContainWidget({
+Future<void> openDialogContainWidget({
   required BuildContext context,
   required String title,
   required List<String> buttonTextList,

@@ -31,7 +31,7 @@ class SearchPage extends ConsumerWidget {
                 registerEditProvider: searchPageProvider,
               ),
             ),
-            const AdaptiveAdBanner(key: GlobalObjectKey("search_ad"))
+            const AdaptiveAdBanner(3, key: GlobalObjectKey("search_ad"))
           ],
         ),
       ),

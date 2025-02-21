@@ -478,10 +478,12 @@ class KeyboardActionstate extends ConsumerState<KeyboardActions>
 
   void scrollToObject(
       ScrollController scrollController, Duration duration, Cubic? curve) {
-    final focusNode = ref.read(offsetFocus);
+    final focusNode = (ref.read(offsetFocus)?.context?.mounted == true)
+        ? ref.read(offsetFocus)
+        : null;
     final offset = ref.read(offsetProvider);
     final voidSpan = (focusNode?.size.height ?? 0) + widget.overscroll;
-    if (focusNode != null) {
+    if (focusNode != null && scrollController.hasClients) {
       final focuRenderObject = focusNode.context?.findRenderObject();
       if (focuRenderObject is RenderBox) {
         final focusOffset = focuRenderObject.localToGlobal(Offset.zero).dy;

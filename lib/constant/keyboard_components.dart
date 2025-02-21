@@ -4,7 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 final List<IconData> keyboardIcons = [
   //お金系
   Symbols.savings,
-  Symbols.payment,
+  Symbols.payments,
   Symbols.credit_card,
   Symbols.receipt_long,
   Symbols.show_chart,

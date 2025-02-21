@@ -4,13 +4,14 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expense_project/model/category.dart';
 import 'package:household_expense_project/provider/app_bar_provider.dart';
+import 'package:household_expense_project/provider/reorderable_provider.dart';
 import 'package:household_expense_project/provider/select_category_provider.dart';
 import 'package:household_expense_project/provider/category_list_provider.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:household_expense_project/constant/constant.dart';
 
 //-------カテゴリリストページ---------------------------
-class CategoryListPage extends ConsumerWidget {
+class CategoryListPage extends HookConsumerWidget {
   const CategoryListPage({super.key});
 
   @override
@@ -19,48 +20,87 @@ class CategoryListPage extends ConsumerWidget {
 
     final settingCategoryState =
         ref.watch(settingCategoryStateNotifierProvider);
-    final categoryList = ref
-        .watch(categoryListNotifierProvider)
-        .valueOrNull?[settingCategoryState.selectExpense];
-    final int numOfCategory = categoryList?.length ?? 0;
+
+    //hooks
+    final ValueNotifier<List<Category>> categoryList = useState([
+      ...ref
+              .watch(categoryListNotifierProvider)
+              .valueOrNull?[settingCategoryState.selectExpense] ??
+          []
+    ]);
+
+    useEffect(() {
+      categoryList.value = [
+        ...ref
+                .watch(categoryListNotifierProvider)
+                .valueOrNull?[settingCategoryState.selectExpense] ??
+            []
+      ];
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(reorderableProvider.notifier).initReorderState();
+      });
+      return () {};
+    }, [
+      ref
+          .watch(categoryListNotifierProvider)
+          .valueOrNull?[settingCategoryState.selectExpense]
+    ]);
+
+    final isReorder =
+        ref.watch(reorderableProvider.select((p) => p.isCategoryReorder));
 
     return SafeArea(
       child: DecoratedBox(
         decoration: BoxDecoration(color: theme.colorScheme.surfaceContainer),
-        child: ListView(
+        child: ReorderableListView(
           padding: viewEdgeInsets,
+          buildDefaultDragHandles: false,
+          onReorder: (int oldIndex, int newIndex) {
+            if (oldIndex < newIndex) {
+              newIndex -= 1;
+            }
+            final Category item = categoryList.value.removeAt(oldIndex);
+            categoryList.value.insert(newIndex, item);
+
+            categoryList.value = [...categoryList.value]; //useStateリビルド用の再割り当て
+            //update用セット
+            ref
+                .read(reorderableProvider.notifier)
+                .setReorderCategoryList(categoryList.value);
+          },
+          //新規追加
+          footer: isReorder
+              ? SizedBox.shrink()
+              : Container(
+                  margin: EdgeInsets.only(top: medium),
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(containreBorderRadius),
+                  ),
+                  child: const CategoryListItem(isNewAdd: true, category: null),
+                ),
           children: [
-            //カテゴリリスト
-            Container(
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(containreBorderRadius),
-              ),
-              child: Column(
-                children: [
-                  for (int i = 0; i < numOfCategory; i++) ...{
-                    CategoryListItem(
-                      category: categoryList![i],
-                    ),
-                    if (i != numOfCategory - 1)
-                      Divider(
-                        height: 0,
-                        thickness: 0.2,
-                        color: theme.colorScheme.outline,
+            for (int i = 0; i < categoryList.value.length; i++) ...{
+              (isReorder)
+                  ? ReorderableDragStartListener(
+                      key: Key("${categoryList.value[i].id}"),
+                      index: i,
+                      child: CategoryListItem(
+                        key: Key("${categoryList.value[i].id}"),
+                        category: categoryList.value[i],
+                        isTop: i == 0,
+                        isBottom: i == categoryList.value.length - 1,
+                        isDivider: i != categoryList.value.length - 1,
                       ),
-                  }
-                ],
-              ),
-            ),
-            //新規追加
-            const SizedBox(height: small),
-            Container(
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(containreBorderRadius),
-              ),
-              child: const CategoryListItem(isNewAdd: true, category: null),
-            ),
+                    )
+                  : CategoryListItem(
+                      key: Key("${categoryList.value[i].id}"),
+                      category: categoryList.value[i],
+                      isTop: i == 0,
+                      isBottom: i == categoryList.value.length - 1,
+                      isDivider: i != categoryList.value.length - 1,
+                    ),
+            }
           ],
         ),
       ),
@@ -72,10 +112,16 @@ class CategoryListPage extends ConsumerWidget {
 class CategoryListItem extends HookConsumerWidget {
   final Category? category;
   final bool isNewAdd;
+  final bool isTop;
+  final bool isBottom;
+  final bool isDivider;
   const CategoryListItem({
     super.key,
     required this.category,
     this.isNewAdd = false,
+    this.isTop = false,
+    this.isBottom = false,
+    this.isDivider = false,
   });
   final String _defaultName = "新規追加";
 
@@ -94,15 +140,17 @@ class CategoryListItem extends HookConsumerWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () async {
-        ref
-            .read(settingCategoryStateNotifierProvider.notifier)
-            .updateSelectParentCategory(category);
-        ref
-            .read(appBarProvider.notifier)
-            .updateActiveCategoryDoneButton(category?.name);
+        if (!ref.read(reorderableProvider.select((p) => p.isCategoryReorder))) {
+          ref
+              .read(settingCategoryStateNotifierProvider.notifier)
+              .updateSelectParentCategory(category);
+          ref
+              .read(appBarProvider.notifier)
+              .updateActiveCategoryDoneButton(category?.name);
 
-        //settingCategoryStateNotifierProviderをセット
-        goRoute.go('/setting/category_list/category_edit', extra: 0);
+          //settingCategoryStateNotifierProviderをセット
+          goRoute.go('/setting/category_list/category_edit', extra: 0);
+        }
       },
       onTapDown: (_) =>
           {listItemColor.value = theme.colorScheme.surfaceContainerHighest},
@@ -110,10 +158,26 @@ class CategoryListItem extends HookConsumerWidget {
       onTapCancel: () =>
           {listItemColor.value = theme.colorScheme.surfaceBright},
       child: AnimatedContainer(
-        color: listItemColor.value,
         height: listHeight,
         duration: listItemAnimationDuration,
         padding: smallEdgeInsets,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: listItemColor.value,
+          border: isDivider
+              ? Border(
+                  bottom: BorderSide(
+                    width: 0.2,
+                    color: theme.colorScheme.outline,
+                  ),
+                )
+              : Border(),
+          borderRadius: BorderRadius.vertical(
+            top: isTop ? Radius.circular(containreBorderRadius) : Radius.zero,
+            bottom:
+                isBottom ? Radius.circular(containreBorderRadius) : Radius.zero,
+          ),
+        ),
         child: Row(
           children: [
             isNewAdd
@@ -145,10 +209,15 @@ class CategoryListItem extends HookConsumerWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Icon(Symbols.chevron_right,
-                weight: 300,
-                size: 25,
-                color: theme.colorScheme.onSurfaceVariant),
+            (ref.watch(reorderableProvider.select((p) => p.isCategoryReorder)))
+                ? Icon(Symbols.reorder,
+                    weight: 300,
+                    size: 25,
+                    color: theme.colorScheme.onSurfaceVariant)
+                : Icon(Symbols.chevron_right,
+                    weight: 300,
+                    size: 25,
+                    color: theme.colorScheme.onSurfaceVariant),
           ],
         ),
       ),

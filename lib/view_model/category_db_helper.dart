@@ -74,6 +74,29 @@ class CategoryDBHelper {
     }
   }
 
+  //カテゴリーのOrderupdate
+  static Future<void> updateCategoryListOrder(
+      List<Category> categoryList) async {
+    try {
+      String sql = 'UPDATE $categoryTable SET $categoryOrder = CASE ';
+      List<dynamic> arguments = [];
+
+      for (int i = 0; i < categoryList.length; i++) {
+        sql += 'WHEN $categoryId = ? THEN ? ';
+        arguments.add(categoryList[i].id); // ID
+        arguments.add(i + 1); // order
+      }
+      sql +=
+          'END WHERE $categoryId IN (${categoryList.map((e) => '?').join(', ')})';
+      arguments.addAll(categoryList.map((e) => e.id).toList());
+
+      // update
+      await _database.rawUpdate(sql, arguments);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   //対象のカテゴリーとサブカテゴリーを全て削除（整合性のために先にregisterを削除）
   static Future<void> deleteCategoryFromId(int deleteId) async {
     try {

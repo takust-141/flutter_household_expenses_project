@@ -322,7 +322,7 @@ class SelectCategoryStateNotifier
       //スナックバー表示
       if (context.mounted) {
         updateSnackBarCallBack(
-          text: isError ? 'カテゴリーの削除に失敗しました' : 'カテゴリーを削除しました',
+          text: isError ? 'サブカテゴリーの追加に失敗しました' : 'サブカテゴリーを追加しました',
           context: context,
           isError: isError,
           ref: ref,
@@ -358,7 +358,7 @@ class SelectCategoryStateNotifier
       //スナックバー表示
       if (context.mounted) {
         updateSnackBarCallBack(
-          text: isError ? 'カテゴリーの更新に失敗しました' : 'カテゴリーを更新しました',
+          text: isError ? 'サブカテゴリーの更新に失敗しました' : 'サブカテゴリーを更新しました',
           context: context,
           isError: isError,
           ref: ref,
@@ -403,6 +403,43 @@ class SelectCategoryStateNotifier
       if (context.mounted) {
         updateSnackBarCallBack(
           text: isError ? 'カテゴリーの削除に失敗しました' : 'サブカテゴリーを削除しました',
+          context: context,
+          isError: isError,
+          ref: ref,
+          isNotNeedBottomHeight: true,
+        );
+      }
+    }
+  }
+
+  //order変更
+  Future<void> updateSubCategoryOrderOfDB(
+      List<Category> categoryList, BuildContext context) async {
+    bool isError = false;
+    final IndicatorOverlay indicatorOverlay = IndicatorOverlay();
+    indicatorOverlay.insertOverlay(context);
+    try {
+      await CategoryDBHelper.updateCategoryListOrder(categoryList);
+    } catch (e) {
+      isError = true;
+      rethrow;
+    } finally {
+      //DB更新時レジスターリスト更新
+      await _refreshRegister();
+      List<Category> subCategoryList =
+          await getSubCategoryList(state.category?.id);
+      state = SelectCategoryState(
+        category: state.category,
+        subCategory: null,
+        subCategoryList: subCategoryList,
+        selectExpense: state.selectExpense,
+      );
+
+      indicatorOverlay.removeOverlay();
+      //スナックバー表示
+      if (context.mounted && !isError) {
+        updateSnackBarCallBack(
+          text: 'カテゴリーを並び替えました',
           context: context,
           isError: isError,
           ref: ref,

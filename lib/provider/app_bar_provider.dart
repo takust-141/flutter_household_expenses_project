@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expense_project/component/segmented_button.dart';
 import 'package:household_expense_project/constant/constant.dart';
 import 'package:household_expense_project/provider/app_version_provider.dart';
+import 'package:household_expense_project/provider/reorderable_provider.dart';
 import 'package:household_expense_project/provider/select_category_provider.dart';
 import 'package:household_expense_project/provider/setting_recurring_provider.dart';
 import 'package:household_expense_project/view/calendar_view/calendar_page.dart';
@@ -269,12 +271,13 @@ class AppBarNotifier extends Notifier<AppBarState> {
               "定期${ref.read(registerEditCategoryStateNotifierProvider.select((p) => p.selectExpense.text))}${titleText!}";
         }
         if (titleText != null) {
-          return Text(
+          return AutoSizeText(
             titleText!,
+            maxLines: 1,
             style: fontStyle?.copyWith(
                 fontSize: 18, color: Theme.of(context).colorScheme.onSurface),
             key: ValueKey<String?>(state.appBarTitle),
-            overflow: TextOverflow.ellipsis,
+            //overflow: TextOverflow.ellipsis,
           );
         } else {
           return const SizedBox();
@@ -309,6 +312,14 @@ class AppBarNotifier extends Notifier<AppBarState> {
     }
     if (state.name == rootNameRegister) {
       return AppBarInformationWidget();
+    }
+
+    if (state.name == rootNameCategoryList) {
+      return AppBarReorderWidget(0);
+    }
+
+    if (state.name == rootNameRecurringList) {
+      return AppBarReorderWidget(1);
     }
     return null;
   }
@@ -463,5 +474,34 @@ class AppBarInformationWidget extends ConsumerWidget {
               : SizedBox.shrink();
         },
         orElse: () => SizedBox.shrink());
+  }
+}
+
+//並び替えボタン
+class AppBarReorderWidget extends HookConsumerWidget {
+  const AppBarReorderWidget(this.flag, {super.key});
+  final int flag; //0:categoryList、1:recurringList
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return IconButton(
+      icon: ((flag == 0)
+              ? ref.watch(reorderableProvider).isCategoryReorder
+              : ref.watch(reorderableProvider).isRecurringReorder)
+          ? const Icon(Icons.check)
+          : const Icon(Icons.reorder),
+      iconSize: IconTheme.of(context).size,
+      color: IconTheme.of(context).color,
+      disabledColor: Theme.of(context).disabledColor,
+      onPressed: () {
+        if (flag == 0) {
+          ref.read(reorderableProvider.notifier).changeCategoryReorder(context);
+        } else {
+          ref
+              .read(reorderableProvider.notifier)
+              .changeRecurringReorder(context);
+        }
+      },
+      style: IconButton.styleFrom(overlayColor: Colors.transparent),
+    );
   }
 }
