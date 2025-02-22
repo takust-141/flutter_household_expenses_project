@@ -137,6 +137,48 @@ class CategoryNotifier
     }
   }
 
+  //メインカテゴリー移行処理
+  //register移行 → サブカテゴリーとメインカテゴリー削除 → リスト、各state更新
+  Future destinationCategoryFromId(
+      Category fromCategory, Category toCategory, BuildContext context) async {
+    bool isError = false;
+    state = const AsyncValue.loading();
+
+    final IndicatorOverlay indicatorOverlay = IndicatorOverlay();
+    indicatorOverlay.insertOverlay(context);
+    try {
+      //register削除→from（カテゴリーとサブカテゴリー）をtoに変更
+      await CategoryDBHelper.destinationCategoryFromId(
+          fromCategory, toCategory);
+    } catch (e, stackTrace) {
+      isError = true;
+      state = AsyncValue.error(e, stackTrace);
+    } finally {
+      await Future.wait([
+        //カテゴリー更新
+        updateCategoryListState(),
+        //register更新
+        _refreshRegister(),
+        //recurring register更新
+        ref
+            .read(registerRecurringListNotifierProvider.notifier)
+            .refreshFromCategory(ref),
+      ]);
+
+      indicatorOverlay.removeOverlay();
+      //スナックバー表示
+      if (context.mounted) {
+        updateSnackBarCallBack(
+          text: isError ? 'カテゴリーの移行に失敗しました' : 'カテゴリーを移行しました',
+          context: context,
+          isError: isError,
+          ref: ref,
+          isNotNeedBottomHeight: true,
+        );
+      }
+    }
+  }
+
   //カテゴリー更新
   Future updateCategory(Category category, BuildContext context) async {
     bool isError = false;

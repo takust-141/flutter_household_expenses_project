@@ -412,6 +412,54 @@ class SelectCategoryStateNotifier
     }
   }
 
+  //サブカテゴリー移行処理
+  //register移行 → サブカテゴリーとメインカテゴリー削除 → リスト、各state更新
+  Future<void> destinationCategoryFromId(
+      Category fromCategory, Category toCategory, BuildContext context) async {
+    bool isError = false;
+
+    final IndicatorOverlay indicatorOverlay = IndicatorOverlay();
+    indicatorOverlay.insertOverlay(context);
+    try {
+      //register削除→カテゴリー、サブカテゴリー削除
+      await CategoryDBHelper.destinationCategoryFromId(
+          fromCategory, toCategory);
+    } catch (e) {
+      isError = true;
+      rethrow;
+    } finally {
+      //register更新
+      await Future.wait([
+        _refreshRegister(),
+        //recurring register更新
+        ref
+            .read(registerRecurringListNotifierProvider.notifier)
+            .refreshFromCategory(ref),
+      ]);
+
+      //サブカテゴリーリスト更新
+      List<Category> subCategoryList =
+          await getSubCategoryList(state.category?.id);
+      state = SelectCategoryState(
+        category: state.category,
+        subCategory: null,
+        subCategoryList: subCategoryList,
+        selectExpense: state.selectExpense,
+      );
+      indicatorOverlay.removeOverlay();
+      //スナックバー表示
+      if (context.mounted) {
+        updateSnackBarCallBack(
+          text: isError ? 'カテゴリーの移行に失敗しました' : 'サブカテゴリーを移行しました',
+          context: context,
+          isError: isError,
+          ref: ref,
+          isNotNeedBottomHeight: true,
+        );
+      }
+    }
+  }
+
   //order変更
   Future<void> updateSubCategoryOrderOfDB(
       List<Category> categoryList, BuildContext context) async {

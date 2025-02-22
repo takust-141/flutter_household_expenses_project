@@ -24,7 +24,7 @@ const String moveCategoryTitle = "移行";
 const String delCategoryTitle = "削除";
 
 const String moveDialogText =
-    "に登録されているデータを別のカテゴリーに移行し、このカテゴリーを削除します。\n移行先のカテゴリーを選択してください。";
+    "に登録されているデータを別のカテゴリーに移行します。\n（サブカテゴリーがある場合はサブカテゴリーも移行されます）\n移行先のカテゴリーを選択してください。";
 const String delSubDialogText = "に紐づくデータは全て削除されます。（定期収支も含む）\nよろしいですか？";
 const String delDialogText =
     "に紐づくデータは全て削除されます。（サブカテゴリーに紐づくデータ、定期収支を含む）\nよろしいですか？";

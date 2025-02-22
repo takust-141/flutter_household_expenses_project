@@ -54,7 +54,8 @@ void openDialog({
   required String title,
   required String text,
   required String buttonText,
-  required Future<void> Function() onTap,
+  required Future Function()? onTap,
+  Widget? aditionalWidget,
 }) async {
   final theme = Theme.of(context);
   final navigator = Navigator.of(context);
@@ -85,6 +86,10 @@ void openDialog({
               ),
               const SizedBox(height: large),
               AutoSizeText(text, textAlign: TextAlign.left),
+              if (aditionalWidget != null) ...{
+                const SizedBox(height: large),
+                aditionalWidget,
+              },
               const SizedBox(height: large),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -113,10 +118,12 @@ void openDialog({
                   Expanded(
                     child: FilledButton(
                       onPressed: () async {
-                        await onTap();
-                        if (!context.mounted) return;
-                        Navigator.pop(context);
-                        navigator.pop();
+                        if (onTap != null) {
+                          await onTap();
+                          if (!context.mounted) return;
+                          Navigator.pop(context);
+                          navigator.pop();
+                        }
                       },
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(

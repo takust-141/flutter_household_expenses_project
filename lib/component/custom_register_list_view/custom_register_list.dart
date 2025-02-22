@@ -48,47 +48,46 @@ class CustomRegisterList extends HookConsumerWidget {
     }
 
     // 年月ごとにグループ化
-    List<List<Register>> registerListGroup = [];
-    int j = 0;
-    for (int i = 0; (i < registerList.length && i < displayCount.value); i++) {
-      if (i != 0 &&
-          LogicComponent.isBeforeMonth(
-              registerList[i - 1].date, registerList[i].date)) {
-        registerListGroup.add(registerList.sublist(j, i));
-        j = i;
+    final memoRegisterListGroup = useMemoized(() {
+      List<List<Register>> registerListGroup = [];
+      int j = 0;
+      for (int i = 0;
+          (i < registerList.length && i < displayCount.value);
+          i++) {
+        if (i != 0 &&
+            LogicComponent.isBeforeMonth(
+                registerList[i - 1].date, registerList[i].date)) {
+          registerListGroup.add(registerList.sublist(j, i));
+          j = i;
+        }
       }
-    }
-    if (j < registerList.length) {
-      registerListGroup.add(registerList.sublist(
-          j, min(displayCount.value, registerList.length)));
-    }
+      if (j < registerList.length) {
+        registerListGroup.add(registerList.sublist(
+            j, min(displayCount.value, registerList.length)));
+      }
+      return registerListGroup;
+    }, [displayCount.value, registerList]);
 
-    return Padding(
-      padding: const EdgeInsets.only(right: scrollbarpadding),
-      child: Scrollbar(
+    return Scrollbar(
+      controller: sliverScrollController,
+      thickness: scrollbarWidth,
+      radius: const Radius.circular(8.0),
+      thumbVisibility: true,
+      child: CustomScrollView(
         controller: sliverScrollController,
-        thickness: scrollbarWidth,
-        radius: const Radius.circular(8.0),
-        thumbVisibility: true,
-        child: CustomScrollView(
-          controller: sliverScrollController,
-          slivers: [
-            SliverPadding(
-              padding: customRegisterListPadding,
-              sliver: SliverMainAxisGroup(
-                slivers: [
-                  for (List<Register> sliverRegisterList in registerListGroup)
-                    if (sliverRegisterList.isNotEmpty)
-                      MainSliverGroup(
-                        registerList: sliverRegisterList,
-                        isDisplayYear: isDisplayYear,
-                        registerEditProvider: registerEditProvider,
-                      ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        slivers: [
+          SliverMainAxisGroup(
+            slivers: [
+              for (List<Register> sliverRegisterList in memoRegisterListGroup)
+                if (sliverRegisterList.isNotEmpty)
+                  MainSliverGroup(
+                    registerList: sliverRegisterList,
+                    isDisplayYear: isDisplayYear,
+                    registerEditProvider: registerEditProvider,
+                  ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -112,30 +111,34 @@ class MainSliverGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     return SliverMainAxisGroup(
       slivers: [
-        if (isDisplayYear)
+        if (isDisplayYear) ...{
           //年月
           SliverPersistentHeader(
             pinned: true,
             delegate:
                 CustomYMSliverHeaderDelegate(date: registerList.first.date),
           ),
+        },
 
         //registerリスト表示
-        SliverFixedExtentList.builder(
-          itemBuilder: (BuildContext context, int index) {
-            return RegisterListItem(
-              register: registerList[index],
-              registerEditProvider: registerEditProvider,
-              isNewDate: (index == 0 ||
-                  LogicComponent.isBeforeDate(
-                      registerList[index - 1].date, registerList[index].date)),
-              isNewDatePre: (index < registerList.length - 1 &&
-                  LogicComponent.isBeforeDate(
-                      registerList[index].date, registerList[index + 1].date)),
-            );
-          },
-          itemCount: registerList.length,
-          itemExtent: registerListHeight,
+        SliverPadding(
+          padding: EdgeInsets.only(top: small),
+          sliver: SliverFixedExtentList.builder(
+            itemBuilder: (BuildContext context, int index) {
+              return RegisterListItem(
+                register: registerList[index],
+                registerEditProvider: registerEditProvider,
+                isNewDate: (index == 0 ||
+                    LogicComponent.isBeforeDate(registerList[index - 1].date,
+                        registerList[index].date)),
+                isNewDatePre: (index < registerList.length - 1 &&
+                    LogicComponent.isBeforeDate(registerList[index].date,
+                        registerList[index + 1].date)),
+              );
+            },
+            itemCount: registerList.length,
+            itemExtent: registerListHeight,
+          ),
         ),
       ],
     );
@@ -409,20 +412,16 @@ class CustomYMSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
     return Align(
       alignment: Alignment.topLeft,
       child: Container(
-        padding:
-            const EdgeInsets.fromLTRB(msmall, 0, small, registerListPadding),
+        width: double.maxFinite,
+        color: theme.colorScheme.surfaceContainerLow,
+        padding: const EdgeInsets.fromLTRB(
+            msmall, registerListPadding / 2, small, registerListPadding / 2),
         child: Text(formatter.format(date),
             overflow: TextOverflow.visible,
             style: theme.textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-                shadows: [
-                  Shadow(blurRadius: 10.0, color: theme.colorScheme.surface),
-                  Shadow(blurRadius: 12.0, color: theme.colorScheme.surface),
-                  Shadow(blurRadius: 14.0, color: theme.colorScheme.surface),
-                  Shadow(blurRadius: 16.0, color: theme.colorScheme.surface),
-                  Shadow(blurRadius: 18.0, color: theme.colorScheme.surface),
-                ])),
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            )),
       ),
     );
   }

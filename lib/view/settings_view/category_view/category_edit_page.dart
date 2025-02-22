@@ -12,6 +12,7 @@ import 'package:household_expense_project/provider/app_bar_provider.dart';
 import 'package:household_expense_project/provider/reorderable_provider.dart';
 import 'package:household_expense_project/provider/select_category_provider.dart';
 import 'package:household_expense_project/provider/category_list_provider.dart';
+import 'package:household_expense_project/view/settings_view/category_view/category_destination_view.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:household_expense_project/constant/constant.dart';
@@ -463,104 +464,156 @@ class _CategoryEditPageState extends ConsumerState<CategoryEditPage> {
                               ),
                             ),
                           SizedBox(height: large),
-                          SizedBox(
-                            height: formItemHeight,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                //カテゴリー移行
-                                Expanded(
-                                  flex: 1,
-                                  child: OutlinedButton(
-                                    onPressed: () => openDialog(
-                                      context: context,
-                                      title: (widget.isSubPage
-                                              ? "サブカテゴリー"
-                                              : "カテゴリー") +
-                                          moveCategoryTitle,
-                                      text:
-                                          '"${selectedCategory!.name}"$moveDialogText',
-                                      buttonText: moveCategoryTitle,
-                                      onTap: () async {
-                                        if (widget.isSubPage) {
-                                          await selectCategoryStateNotifier
-                                              .deleteCategoryFromId(
-                                                  selectedCategory!.id!,
-                                                  context);
-                                        } else {
-                                          await categoryListProvider
-                                              .deleteCategoryFromId(
-                                                  selectedCategory!.id!,
-                                                  context);
-                                        }
-                                      },
-                                    ),
-                                    style: OutlinedButton.styleFrom(
-                                      padding: smallEdgeInsets,
-                                      foregroundColor:
-                                          theme.colorScheme.primary,
-                                      side: BorderSide(
-                                          color: theme.colorScheme.primary,
-                                          width: 1.3),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                            containreBorderRadius),
+                          HookBuilder(
+                            builder: (context) {
+                              final errText = useState<String?>(null);
+                              return SizedBox(
+                                height: formItemHeight,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    //カテゴリー移行
+                                    Expanded(
+                                      flex: 1,
+                                      child: OutlinedButton(
+                                        //カテゴリー移行ダイアログ表示
+                                        onPressed: () {
+                                          ref
+                                              .read(
+                                                  destinationCategory.notifier)
+                                              .initSelectCategory();
+                                          openDestinationDialog(
+                                            context: context,
+                                            title: (widget.isSubPage
+                                                    ? "サブカテゴリー"
+                                                    : "カテゴリー") +
+                                                moveCategoryTitle,
+                                            text:
+                                                '"${selectedCategory!.name}"$moveDialogText',
+                                            buttonText: moveCategoryTitle,
+                                            aditionalWidget:
+                                                DestinationCategorySelector(),
+                                            errTextNotifiere: errText,
+                                            //移行ボタン押下時
+                                            onTap: () async {
+                                              if (ref.watch(destinationCategory
+                                                      .select((p) => p
+                                                          .selectDestinationCategory)) !=
+                                                  null) {
+                                                final fromCategory =
+                                                    selectedCategory;
+                                                final toCategory = ref
+                                                    .watch(destinationCategory)
+                                                    .selectDestinationCategory;
+                                                if (fromCategory?.id == null ||
+                                                    toCategory?.id == null ||
+                                                    (fromCategory?.id ==
+                                                        toCategory?.id)) {
+                                                  errText.value =
+                                                      '選択したカテゴリーが正しくありません';
+                                                  return false;
+                                                }
+                                                //親カテゴリ→サブカテゴリーへの移動の時、fromのサブカテゴリーに登録されるデータも移行
+                                                if (fromCategory?.parentId ==
+                                                        null &&
+                                                    toCategory?.parentId !=
+                                                        null) {
+                                                  errText.value =
+                                                      'サブカテゴリーを持つカテゴリーをサブカテゴリーに移行することはできません';
+
+                                                  return false;
+                                                }
+
+                                                if (widget.isSubPage) {
+                                                  await selectCategoryStateNotifier
+                                                      .destinationCategoryFromId(
+                                                          fromCategory!,
+                                                          toCategory!,
+                                                          context);
+                                                } else {
+                                                  await categoryListProvider
+                                                      .destinationCategoryFromId(
+                                                          fromCategory!,
+                                                          toCategory!,
+                                                          context);
+                                                }
+                                              } else {
+                                                errText.value = '移行先を選択してください';
+                                                return false;
+                                              }
+                                              return true;
+                                            },
+                                          );
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          padding: smallEdgeInsets,
+                                          foregroundColor:
+                                              theme.colorScheme.primary,
+                                          side: BorderSide(
+                                              color: theme.colorScheme.primary,
+                                              width: 1.3),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                                containreBorderRadius),
+                                          ),
+                                        ),
+                                        child: AutoSizeText(
+                                          categoryTitle + moveCategoryTitle,
+                                          maxLines: 1,
+                                        ),
                                       ),
                                     ),
-                                    child: AutoSizeText(
-                                      categoryTitle + moveCategoryTitle,
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: medium),
-                                //カテゴリー削除
-                                Expanded(
-                                  flex: 1,
-                                  child: OutlinedButton(
-                                    onPressed: () => openDialog(
-                                      context: context,
-                                      title: (widget.isSubPage
-                                              ? "サブカテゴリー"
-                                              : "カテゴリー") +
-                                          delCategoryTitle,
-                                      text:
-                                          '"${selectedCategory!.name}"$delDialogText',
-                                      onTap: () async {
-                                        if (widget.isSubPage) {
-                                          await selectCategoryStateNotifier
-                                              .deleteCategoryFromId(
-                                                  selectedCategory!.id!,
-                                                  context);
-                                        } else {
-                                          await categoryListProvider
-                                              .deleteCategoryFromId(
-                                                  selectedCategory!.id!,
-                                                  context);
-                                        }
-                                      },
-                                      buttonText: delCategoryTitle,
-                                    ),
-                                    style: OutlinedButton.styleFrom(
-                                      padding: smallEdgeInsets,
-                                      foregroundColor:
-                                          theme.colorScheme.primary,
-                                      side: BorderSide(
-                                          color: theme.colorScheme.primary,
-                                          width: 1.3),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                            containreBorderRadius),
+                                    const SizedBox(width: medium),
+                                    //カテゴリー削除
+                                    Expanded(
+                                      flex: 1,
+                                      child: OutlinedButton(
+                                        onPressed: () => openDialog(
+                                          context: context,
+                                          title: (widget.isSubPage
+                                                  ? "サブカテゴリー"
+                                                  : "カテゴリー") +
+                                              delCategoryTitle,
+                                          text:
+                                              '"${selectedCategory!.name}"$delDialogText',
+                                          onTap: () async {
+                                            if (widget.isSubPage) {
+                                              await selectCategoryStateNotifier
+                                                  .deleteCategoryFromId(
+                                                      selectedCategory!.id!,
+                                                      context);
+                                            } else {
+                                              await categoryListProvider
+                                                  .deleteCategoryFromId(
+                                                      selectedCategory!.id!,
+                                                      context);
+                                            }
+                                          },
+                                          buttonText: delCategoryTitle,
+                                        ),
+                                        style: OutlinedButton.styleFrom(
+                                          padding: smallEdgeInsets,
+                                          foregroundColor:
+                                              theme.colorScheme.primary,
+                                          side: BorderSide(
+                                              color: theme.colorScheme.primary,
+                                              width: 1.3),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                                containreBorderRadius),
+                                          ),
+                                        ),
+                                        child: AutoSizeText(
+                                          categoryTitle + delCategoryTitle,
+                                          maxLines: 1,
+                                        ),
                                       ),
                                     ),
-                                    child: AutoSizeText(
-                                      categoryTitle + delCategoryTitle,
-                                      maxLines: 1,
-                                    ),
-                                  ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
                         }
                       ],

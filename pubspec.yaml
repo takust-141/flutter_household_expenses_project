@@ -3,7 +3,7 @@ description: "Household expense project."
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.1+1
+version: 1.0.0+1
 
 environment:
   sdk: '>=3.3.3 <4.0.0'
@@ -11,6 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  webview_flutter_wkwebview: ^3.18.2
 
   material_symbols_icons: ^4.2719.3
   collection: ^1.16.0
@@ -61,9 +63,6 @@ dev_dependencies:
   custom_lint: ^0.7.2
   riverpod_lint: ^2.3.10
 
-#admob利用時のvmエラー回避用
-dependency_overrides:
-  webview_flutter_wkwebview: 3.17.0
 
 flutter:
   generate: true       #多言語対応のファイルが自動生成

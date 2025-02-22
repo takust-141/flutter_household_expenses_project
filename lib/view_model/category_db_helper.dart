@@ -9,7 +9,7 @@ import 'package:household_expense_project/model/category.dart';
 class CategoryDBHelper {
   static final Database _database = DbHelper.database;
 
-  //全カテゴリ取得
+  //全カテゴリ取得（pearentのみ）
   static Future<(List<Category>, List<Category>)> getAllCategory() async {
     final batch = _database.batch();
     batch.query(
@@ -37,6 +37,32 @@ class CategoryDBHelper {
       incomeCategoryList.add(Category.fromMap(map));
     }
     return (outgoCategoryList, incomeCategoryList);
+  }
+
+  //全subカテゴリ取得
+  static Future<List<List<Category>>> getAllSubCategoryList(
+      List<int> parentIdList) async {
+    final batch = _database.batch();
+    for (int parentId in parentIdList) {
+      batch.query(
+        categoryTable,
+        where: '$categoryParentId IS NOT NULL AND $categoryParentId = ?',
+        whereArgs: [parentId],
+        orderBy: "$categoryOrder ASC",
+      );
+    }
+
+    final List<Object?> batchResult = await batch.commit();
+    List<List<Map>> listMaps = batchResult.cast<List<Map<dynamic, dynamic>>>();
+    List<List<Category>> subCategoryLists = [];
+    for (List<Map> listMap in listMaps) {
+      List<Category> subCategoryList = [];
+      for (Map map in listMap) {
+        subCategoryList.add(Category.fromMap(map));
+      }
+      subCategoryLists.add(subCategoryList);
+    }
+    return (subCategoryLists);
   }
 
   //サブカテゴリーリスト取得
@@ -142,12 +168,15 @@ class CategoryDBHelper {
   }
 
   //カテゴリーの移行（registerのcategory移行→カテゴリー削除）
-  //前提：mergeFromIdにサブカテゴリーが無いこと
-  static Future<void> mergeCategoryFromId(
-      int mergeFromId, int margeToId) async {
+  //サブカテゴリーがある場合は、サブカテゴリーごと移動
+  static Future<void> destinationCategoryFromId(
+      Category fromCategory, Category toCategory) async {
     try {
+      final mergeFromId = fromCategory.id;
+      final margeToId = toCategory.id;
+
       await _database.transaction((txn) async {
-        //registerカテゴリ変更
+        //register変更
         await txn.update(
           registerTable, // 更新対象のテーブル名
           {registerCategoryId: margeToId}, // 更新するカラムと新しい値
@@ -155,7 +184,7 @@ class CategoryDBHelper {
           whereArgs: [mergeFromId], // 条件に一致する値
         );
 
-        //registerRecuuringカテゴリ変更
+        //registerRecuuringカテゴリー変更
         await txn.update(
           registerRecurringTable, // 更新対象のテーブル名
           {registerRecurringCategoryId: margeToId}, // 更新するカラムと新しい値
@@ -163,11 +192,19 @@ class CategoryDBHelper {
           whereArgs: [mergeFromId], // 条件に一致する値
         );
 
-        //カテゴリ削除
+        //サブカテゴリーの親カテゴリ変更
+        await txn.update(
+          categoryTable, // 更新対象のテーブル名
+          {categoryParentId: margeToId}, // 更新するカラムと新しい値
+          where: '$categoryParentId = ?', // 条件を指定
+          whereArgs: [mergeFromId], // 条件に一致する値
+        );
+
+        //カテゴリー削除
         await txn.delete(
           categoryTable,
-          where: '$categoryId = ? OR $categoryParentId = ?',
-          whereArgs: [mergeFromId, mergeFromId],
+          where: '$categoryId = ?',
+          whereArgs: [mergeFromId],
         );
       });
     } catch (e) {

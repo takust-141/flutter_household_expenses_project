@@ -95,7 +95,7 @@ class VersionUpdateSnackBar extends ConsumerWidget {
                         color: theme.colorScheme.surface,
                       ),
                     ),
-                    Align(
+                    /*Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         style: TextButton.styleFrom(
@@ -128,7 +128,7 @@ class VersionUpdateSnackBar extends ConsumerWidget {
                           ),
                         ),
                       ),
-                    )
+                    )*/
                   ],
                 ),
               ),

@@ -35,7 +35,7 @@ class RecurringSettingRegisterListPage extends ConsumerWidget {
           builder: (context, AsyncSnapshot<List<Register>> snapshot) {
             if (snapshot.hasData) {
               if (snapshot.data?.isNotEmpty != true) {
-                const SizedBox.shrink();
+                return const SizedBox.shrink();
               }
               return CustomRegisterList(
                 registerList: snapshot.data!,

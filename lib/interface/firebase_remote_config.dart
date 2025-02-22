@@ -32,8 +32,6 @@ class CheckVersionHelper {
 
     String pubAppVersion = remoteConfig.getString(configPubAppVersion);
 
-    debugPrint("pubAppVer : $pubAppVersion");
-
     currentVersionList =
         currentVersion.split('.').map((e) => int.parse(e)).toList();
     pubAppVersionList =
@@ -44,7 +42,6 @@ class CheckVersionHelper {
         i < currentVersionList.length || i < pubAppVersionList.length;
         i++) {
       if (currentVersionList[i] < pubAppVersionList[i]) {
-        debugPrint('更新してください');
         needUpdate = true;
         break;
       }
