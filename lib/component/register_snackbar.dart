@@ -40,7 +40,7 @@ void updateSnackBarCallBack({
     elevation: 3,
   );
 
-  HapticFeedback.lightImpact();
+  HapticFeedback.mediumImpact();
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(snackBar);

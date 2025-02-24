@@ -1,5 +1,4 @@
 import 'package:firebase_remote_config/firebase_remote_config.dart';
-import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 const String configPubAppVersion = "publish_app_version";
@@ -17,7 +16,6 @@ class CheckVersionHelper {
     //現在のバージョン
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     String currentVersion = packageInfo.version;
-    debugPrint("version :${packageInfo.version}");
 
     // remote configから最新バージョン取得
     final remoteConfig = FirebaseRemoteConfig.instance;

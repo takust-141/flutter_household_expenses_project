@@ -146,11 +146,11 @@ final List<Color> keyboardColors = [
 ];
 
 final Map<String, Color> categoryColors = {
-  for (var color in keyboardColors) color.toString(): color,
-  'default': keyboardColors[0],
+  for (var color in keyboardColors) color.toARGB32().toString(): color,
+  'default': Colors.grey.shade800,
 };
 
 final Map<String, IconData> categoryIcons = {
-  for (var icon in keyboardIcons) icon.toString(): icon,
+  for (var icon in keyboardIcons) icon.codePoint.toString(): icon,
   'default': keyboardIcons[0],
 };

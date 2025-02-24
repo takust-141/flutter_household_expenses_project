@@ -52,13 +52,13 @@ class AdHelper {
       if (kDebugMode) {
         //test
         return 'ca-app-pub-3940256099942544/6300978111';
-      } else if (kReleaseMode) {
+      } else if (kProfileMode || kReleaseMode) {
         return 'ca-app-pub-1911558515475737/7713318577';
       }
     } else if (Platform.isIOS) {
       if (kDebugMode) {
         return 'ca-app-pub-3940256099942544/2934735716';
-      } else if (kReleaseMode) {
+      } else if (kProfileMode || kReleaseMode) {
         return 'ca-app-pub-1911558515475737/2064270603';
       }
     }
@@ -77,32 +77,42 @@ class AdaptiveAdBanner extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final adSize =
         ref.watch(adNotifierProvider.select((p) => p.adSize)) ?? AdSize.banner;
+    String? adUnitId;
+    try {
+      adUnitId = AdHelper.bannerAdUnitId;
+    } catch (e) {
+      debugPrint("Ad platform is not found");
+    }
 
     final isLoaded = useState<bool>(false);
-    final bannerAd = useMemoized(() => BannerAd(
-          size: adSize,
-          adUnitId: AdHelper.bannerAdUnitId,
-          listener: BannerAdListener(
-            onAdFailedToLoad: (ad, error) {
-              ad.dispose();
-            },
-            onAdLoaded: (ad) {
-              isLoaded.value = true;
-            },
-          ),
-          request: const AdRequest(),
-        ));
+    final bannerAd = useMemoized(
+        () => (adUnitId != null)
+            ? BannerAd(
+                size: adSize,
+                adUnitId: adUnitId,
+                listener: BannerAdListener(
+                  onAdFailedToLoad: (ad, error) {
+                    ad.dispose();
+                  },
+                  onAdLoaded: (ad) {
+                    isLoaded.value = true;
+                  },
+                ),
+                request: const AdRequest(),
+              )
+            : null,
+        [adUnitId]);
 
     useEffect(() {
-      bannerAd.load();
-      return () async => await bannerAd.dispose();
+      bannerAd?.load();
+      return () async => await bannerAd?.dispose();
     }, [bannerAd]);
 
     return Container(
       color: Theme.of(context).colorScheme.surfaceContainerLowest,
       width: adSize.width.toDouble(),
       height: adSize.height.toDouble(),
-      child: (isLoaded.value)
+      child: (isLoaded.value && bannerAd != null)
           ? AdWidget(key: Key(page.toString()), ad: bannerAd)
           : SizedBox.shrink(),
     );

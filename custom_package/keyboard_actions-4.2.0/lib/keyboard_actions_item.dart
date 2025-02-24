@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 
-typedef ButtonBuilder = Widget Function(FocusNode focusNode);
+typedef ButtonBuilder = Widget Function(CustomFocusNode focusNode);
 
 ///Class to define the `focusNode` that you pass to your `TextField` too and other params to customize
 ///the bar that will appear over your keyboard

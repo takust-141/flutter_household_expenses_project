@@ -57,6 +57,7 @@ class RegisterKeyboardAction {
   }
 
   KeyboardActionsConfig buildConfig(BuildContext context) {
+    final goRoute = GoRouter.of(context);
     return KeyboardActionsConfig(
       keyboardBarElevation: 1,
       keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
@@ -124,10 +125,56 @@ class RegisterKeyboardAction {
             enableNewAdd: enableNewAdd,
             selectCategoryProviderIndex: selectCategoryProviderIndex,
           ),
+          toolbarButtons: [
+            (CustomFocusNode node) => Padding(
+                  padding: keyboardInkWellPadding,
+                  child: KeyboardGestureDetector(
+                    onTapIcon: () async {
+                      node.unfocus();
+                      await CustomFocusNode.waitAnimation?.future;
+                      if (goRoute.canPop()) {
+                        goRoute.pop();
+                      }
+                      goRoute.go('/setting/category_list');
+                    },
+                    customIcon: const Text("編集"),
+                  ),
+                ),
+            (node) => Padding(
+                  padding: keyboardClosedIconPadding,
+                  child: KeyboardGestureDetector(
+                    onTapIcon: () => node.unfocus(),
+                    customIcon: const KeyboardClosedIcon(),
+                  ),
+                ),
+          ],
         ),
         KeyboardActionsItem(
           focusNode: subCategoryNode,
           keyboardCustom: true,
+          toolbarButtons: [
+            (CustomFocusNode node) => Padding(
+                  padding: keyboardInkWellPadding,
+                  child: KeyboardGestureDetector(
+                    onTapIcon: () async {
+                      node.unfocus();
+                      await CustomFocusNode.waitAnimation?.future;
+                      if (goRoute.canPop()) {
+                        goRoute.pop();
+                      }
+                      goRoute.go('/setting/category_list');
+                    },
+                    customIcon: const Text("編集"),
+                  ),
+                ),
+            (node) => Padding(
+                  padding: keyboardClosedIconPadding,
+                  child: KeyboardGestureDetector(
+                    onTapIcon: () => node.unfocus(),
+                    customIcon: const KeyboardClosedIcon(),
+                  ),
+                ),
+          ],
           footerBuilder: (_) => CategoryPickerKeyboard(
             notifier: subCategoryNotifier,
             sub: true,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:household_expense_project/constant/dimension.dart';
 import 'package:household_expense_project/provider/app_bar_provider.dart';
@@ -236,21 +235,14 @@ class _ScaffoldWithNavBarState extends ConsumerState<ScaffoldWithNavBar>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    Future<InitializationStatus?> initGoogleMobileAds() {
-      return MobileAds.instance.initialize();
-    }
 
     return Scaffold(
       appBar: CustomAppBar(goRouterState: widget.goRouterState),
       extendBody: true,
-      body: FutureBuilder<InitializationStatus?>(
-          future: initGoogleMobileAds(),
-          builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
-            return SafeArea(
-              bottom: false,
-              child: widget.navigationShell,
-            );
-          }),
+      body: SafeArea(
+        bottom: false,
+        child: widget.navigationShell,
+      ),
       backgroundColor: theme.colorScheme.surfaceContainer,
       resizeToAvoidBottomInset: false, //キーボードによるレイアウト変更を制御
       bottomNavigationBar:

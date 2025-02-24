@@ -51,6 +51,7 @@ dependencies:
   package_info_plus: ^8.2.1
   url_launcher: ^6.3.1
   flutter_native_splash: ^2.4.4
+  flutter_launcher_icons: ^0.14.3
 
 dev_dependencies:
   flutter_test:
@@ -90,5 +91,20 @@ flutter:
         - asset: fonts/NotoSans/NotoSansJP-Black.ttf
           weight: 900
 
+#起動時のsplush画面
 flutter_native_splash:
-  color: "#42a5f5"
+  color: "#AAAAAA"
+  image: assets/images/app_icon_1024x1024.png
+  color_dark: '#333333'
+  android_12:
+    color: "#AAAAAA"
+    image: assets/images/app_icon_1152x1152.png
+    color_dark: '#333333'
+  
+  
+
+#icon
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon_1024x1024.png"

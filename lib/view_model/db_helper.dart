@@ -1,12 +1,61 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:household_expense_project/model/category.dart';
 import 'package:household_expense_project/model/register.dart';
 import 'package:household_expense_project/model/register_recurring.dart';
+import 'package:household_expense_project/provider/select_expense_state.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
+
+final defaultMapList = [
+  {
+    categoryId: 1,
+    categoryName: '食費',
+    categoryIcon: Symbols.restaurant.codePoint.toString(),
+    categoryColor: Colors.red.shade600.toARGB32().toString(),
+    categoryParentId: null,
+    categoryOrder: 1,
+    categoryExpense: SelectExpense.outgo.name,
+  },
+  {
+    categoryId: 2,
+    categoryName: 'スーパー',
+    categoryIcon: Symbols.shopping_cart.codePoint.toString(),
+    categoryColor: Colors.deepOrange.toARGB32().toString(),
+    categoryParentId: 1,
+    categoryOrder: 1,
+    categoryExpense: SelectExpense.outgo.name,
+  },
+  {
+    categoryId: 3,
+    categoryName: '外食',
+    categoryIcon: Symbols.fastfood.codePoint.toString(),
+    categoryColor: Colors.yellow.toARGB32().toString(),
+    categoryParentId: 1,
+    categoryOrder: 2,
+    categoryExpense: SelectExpense.outgo.name,
+  },
+  {
+    categoryId: 4,
+    categoryName: '家賃',
+    categoryIcon: Symbols.home.codePoint.toString(),
+    categoryColor: Colors.green.toARGB32().toString(),
+    categoryParentId: null,
+    categoryOrder: 2,
+    categoryExpense: SelectExpense.outgo.name,
+  },
+  {
+    categoryId: 5,
+    categoryName: '給料',
+    categoryIcon: Symbols.payments.codePoint.toString(),
+    categoryColor: Colors.indigo.toARGB32().toString(),
+    categoryParentId: null,
+    categoryOrder: 1,
+    categoryExpense: SelectExpense.income.name,
+  },
+];
 
 class DbHelper {
   //シングルトンパターン（インスタンスが1つで静的）
@@ -40,11 +89,13 @@ class DbHelper {
 
   static Future<void> openDataBase() async {
     final path = await getDBPath('register');
-    database = await openDatabase(
-      path,
-      version: 1,
-      onCreate: (Database db, int version) async {
-        await db.execute('''
+    try {
+      database = await openDatabase(
+        path,
+        version: 1,
+        onCreate: (Database db, int version) async {
+          Batch batch = db.batch();
+          batch.execute('''
           CREATE TABLE $categoryTable ( 
           $categoryId INTEGER PRIMARY KEY, 
           $categoryName TEXT NOT NULL,
@@ -54,8 +105,8 @@ class DbHelper {
           $categoryOrder INTEGER NOT NULL,
           $categoryExpense TEXT NOT NULL
           )
-        ''');
-        await db.execute('''
+          ''');
+          batch.execute('''
           CREATE TABLE $registerTable ( 
           $registerId INTEGER PRIMARY KEY, 
           $registerAmount INTEGER NOT NULL,
@@ -66,8 +117,8 @@ class DbHelper {
           $registerRegistrationDate INTEGER NOT NULL,
           $registerUpdateDate INTEGER
           )
-        ''');
-        await db.execute('''
+          ''');
+          batch.execute('''
           CREATE TABLE $registerRecurringTable ( 
           $registerRecurringPrimaryId INTEGER PRIMARY KEY, 
           $registerRecurringAmount INTEGER NOT NULL,
@@ -79,9 +130,20 @@ class DbHelper {
           $registerRecurringSetting TEXT NOT NULL,
           $registerRescheduleSetting TEXT NOT NULL
           )
-        ''');
-      },
-    );
+          ''');
+          await batch.commit();
+
+          // 初期データを挿入
+          Batch insertBatch = db.batch();
+          for (var defaultMap in defaultMapList) {
+            insertBatch.insert(categoryTable, defaultMap);
+          }
+          await insertBatch.commit();
+        },
+      );
+    } catch (e) {
+      debugPrint("db err");
+    }
   }
 
   static Future closeDataBase() async {

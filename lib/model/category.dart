@@ -53,8 +53,8 @@ class Category {
   Map<String, Object?> toMap() {
     return {
       categoryName: name,
-      categoryIcon: icon.toString(),
-      categoryColor: color.toString(),
+      categoryIcon: icon.codePoint.toString(),
+      categoryColor: color.toARGB32().toString(),
       categoryParentId: parentId,
       categoryOrder: order,
       categoryExpense: expense.name,

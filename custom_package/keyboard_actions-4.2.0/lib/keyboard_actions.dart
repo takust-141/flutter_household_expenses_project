@@ -724,16 +724,12 @@ class CustomFocusNode extends FocusNode {
     super.descendantsAreTraversable,
   });
 
-  static Completer<void>? _waitAnimation;
-
-  static set waitAnimation(Completer<void>? value) {
-    _waitAnimation = value;
-  }
+  static Completer<void>? waitAnimation;
 
   @override
   void requestFocus([FocusNode? node]) async {
     if (!hasFocus) {
-      await _waitAnimation?.future;
+      await waitAnimation?.future;
     }
     super.requestFocus(node);
   }

@@ -58,7 +58,8 @@ class PreferencesService {
       int brightness, double contrustLevel, Color seedColor) async {
     await asyncPrefs.setInt(themeBrightnessKey, brightness);
     await asyncPrefs.setDouble(themeContrastLevelKey, contrustLevel);
-    await asyncPrefs.setString(themeSeedColorKey, seedColor.toString());
+    await asyncPrefs.setString(
+        themeSeedColorKey, seedColor.toARGB32().toString());
   }
 
   static Future<(int, double, Color)> getTheme() async {
@@ -69,7 +70,7 @@ class PreferencesService {
     final String? seedColorString =
         await asyncPrefs.getString(themeSeedColorKey);
     final Color seedColor =
-        themeColorMap[seedColorString] ?? themeColorMap['default']!; //初期値赤
+        themeColorMap[seedColorString] ?? themeColorMap['default']!; //初期値
 
     return (brightness, contrustLevel, seedColor);
   }

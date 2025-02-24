@@ -517,7 +517,6 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
             Navigator.of(context).pop();
           } else {
             //繰り返し収支の更新の場合
-
             //ダイアログ表示（日付を変更している場合はボタン非活性）
             openDialogContainWidget(
               context: context,
@@ -691,8 +690,6 @@ class _RegisterEditBodyViewState extends ConsumerState<RegisterEditBodyView> {
         registerSpacerHeight =
             (registerSpacerHeight.isNegative) ? 0 : registerSpacerHeight;
 
-        debugPrint(
-            "KeyboardActions build ${amountOfMoneyNode.canRequestFocus.toString()}");
         return KeyboardActions(
           keepFocusOnTappingNode: true,
           autoScroll: true,
