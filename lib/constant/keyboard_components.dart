@@ -43,6 +43,7 @@ final List<IconData> keyboardIcons = [
 
   //デバイス
   Symbols.phone,
+  Symbols.phone_iphone,
   Symbols.app_promo,
   Symbols.devices,
   Symbols.wifi,
@@ -68,6 +69,9 @@ final List<IconData> keyboardIcons = [
   Symbols.movie,
   Symbols.videocam,
   Symbols.photo_camera,
+  Symbols.landscape,
+  Symbols.outdoor_garden,
+  Symbols.bath_outdoor,
   Symbols.music_note,
   Symbols.stadia_controller,
   Symbols.sports_tennis,
@@ -120,6 +124,7 @@ final List<IconData> keyboardIcons = [
   Symbols.favorite,
   Symbols.star,
   Symbols.circle,
+  Symbols.sunny,
 ];
 
 final List<Color> keyboardColors = [

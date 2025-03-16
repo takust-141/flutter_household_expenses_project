@@ -30,6 +30,7 @@ const rootNameRecurringSettingDetail = 'recurring_setting_detail';
 const rootNameRecurringSettingRegisterList = 'recurring_setting_register_list';
 const rootNameContact = 'contact';
 const rootNameThemeColorSetting = 'theme_color_setting';
+const rootNameRemoveAd = 'remove_ad';
 
 const List<AppBarState> appBarStateStateList = [
   AppBarState(name: rootNameRegister, appBarTitle: null, appBarBack: false),
@@ -87,6 +88,11 @@ const List<AppBarState> appBarStateStateList = [
   AppBarState(
     name: rootNameThemeColorSetting,
     appBarTitle: 'テーマカラー設定',
+    appBarBack: true,
+  ),
+  AppBarState(
+    name: rootNameRemoveAd,
+    appBarTitle: '広告非表示',
     appBarBack: true,
   ),
 ];

@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.tomakust.householdExpenseProject</string>
+	<string>com.takust.householdExpenseProject</string>
 	<key>PROJECT_ID</key>
 	<string>flutterhouseholdexpensesapp</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:198093048548:ios:4b0089422a4b493edb3af1</string>
+	<string>1:198093048548:ios:19e1f6add656a963db3af1</string>
 </dict>
 </plist>

@@ -24,6 +24,7 @@ class SettingPage extends HookConsumerWidget {
               child: Padding(
                 padding: viewEdgeInsets,
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
                       clipBehavior: Clip.antiAlias,
@@ -34,8 +35,17 @@ class SettingPage extends HookConsumerWidget {
                       child: Column(
                         children: [
                           SettingListItem(
+                            setText: "広告を非表示",
+                            onTapList: () => goRoute.push('/setting/remove_ad'),
+                          ),
+                          Divider(
+                            height: 0.2,
+                            thickness: 0.2,
+                            color: theme.colorScheme.outline,
+                          ),
+                          SettingListItem(
                             setText: "カテゴリー編集",
-                            onTapRoute: () {
+                            onTapList: () {
                               ref
                                   .read(settingCategoryStateNotifierProvider
                                       .notifier)
@@ -44,42 +54,42 @@ class SettingPage extends HookConsumerWidget {
                             },
                           ),
                           Divider(
-                            height: 0,
+                            height: 0.2,
                             thickness: 0.2,
                             color: theme.colorScheme.outline,
                           ),
                           SettingListItem(
                             setText: "カレンダー開始日設定",
-                            onTapRoute: () =>
+                            onTapList: () =>
                                 goRoute.push('/setting/calendar_setting'),
                           ),
                           Divider(
-                            height: 0,
+                            height: 0.2,
                             thickness: 0.2,
                             color: theme.colorScheme.outline,
                           ),
                           SettingListItem(
                             setText: "定期収支設定",
-                            onTapRoute: () =>
+                            onTapList: () =>
                                 goRoute.push('/setting/recurring_list'),
                           ),
                           Divider(
-                            height: 0,
+                            height: 0.2,
                             thickness: 0.2,
                             color: theme.colorScheme.outline,
                           ),
                           SettingListItem(
                             setText: "問い合わせ",
-                            onTapRoute: () => goRoute.push('/setting/contact'),
+                            onTapList: () => goRoute.push('/setting/contact'),
                           ),
                           Divider(
-                            height: 0,
+                            height: 0.2,
                             thickness: 0.2,
                             color: theme.colorScheme.outline,
                           ),
                           SettingListItem(
                             setText: "テーマカラー設定",
-                            onTapRoute: () =>
+                            onTapList: () =>
                                 goRoute.push('/setting/theme_color_setting'),
                           ),
                         ],

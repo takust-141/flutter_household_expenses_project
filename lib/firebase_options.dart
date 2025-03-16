@@ -63,7 +63,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '198093048548',
     projectId: 'flutterhouseholdexpensesapp',
     storageBucket: 'flutterhouseholdexpensesapp.firebasestorage.app',
-    iosBundleId: 'com.tomakust.householdExpenseProject',
+    iosBundleId: 'com.takust.householdExpenseProject',
   );
-
 }

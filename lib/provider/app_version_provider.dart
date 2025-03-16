@@ -95,7 +95,7 @@ class VersionUpdateSnackBar extends ConsumerWidget {
                         color: theme.colorScheme.surface,
                       ),
                     ),
-                    /*Align(
+                    Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         style: TextButton.styleFrom(
@@ -111,7 +111,8 @@ class VersionUpdateSnackBar extends ConsumerWidget {
                           } else if (Theme.of(context).platform ==
                               TargetPlatform.iOS) {
                             // ios
-                            updateUrl = "itms-apps://apps.apple.com/";
+                            updateUrl =
+                                "itms-apps://apps.apple.com/jp/app/id6742489643";
                           } else {
                             return;
                           }
@@ -128,7 +129,7 @@ class VersionUpdateSnackBar extends ConsumerWidget {
                           ),
                         ),
                       ),
-                    )*/
+                    )
                   ],
                 ),
               ),

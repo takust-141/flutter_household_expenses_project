@@ -32,7 +32,7 @@ final defaultMapList = [
     categoryId: 3,
     categoryName: '外食',
     categoryIcon: Symbols.fastfood.codePoint.toString(),
-    categoryColor: Colors.yellow.toARGB32().toString(),
+    categoryColor: Colors.orange.toARGB32().toString(),
     categoryParentId: 1,
     categoryOrder: 2,
     categoryExpense: SelectExpense.outgo.name,

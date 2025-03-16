@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:household_expense_project/provider/setting_remove_ad_provider.dart';
 
 //広告高さ考慮用Provider
 final adNotifierProvider =
@@ -35,12 +36,28 @@ class AdStateNotifier extends Notifier<AdState> {
   }
 
   Future<void> initAdState(BuildContext context) async {
-    final adSize =
-        await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
-      MediaQuery.of(context).size.width.truncate(),
-    ) as AdSize;
+    final ProductState settingRemoveAdState = await ref.read(
+        settingRemoveAdProvider.selectAsync((p) => p.removedAdProductState));
+
+    late final AdSize? adSize;
+    if (settingRemoveAdState != ProductState.purchased) {
+      if (context.mounted) {
+        adSize = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+          MediaQuery.of(context).size.width.truncate(),
+        ) as AdSize;
+      } else {
+        adSize = AdSize.banner;
+      }
+    } else {
+      adSize = null;
+    }
 
     state = state.copyWith(adSize: adSize);
+    debugPrint("comp initAdState");
+  }
+
+  void removeAd() {
+    state = AdState(adSize: null);
   }
 }
 
@@ -50,7 +67,6 @@ class AdHelper {
   static String get bannerAdUnitId {
     if (Platform.isAndroid) {
       if (kDebugMode) {
-        //test
         return 'ca-app-pub-3940256099942544/6300978111';
       } else if (kProfileMode || kReleaseMode) {
         return 'ca-app-pub-1911558515475737/7713318577';
@@ -75,46 +91,53 @@ class AdaptiveAdBanner extends HookConsumerWidget {
   final ValueChanged<double>? setAdHeight;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final adSize =
-        ref.watch(adNotifierProvider.select((p) => p.adSize)) ?? AdSize.banner;
-    String? adUnitId;
-    try {
-      adUnitId = AdHelper.bannerAdUnitId;
-    } catch (e) {
-      debugPrint("Ad platform is not found");
+    if (ref.watch(settingRemoveAdProvider).valueOrNull?.removedAdProductState ==
+        ProductState.purchased) {
+      //広告削除済みの場合
+      return SizedBox.shrink();
+    } else {
+      //未削除
+      final adSize = ref.watch(adNotifierProvider.select((p) => p.adSize)) ??
+          AdSize.banner;
+      String? adUnitId;
+      try {
+        adUnitId = AdHelper.bannerAdUnitId;
+      } catch (e) {
+        debugPrint("Ad platform is not found");
+      }
+
+      final isLoaded = useState<bool>(false);
+      final bannerAd = useMemoized(
+          () => (adUnitId != null)
+              ? BannerAd(
+                  size: adSize,
+                  adUnitId: adUnitId,
+                  listener: BannerAdListener(
+                    onAdFailedToLoad: (ad, error) {
+                      ad.dispose();
+                    },
+                    onAdLoaded: (ad) {
+                      isLoaded.value = true;
+                    },
+                  ),
+                  request: const AdRequest(),
+                )
+              : null,
+          [adUnitId]);
+
+      useEffect(() {
+        bannerAd?.load();
+        return () async => await bannerAd?.dispose();
+      }, [bannerAd]);
+
+      return Container(
+        color: Theme.of(context).colorScheme.surfaceContainerLowest,
+        width: adSize.width.toDouble(),
+        height: adSize.height.toDouble(),
+        child: (isLoaded.value && bannerAd != null)
+            ? AdWidget(key: Key(page.toString()), ad: bannerAd)
+            : SizedBox.shrink(),
+      );
     }
-
-    final isLoaded = useState<bool>(false);
-    final bannerAd = useMemoized(
-        () => (adUnitId != null)
-            ? BannerAd(
-                size: adSize,
-                adUnitId: adUnitId,
-                listener: BannerAdListener(
-                  onAdFailedToLoad: (ad, error) {
-                    ad.dispose();
-                  },
-                  onAdLoaded: (ad) {
-                    isLoaded.value = true;
-                  },
-                ),
-                request: const AdRequest(),
-              )
-            : null,
-        [adUnitId]);
-
-    useEffect(() {
-      bannerAd?.load();
-      return () async => await bannerAd?.dispose();
-    }, [bannerAd]);
-
-    return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerLowest,
-      width: adSize.width.toDouble(),
-      height: adSize.height.toDouble(),
-      child: (isLoaded.value && bannerAd != null)
-          ? AdWidget(key: Key(page.toString()), ad: bannerAd)
-          : SizedBox.shrink(),
-    );
   }
 }

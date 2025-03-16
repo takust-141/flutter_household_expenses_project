@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -46,22 +47,26 @@ void main() async {
   );
 }
 
-class HouseholdExpenseApp extends ConsumerWidget {
+class HouseholdExpenseApp extends HookConsumerWidget {
   const HouseholdExpenseApp({super.key});
-
-  Future<void> initApp() async {}
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.read(adNotifierProvider.notifier).initAdState(context);
-    return ref.watch(settingThemeProvider).maybeWhen(
-          data: (themeState) => MaterialApp.router(
-            title: "Household Expense App",
-            theme: themeState.lightTheme,
-            darkTheme: themeState.darkTheme,
-            routerConfig: router,
-          ),
-          orElse: () => SizedBox.shrink(),
-        );
+    final initMemo = useMemoized(() => Future.wait<void>([
+          ref.read(adNotifierProvider.notifier).initAdState(context),
+        ]));
+    final futureState = useFuture(initMemo);
+    return (futureState.connectionState == ConnectionState.done)
+        ? ref.watch(settingThemeProvider).maybeWhen(
+              data: (themeState) => MaterialApp.router(
+                title: "Household Expense App",
+                theme: themeState.lightTheme,
+                darkTheme: themeState.darkTheme,
+                routerConfig: router,
+                debugShowCheckedModeBanner: false,
+              ),
+              orElse: () => SizedBox.shrink(),
+            )
+        : SizedBox.shrink();
   }
 }

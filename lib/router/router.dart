@@ -168,6 +168,11 @@ final router = GoRouter(
                   name: rootNameThemeColorSetting,
                   builder: (context, state) => const ThemeColorSettingPage(),
                 ),
+                GoRoute(
+                  path: 'remove_ad',
+                  name: rootNameRemoveAd,
+                  builder: (context, state) => const RemoveAdPage(),
+                ),
               ],
             ),
           ],

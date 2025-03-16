@@ -15,3 +15,4 @@ export 'package:household_expense_project/view/settings_view/recurring_setting_v
 
 export 'package:household_expense_project/view/settings_view/contact_page.dart';
 export 'package:household_expense_project/view/settings_view/theme_color_setting_page.dart';
+export 'package:household_expense_project/view/settings_view/remove_ad_page.dart';

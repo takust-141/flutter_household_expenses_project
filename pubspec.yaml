@@ -52,6 +52,11 @@ dependencies:
   url_launcher: ^6.3.1
   flutter_native_splash: ^2.4.4
   flutter_launcher_icons: ^0.14.3
+  in_app_purchase: ^3.2.1
+  app_store_server_sdk: ^1.2.10
+  envied: ^1.1.1
+  in_app_purchase_storekit: ^0.3.21
+  purchases_flutter: ^8.6.0
 
 dev_dependencies:
   flutter_test:
@@ -60,9 +65,11 @@ dev_dependencies:
   #riverpod
   flutter_lints: ^5.0.0
   riverpod_generator: ^2.6.4
-  build_runner: ^2.4.9
+  build_runner: ^2.4.15
   custom_lint: ^0.7.2
   riverpod_lint: ^2.3.10
+  in_app_purchase_platform_interface: ^1.4.0
+  envied_generator: ^1.1.1
 
 
 flutter:
@@ -105,6 +112,9 @@ flutter_native_splash:
 
 #icon
 flutter_launcher_icons:
-  android: true
   ios: true
-  image_path: "assets/images/app_icon_1024x1024.png"
+  image_path: "assets/images/non_alpha_app_icon_1024x1024.png"
+  remove_alpha_ios: true
+  android: true
+  adaptive_icon_foreground: "assets/images/app_icon_1152x1152.png"
+  adaptive_icon_background: "#AAAAAA"

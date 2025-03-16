@@ -40,7 +40,7 @@ class ContactFormPage extends HookConsumerWidget {
                 Align(
                   alignment: Alignment.topLeft,
                   child: const Text(
-                    "アプリに対するご意見、ご要望、ご感想など\nお気軽にご記入ください",
+                    "アプリに対するご意見、ご要望、ご感想など\nお気軽にご記入ください\n返信が必要な場合はメールアドレスを明記してください",
                     textAlign: TextAlign.start,
                   ),
                 ),

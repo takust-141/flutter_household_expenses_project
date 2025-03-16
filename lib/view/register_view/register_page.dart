@@ -485,8 +485,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> with RouteAware {
                               padding: mediumHorizontalEdgeInsets,
                               child: HookBuilder(builder: (context) {
                                 //registerButton用
-                                final isActiveRegisterButton =
-                                    useState<bool>(false);
+                                final isActiveRegisterButton = useState<bool>(
+                                    amountOfMoneyTextController
+                                            .text.isNotEmpty &&
+                                        (categoryNotifier.value != null));
                                 //フォーム入力チェック
                                 void formInputCheck() {
                                   isActiveRegisterButton.value =

@@ -373,15 +373,21 @@ class CustomSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
 
 //
 //月合計アイテム
-class CalendarMonthSumItem extends ConsumerWidget {
-  // ignore: prefer_const_constructors_in_immutables
-  CalendarMonthSumItem({super.key});
+class CalendarMonthSumItem extends HookConsumerWidget {
+  const CalendarMonthSumItem({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ThemeData theme = Theme.of(context);
-    final (int totalIncome, int totalOutgo) =
-        ref.read(calendarPageProvider.notifier).calcMonthSumRegister();
+
+    final totalAmount = useMemoized(
+        () => ref.read(calendarPageProvider.notifier).calcMonthSumRegister(), [
+      ref.watch(calendarPageProvider.selectAsync((p) => p.displayMonth)),
+      ref.watch(calendarPageProvider.selectAsync((p) => p.registerList))
+    ]);
+
+    int totalIncome = totalAmount.$1;
+    int totalOutgo = totalAmount.$2;
 
     return SizedBox(
       height: registerListHeight - registerListPadding,

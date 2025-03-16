@@ -115,3 +115,6 @@ const double scrollbarWidth = 4;
 const double scrollbarSpace = scrollbarpadding * 2 + scrollbarWidth;
 const customRegisterListPadding =
     EdgeInsets.symmetric(vertical: msmall, horizontal: 0);
+
+//Duration
+const Duration listItemAnimationDuration = Duration(milliseconds: 50);

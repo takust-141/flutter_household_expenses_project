@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:household_expense_project/constant/config.dart';
 import 'package:household_expense_project/constant/dimension.dart';
 import 'package:household_expense_project/model/register_recurring.dart';
 import 'package:household_expense_project/provider/register_recurring_list_provider.dart';
@@ -70,11 +69,13 @@ class RecurringSettingListPage extends HookConsumerWidget {
                 .setReorderRecurringList(registerRecurringList.value);
           },
           //新規追加
-
           footer: isReorder
               ? SizedBox.shrink()
               : Container(
-                  margin: EdgeInsets.only(top: medium),
+                  margin: EdgeInsets.only(
+                      top: (registerRecurringList.value.isNotEmpty)
+                          ? medium
+                          : 0),
                   clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(containreBorderRadius),
