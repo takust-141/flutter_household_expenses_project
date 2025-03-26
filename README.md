@@ -6,5 +6,5 @@ Household expense project.
 
 This project is a Flutter application.
 
-- [iOS app]([https://docs.flutter.dev/get-started/codelab](https://apps.apple.com/jp/app/id6742489643))
+- [app store](https://apps.apple.com/jp/app/id6742489643)
 
